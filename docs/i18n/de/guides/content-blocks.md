@@ -251,7 +251,7 @@ aus den eigenen Attributen der Direktive: nur `url` ist erforderlich,
 `title` fällt, wenn weggelassen, auf die reine URL zurück, und
 `description`/`image` sind beide optional. Es gibt keinen
 Build-Zeit-Abruf der Ziel-URL, um diese automatisch zu befüllen -
-dieselbe Überlegung, die [`site:check`](../cli-reference.md#sitecheck) auf
+dieselbe Überlegung, die [`audit`](../cli-reference.md#audit) auf
 interne Links beschränkt, gilt auch hier, sodass eine langsame oder
 nicht erreichbare externe Website die Build-Zeit niemals beeinflusst:
 

@@ -251,7 +251,7 @@ direttiva: solo `url` è obbligatorio, `title` ricade sull'URL nudo quando
 omesso, e `description`/`image` sono entrambi opzionali. Non c'è alcun
 recupero dell'URL di destinazione al momento del build per riempirli
 automaticamente - lo stesso ragionamento che mantiene
-[`site:check`](../cli-reference.md#sitecheck) limitato ai soli link interni si
+[`audit`](../cli-reference.md#audit) limitato ai soli link interni si
 applica anche qui, così un sito di terze parti lento o irraggiungibile
 non influisce mai sul tempo di build:
 

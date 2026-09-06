@@ -86,7 +86,7 @@ boxlang bxSites <verb> [options]
 | `search-index` | Rebuild `site/search-index.json` standalone (also runs automatically during `build`) |
 | `clean` | Remove `site/` and any build cache |
 | `migrate` | Convert an existing GitBook export, mkdocs project, plain zip of Markdown, or Notion export into `docs/` + `nav.json` (`--from=gitbook`, the default, `--from=mkdocs`, `--from=markdown-zip`, or `--from=notion`) |
-| `check` | CI-grade content check on a built `site/`: broken internal links/images, missing alt text, orphaned pages |
+| `audit` | CI-grade content check on a built `site/`: broken internal links/images, missing alt text, orphaned pages |
 | `stats` | Read-only summary report on a built `site/`: page/word counts, versions/locales, blog, tags, search index, site size |
 | `doctor` | Environment/config health check: JVM, `docs/` (or `src/`), config validity, required modules, theme override |
 | `post:new` | Scaffold a new blog post at `docs/blog/posts/<slug>.md` |

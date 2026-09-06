@@ -27,7 +27,7 @@ project.
 ## Common issues
 
 ??? bug "`No docs/ directory found`"
-    `build`/`serve`/`site:check`/etc. look for `docs/` (falling back to `src/`)
+    `build`/`serve`/`audit`/etc. look for `docs/` (falling back to `src/`)
     relative to the current directory, or to `--projectRoot=<path>` if you
     passed one. Either run the command from inside your project's root
     folder, or pass `--projectRoot`:

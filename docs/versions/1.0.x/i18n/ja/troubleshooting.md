@@ -28,7 +28,7 @@ BoxLang モジュールがインストールされ有効化されているかど
 ## よくある問題
 
 ??? bug "`No docs/ directory found`"
-    `build`/`serve`/`site:check` などは、現在のディレクトリを基準に `docs/`
+    `build`/`serve`/`audit` などは、現在のディレクトリを基準に `docs/`
     (見つからなければ `src/`)を探すか、`--projectRoot=<path>` を指定
     した場合はそれを基準に探します。プロジェクトのルートフォルダー内
     でコマンドを実行するか、`--projectRoot` を指定してください。

@@ -120,7 +120,7 @@ nesting automatically:
     `docs/` is what `new` scaffolds and what every example here uses, but a
     project that isn't really "docs" in spirit - a marketing site, a
     portfolio - can use `src/` instead, with zero other changes: every verb
-    (`build`, `serve`, `site:check`, `lint`, `page:new`, ...) looks for `docs/`
+    (`build`, `serve`, `audit`, `lint`, `page:new`, ...) looks for `docs/`
     first and falls back to `src/` when that's what actually exists. Build
     output always lands in `site/` either way - the two never collide, since
     `site/` is never itself a valid source-folder name.

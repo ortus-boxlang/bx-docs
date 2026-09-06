@@ -258,7 +258,7 @@ nada se descarta silenciosamente. Un archivo de destino, `bxsites.yaml`,
 o `docs/nav.json` que ya exista se sobrescribe (también se informa), así
 que revisa la salida migrada antes de confirmarla.
 
-## `site:check`
+## `audit`
 
 Una puerta de calidad de contenido de nivel CI sobre un `site/` ya
 construido - ejecuta `build` primero. Verifica:
@@ -279,7 +279,7 @@ construido - ejecuta `build` primero. Verifica:
 
 ```bash frame="terminal" title="Terminal" linenums="1"
 bxSites build
-bxSites site:check
+bxSites audit
 ```
 
 Sale con `1` cuando hay algún enlace/imagen roto o alguna imagen sin
@@ -318,7 +318,7 @@ bxSites stats
 ```
 
 Siempre sale con `0` - puramente informativo, nada aquí es una
-compuerta de aprobado/fallido (ese es el trabajo de `site:check`).
+compuerta de aprobado/fallido (ese es el trabajo de `audit`).
 
 ## `doctor`
 
@@ -504,7 +504,7 @@ traduce y qué no, y qué revisar después.
 Mueve una página de documentación de una ruta a otra, reescribiendo cada
 enlace Markdown relativo en todo `docs/**` que apuntaba a la ruta
 antigua - el mismo problema de enlaces rotos que ya resuelve el lado HTML
-construido (`site:check`), aplicado al código fuente Markdown en bruto en el
+construido (`audit`), aplicado al código fuente Markdown en bruto en el
 momento de renombrar en su lugar.
 
 ```bash title="Uso"
@@ -572,7 +572,7 @@ bxSites search:query --query="getting started" [--limit=10]
 ## `lint`
 
 Un paso de calidad de contenido previo a la construcción sobre el código
-fuente Markdown en bruto de `docs/`, distinto de `site:check` (que solo
+fuente Markdown en bruto de `docs/`, distinto de `audit` (que solo
 inspecciona un `site/` ya construido). Verifica:
 
 - **Saltos de nivel de encabezado** - un cuerpo de página que salta
