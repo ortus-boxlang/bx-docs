@@ -6,6 +6,7 @@ import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.tasks.Delete;
 
 import ortus.boxlang.bxsites.core.ContentDirResolver;
+import ortus.boxlang.bxsites.core.SiteDirResolver;
 import ortus.boxlang.bxsites.gradle.tasks.AbstractBxSitesVerbTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesBuildTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesNewTask;
@@ -44,7 +45,12 @@ public class BxSitesPlugin implements Plugin<Project> {
             task.getContentDir().set(project.getLayout().dir(
                     project.provider(() -> ContentDirResolver.resolve(
                             extension.getProjectRoot().get().getAsFile().toPath()).toFile())));
-            task.getSiteDir().set(extension.getSiteDir());
+            // Fixed, not independently configurable - bx-sites itself always writes to
+            // <projectRoot>/site (confirmed in BuildPipeline.bx), so this is derived from
+            // projectRoot rather than exposed as its own settable extension property.
+            task.getSiteDir().set(project.getLayout().dir(
+                    project.provider(() -> SiteDirResolver.resolve(
+                            extension.getProjectRoot().get().getAsFile().toPath()).toFile())));
         });
 
         project.getTasks().register("bxSitesServe", BxSitesServeTask.class, task -> {
@@ -56,7 +62,8 @@ public class BxSitesPlugin implements Plugin<Project> {
         project.getTasks().register("bxSitesClean", Delete.class, task -> {
             task.setGroup("bx-sites");
             task.setDescription("Removes the built bx-sites site directory.");
-            task.delete(extension.getSiteDir());
+            task.delete(project.provider(() -> SiteDirResolver.resolve(
+                    extension.getProjectRoot().get().getAsFile().toPath()).toFile()));
         });
 
         project.getTasks().named("assemble", task -> {

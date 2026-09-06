@@ -21,7 +21,6 @@ public abstract class BxSitesExtension {
     @Inject
     public BxSitesExtension(Project project) {
         getProjectRoot().convention(project.getLayout().getProjectDirectory());
-        getSiteDir().convention(getProjectRoot().dir("site"));
         getBoxlangMiniserverVersion().convention(DEFAULT_MINISERVER_VERSION);
         getBxSitesVersion().convention(DEFAULT_BXSITES_VERSION);
         getBoxlangHomeDir().convention(project.getLayout().getBuildDirectory().dir("bxsites/boxlang-home"));
@@ -31,9 +30,6 @@ public abstract class BxSitesExtension {
 
     /** The bx-sites project root; defaults to this Gradle project's own directory. */
     public abstract DirectoryProperty getProjectRoot();
-
-    /** Where the built site lands; defaults to {@code <projectRoot>/site}. */
-    public abstract DirectoryProperty getSiteDir();
 
     /** Pinned boxlang-miniserver version - a snapshot build, for now (see the plan). */
     public abstract Property<String> getBoxlangMiniserverVersion();

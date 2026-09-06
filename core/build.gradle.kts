@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    `maven-publish`
 }
 
 group = "com.ortussolutions.bxsites"
@@ -25,12 +26,19 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// core/ is never published standalone - each consuming plugin shades its classes
-// into its own final jar. This "publish to a local, file-based repo" task is how
-// gradle-plugin and maven-plugin both consume it during their own builds without
-// core needing a real, permanent public coordinate.
-tasks.register<Sync>("publishToLocalRepo") {
-    dependsOn(tasks.jar)
-    from(tasks.jar.get().archiveFile)
-    into(layout.buildDirectory.dir("local-repo"))
+// core/ is never published to a real, public repository - each consuming
+// plugin shades its classes into its own final jar at release time (see the
+// plan). During development, `maven-plugin`'s own Maven build resolves core
+// from the local repository (~/.m2/repository) via this `maven-publish`
+// configuration - run `./gradlew publishToMavenLocal` here first. This is a
+// deliberately simpler resolution than `gradle-plugin`'s (a Gradle composite
+// build via `includeBuild`, see gradle-plugin/settings.gradle.kts) because
+// Maven has no equivalent of Gradle composite builds for a same-ecosystem
+// project dependency.
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+        }
+    }
 }
