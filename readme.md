@@ -185,6 +185,29 @@ Open `http://$BXSITES_PREVIEW_HOST:$BXSITES_PREVIEW_PORT` in a browser. `serve` 
 
 This module uses [SemVer](https://semver.org/) for versioning. The version is stored in `box.json`, used to publish to ForgeBox, and bumped automatically by the release workflow, which also tags the repo for each release.
 
+### Cutting a release
+
+Development happens on `development`; a release is just merging it into
+`main` - `release.yml` triggers on that push and does the rest:
+
+1. Finalizes `changelog.md`'s `## [Unreleased]` section under the real
+   version/date, and generates a matching `docs/releases/vX.Y.Z.md`
+   "what's new" page from it.
+2. Packages the module (`Build.bx`), tags the repo `vX.Y.Z`, and publishes
+   to ForgeBox, S3, and a GitHub Release.
+3. Bumps `development`'s own `box.json` to the next minor version and
+   carries the finalized changelog/release-notes content back onto it, so
+   `## [Unreleased]` is ready for the next cycle immediately.
+
+A push to `development` instead builds and publishes a `-snapshot` (steps
+1-2 only, no version bump - see `snapshot.yml`/`release.yml`'s own
+`snapshot: true` input).
+
+This repository doesn't have a `main` branch yet - create one from
+`development` (`git checkout -b main development && git push -u origin
+main`) when you're ready to cut the first release; every release after
+that is just merging `development` into it.
+
 ## GitHub Actions Automation
 
 - `pr.yml` - runs the test suite against every pull request
