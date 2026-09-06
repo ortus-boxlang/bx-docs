@@ -232,7 +232,7 @@ Notion の「Export as Markdown & CSV」アーカイブ（`.zip`、または展�
 `docs/nav.json` は上書きされます（これも報告されます）。移行済みの出力を
 コミットする前に確認してください。
 
-## `check`
+## `audit`
 
 すでにビルド済みの `site/` に対する CI グレードのコンテンツ品質ゲートです - 先に `build` を
 実行してください。以下をチェックします:
@@ -249,7 +249,7 @@ Notion の「Export as Markdown & CSV」アーカイブ（`.zip`、または展�
 
 ```bash frame="terminal" title="Terminal" linenums="1"
 bxSites build
-bxSites check
+bxSites audit
 ```
 
 リンク/画像切れや alt 欠落画像が1つでもあれば `1` で終了し、それ以外は `0` で終了します
@@ -280,7 +280,7 @@ bxSites stats
 ```
 
 常に `0` で終了します - 純粋に情報提供であり、ここには合格/不合格のゲートはありません
-（それは `check` の役割です）。
+（それは `audit` の役割です）。
 
 ## `doctor`
 
@@ -455,7 +455,7 @@ bxSites theme:import --source=mkdocs --path=/path/to/theme --name=my-imported-th
 
 docs ページをあるパスから別のパスへ移動し、`docs/**` 全体で旧パスを指していたすべての
 相対 Markdown リンクを書き換えます - ビルド済み HTML 側がすでに解決しているのと同じ
-ファイル相対リンク切れの問題（`check`）を、リネーム時点の生の Markdown ソースに対して
+ファイル相対リンク切れの問題（`audit`）を、リネーム時点の生の Markdown ソースに対して
 適用したものです。
 
 ```bash title="Usage"
@@ -515,7 +515,7 @@ bxSites search:query --query="getting started" [--limit=10]
 ## `lint`
 
 生の `docs/` Markdown ソースに対するビルド前のコンテンツ品質パスです。すでにビルド済みの
-`site/` のみを検査する `check` とは異なります。以下をチェックします:
+`site/` のみを検査する `audit` とは異なります。以下をチェックします:
 
 - **見出しレベルのスキップ** - ページ本文が `##` から `###` を挟まずに直接 `####` に
   ジャンプしている（構造が分かりにくく、アクセシビリティにも良くありません）。フェンス付き

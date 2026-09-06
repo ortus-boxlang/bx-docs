@@ -27,7 +27,7 @@ aus, was nicht stimmt; nichts hiervon verändert dein Projekt.
 ## Häufige Probleme
 
 ??? bug "`No docs/ directory found`"
-    `build`/`serve`/`check`/etc. suchen `docs/` (mit Fallback auf `src/`)
+    `build`/`serve`/`audit`/etc. suchen `docs/` (mit Fallback auf `src/`)
     relativ zum aktuellen Verzeichnis, oder relativ zu
     `--projectRoot=<path>`, falls angegeben. Führe den Befehl entweder
     innerhalb des Projekt-Root-Ordners aus, oder gib `--projectRoot` an:
