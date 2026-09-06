@@ -76,9 +76,33 @@ jobs:
           # Fail this step explicitly by summing every generated JUnit XML
           # file's own `failures`/`errors` attributes (ANTJUnitReporter.cfc's
           # own <testsuite> shape).
-          failures=$(grep -ohE 'failures="[0-9]+"' tests/results/*.xml | grep -oE '[0-9]+' | awk '{s+=$1} END {print s+0}')
-          errors=$(grep -ohE 'errors="[0-9]+"' tests/results/*.xml | grep -oE '[0-9]+' | awk '{s+=$1} END {print s+0}')
-          echo "Failures: ${failures}, Errors: ${errors}"
+          #
+          # A run that crashes before writing ANY JUnit XML at all - a
+          # compile error in a spec file, TestBox's own bootstrap failing -
+          # is the same silent-green gap in a different shape: the glob
+          # below then matches nothing, grep finds no failures=".../
+          # errors="..." attributes to sum, and the two sums both come out
+          # 0 - indistinguishable from "every spec genuinely passed" by the
+          # check that follows, unless this run out for it separately.
+          # tests="..." (this exact suite's own spec count, same
+          # <testsuite> shape) catches this: it's 0 in exactly the cases
+          # failures/errors would otherwise misreport as green - no XML
+          # written, or XML written with zero specs recorded in it - real
+          # runs of this suite are never actually empty.
+          shopt -s nullglob
+          resultFiles=(tests/results/*.xml)
+          if [ "${#resultFiles[@]}" -eq 0 ]; then
+            echo "::error::No tests/results/*.xml were written at all - the test run likely crashed before TestBox could even start (check the ./testbox/run output above for a compile error or bootstrap failure)"
+            exit 1
+          fi
+          totalTests=$(grep -ohE 'tests="[0-9]+"' "${resultFiles[@]}" | grep -oE '[0-9]+' | awk '{s+=$1} END {print s+0}')
+          if [ "${totalTests}" -eq 0 ]; then
+            echo "::error::tests/results/*.xml were written but recorded 0 total specs - see tests/results/*.xml (uploaded as this job's tests-${{ matrix.os }} artifact); this suite is never genuinely empty, so treat this the same as a crashed run"
+            exit 1
+          fi
+          failures=$(grep -ohE 'failures="[0-9]+"' "${resultFiles[@]}" | grep -oE '[0-9]+' | awk '{s+=$1} END {print s+0}')
+          errors=$(grep -ohE 'errors="[0-9]+"' "${resultFiles[@]}" | grep -oE '[0-9]+' | awk '{s+=$1} END {print s+0}')
+          echo "Tests: ${totalTests}, Failures: ${failures}, Errors: ${errors}"
           if [ "${failures}" -gt 0 ] || [ "${errors}" -gt 0 ]; then
             echo "::error::${failures} failing / ${errors} erroring spec(s) - see tests/results/*.xml (uploaded as this job's tests-${{ matrix.os }} artifact) for exactly which ones"
             exit 1
