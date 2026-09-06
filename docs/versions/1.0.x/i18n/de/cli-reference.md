@@ -260,7 +260,7 @@ Zieldatei, `bxsites.yaml`, oder `docs/nav.json` wird überschrieben
 (ebenfalls gemeldet), prüfe daher die migrierte Ausgabe, bevor du sie
 committest.
 
-## `check`
+## `audit`
 
 Ein CI-taugliches Qualitäts-Gate über eine bereits gebaute `site/` -
 führe zuerst `build` aus. Prüft:
@@ -281,7 +281,7 @@ führe zuerst `build` aus. Prüft:
 
 ```bash frame="terminal" title="Terminal" linenums="1"
 bxSites build
-bxSites check
+bxSites audit
 ```
 
 Beendet sich mit `1`, wenn es defekte Links/Bilder oder Bilder ohne
@@ -319,7 +319,7 @@ bxSites stats
 ```
 
 Beendet sich immer mit `0` - rein informativ, hier gibt es kein
-Bestehen/Durchfallen-Gate (das ist die Aufgabe von `check`).
+Bestehen/Durchfallen-Gate (das ist die Aufgabe von `audit`).
 
 ## `doctor`
 
@@ -507,7 +507,7 @@ Asset-Ordner werden zusammengeführt. Siehe
 Verschiebt eine Docs-Seite von einem Pfad zu einem anderen und schreibt
 dabei jeden relativen Markdown-Link über `docs/**` um, der auf den alten
 Pfad zeigte - dasselbe Link-Rot-Problem, das die gebaute HTML-Seite
-bereits löst (`check`), hier angewendet auf rohen Markdown-Quelltext zur
+bereits löst (`audit`), hier angewendet auf rohen Markdown-Quelltext zur
 Zeit der Umbenennung.
 
 ```bash title="Usage"
@@ -574,7 +574,7 @@ bxSites search:query --query="getting started" [--limit=10]
 ## `lint`
 
 Ein Qualitäts-Durchlauf über den rohen `docs/`-Markdown-Quelltext vor dem
-Build, getrennt von `check` (das nur eine bereits gebaute `site/`
+Build, getrennt von `audit` (das nur eine bereits gebaute `site/`
 untersucht). Prüft:
 
 - **Übersprungene Überschriftenebenen** - ein Seitentext, der direkt von

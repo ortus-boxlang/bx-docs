@@ -77,6 +77,20 @@ class {
 	this.dependencies = [];
 
 	static {
+		// The content-quality verb is registered as "audit", not the
+		// plainer "check" its own class name/file suggests, because
+		// BoxLang's own CLI reserves the literal argv token "check" (also
+		// "compile", "cftranspile", "featureaudit", "generatesecret",
+		// "schedule", and "format") as a top-level subcommand - it hijacks
+		// ANY invocation containing one of those exact tokens, anywhere in
+		// argv, before dispatch ever reaches a module's main() (confirmed
+		// on both the current stable release and the 1.18.0-snapshot
+		// bleeding edge, so this isn't a version-specific bug to wait out).
+		// "audit" isn't one of BoxLang's own reserved tokens (verified the
+		// same way), so it's the fix, not a workaround - and it stays
+		// unscoped, matching every other top-level verb (build, serve,
+		// etc.) instead of a "site:"-namespaced compound like the reserved
+		// words would otherwise force.
 		verbs = {
 			"new"          : "models.cli.New",
 			"build"        : "models.cli.Build",
@@ -88,7 +102,7 @@ class {
 			"publish"      : "models.cli.Publish",
 			"package"      : "models.cli.Package",
 			"migrate"      : "models.cli.Migrate",
-			"check"        : "models.cli.Check",
+			"audit"        : "models.cli.Check",
 			"stats"        : "models.cli.Stats",
 			"doctor"       : "models.cli.Doctor",
 			"post:new"     : "models.cli.PostNew",
@@ -120,7 +134,7 @@ class {
 			"publish"      : "Build and publish site/ to bxSites Cloud, using [cloud.siteId]/[cloud.apiUrl] in bxsites.yaml ([--token], overrides the BXSITES_CLOUD_TOKEN env var)",
 			"package"      : "Build and zip site/ into a single archive ([--output=<path>], defaults to site.zip)",
 			"migrate"      : "Convert a GitBook export, mkdocs project, plain zip of Markdown, or Notion export into a bx-sites project (--source, required; [--from=gitbook|mkdocs|markdown-zip|notion])",
-			"check"        : "CI-grade content check on a built site: broken links/images, missing alt text, orphaned pages",
+			"audit"        : "CI-grade content check on a built site: broken links/images, missing alt text, orphaned pages",
 			"stats"        : "Report page/word counts, versions/locales, blog, tags, search index, and site size for a built site",
 			"doctor"       : "Check the project/environment for common problems (modules, config, theme override)",
 			"post:new"     : "Scaffold a new blog post (--title, required; [--slug], [--date], [--authors], [--categories], [--tags], [--draft])",
@@ -225,7 +239,17 @@ class {
 	 * (space-separated) form - BoxLang's own convention doesn't have one.
 	 *
 	 * `--version`/`-v` and `--help`/`-h` (or no verb, or the `help` verb) are
-	 * handled before verb dispatch and never reach a verb class.
+	 * handled before verb dispatch and never reach a verb class - though in
+	 * practice only `-v` and `help`/no-args ever get this far intact:
+	 * BoxLang's own CLI reserves `-h`, `--help`, and the long `--version`
+	 * form as ITS OWN global flags and intercepts them before any module,
+	 * this one included, ever runs - `-h`/`--help` show BoxLang's generic
+	 * runtime help instead of this method's own printUsage(), and
+	 * `--version` gets silently stripped from argv, so firstToken below
+	 * ends up empty rather than "--version". Not a bug in this dispatch
+	 * logic to fix - there's no argv this class ever sees to fix it with -
+	 * see docs/cli-reference.md's "Global options" section for the
+	 * user-facing form of this same caveat.
 	 *
 	 * @args The raw CLI argv, module name and dispatch token excluded
 	 *

@@ -86,7 +86,7 @@ boxlang bxSites <verb> [options]
 | `search-index` | Rebuild `site/search-index.json` standalone (also runs automatically during `build`) |
 | `clean` | Remove `site/` and any build cache |
 | `migrate` | Convert an existing GitBook export, mkdocs project, plain zip of Markdown, or Notion export into `docs/` + `nav.json` (`--from=gitbook`, the default, `--from=mkdocs`, `--from=markdown-zip`, or `--from=notion`) |
-| `check` | CI-grade content check on a built `site/`: broken internal links/images, missing alt text, orphaned pages |
+| `audit` | CI-grade content check on a built `site/`: broken internal links/images, missing alt text, orphaned pages |
 | `stats` | Read-only summary report on a built `site/`: page/word counts, versions/locales, blog, tags, search index, site size |
 | `doctor` | Environment/config health check: JVM, `docs/` (or `src/`), config validity, required modules, theme override |
 | `post:new` | Scaffold a new blog post at `docs/blog/posts/<slug>.md` |
@@ -110,7 +110,7 @@ boxlang bxSites <verb> [options]
 | `publish` | Build and publish `site/` to [bxSites Cloud](https://bxsites.io) via `cloud.siteId`/`cloud.apiUrl` in `bxsites.yaml` (`--token`, overrides the `BXSITES_CLOUD_TOKEN` env var) |
 | `package` | Build and zip `site/` into a single archive (`--output=<path>`, defaults to `site.zip`) |
 
-Every verb accepts `--projectRoot=<path>` (or a bare positional path) to target a project other than the current directory. Run `bxSites --help` for full usage.
+Every verb accepts `--projectRoot=<path>` (or a bare positional path) to target a project other than the current directory. Run `bxSites help` (or `bxSites` with no verb at all) for full usage - `-h`/`--help` show BoxLang's own generic runtime help instead, since BoxLang's CLI reserves those as its own global flags before bxSites ever sees them; see [CLI Reference](docs/cli-reference.md#global-options).
 
 ## Documentation
 
