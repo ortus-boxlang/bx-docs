@@ -63,11 +63,21 @@ jobs:
 
           # Snapshot builds are always on the development branch
           echo "Github Ref is $GITHUB_REF"
-          echo "BRANCH=master" >> $GITHUB_ENV
-          if [ $GITHUB_REF == 'refs/heads/development' ]
+          if [ "$GITHUB_REF" == 'refs/heads/development' ]
           then
             echo "BRANCH=development" >> $GITHUB_ENV
             echo "MODULE_VERSION=${MODULE_VERSION}-snapshot" >> $GITHUB_ENV
+          else
+            # A real release push - to whichever of main/master this
+            # workflow's own `on: push: branches:` trigger above matched -
+            # passed through as the ACTUAL branch name rather than a
+            # hardcoded "master", so Build.bx's own `variables.branch ==
+            # "main"` check (which stamps real build metadata, `+<build
+            # ID>`, onto an otherwise-bare release version - see its own
+            # docblock) actually fires for a `main` push instead of
+            # silently no-op'ing behind a "master" value this repo's own
+            # primary branch (per this repo's docs, `main`) never matches.
+            echo "BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
           fi
 
       - name: Update changelog [unreleased] with latest version
