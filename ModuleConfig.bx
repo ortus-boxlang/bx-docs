@@ -77,17 +77,20 @@ class {
 	this.dependencies = [];
 
 	static {
-		// The content-quality verb is registered as "site:check", not the
-		// plainer "check" its own class name/file suggest, because
-		// BoxLang's own CLI reserves the literal argv token "check" as a
-		// top-level subcommand (its own syntax-only validator, unrelated to
-		// this module) - it hijacks ANY invocation containing that exact
-		// token, anywhere in argv, before dispatch ever reaches a module's
-		// main() (confirmed on both the current stable release and the
-		// 1.18.0 bleeding-edge snapshot, so this isn't a version-specific
-		// bug to wait out). A compound token like "site:check" never
-		// collides with a reserved single-word subcommand name (check,
-		// compile, format, transpile), so it's the fix, not a workaround.
+		// The content-quality verb is registered as "audit", not the
+		// plainer "check" its own class name/file suggests, because
+		// BoxLang's own CLI reserves the literal argv token "check" (also
+		// "compile", "cftranspile", "featureaudit", "generatesecret",
+		// "schedule", and "format") as a top-level subcommand - it hijacks
+		// ANY invocation containing one of those exact tokens, anywhere in
+		// argv, before dispatch ever reaches a module's main() (confirmed
+		// on both the current stable release and the 1.18.0-snapshot
+		// bleeding edge, so this isn't a version-specific bug to wait out).
+		// "audit" isn't one of BoxLang's own reserved tokens (verified the
+		// same way), so it's the fix, not a workaround - and it stays
+		// unscoped, matching every other top-level verb (build, serve,
+		// etc.) instead of a "site:"-namespaced compound like the reserved
+		// words would otherwise force.
 		verbs = {
 			"new"          : "models.cli.New",
 			"build"        : "models.cli.Build",
@@ -99,7 +102,7 @@ class {
 			"publish"      : "models.cli.Publish",
 			"package"      : "models.cli.Package",
 			"migrate"      : "models.cli.Migrate",
-			"site:check"   : "models.cli.Check",
+			"audit"        : "models.cli.Check",
 			"stats"        : "models.cli.Stats",
 			"doctor"       : "models.cli.Doctor",
 			"post:new"     : "models.cli.PostNew",
@@ -130,8 +133,8 @@ class {
 			"deploy"       : "Build and ship site/ to a real target: s3, azure, gcs, firebase, ftp, sftp, rsync, netlify, vercel, cloudflare-pages, local, github-pages ([--entry=<deployments/*.json entry name>] or [--target] with its own flags; no args deploys every deployments/*.json entry; [--verbose])",
 			"publish"      : "Build and publish site/ to bxSites Cloud, using [cloud.siteId]/[cloud.apiUrl] in bxsites.yaml ([--token], overrides the BXSITES_CLOUD_TOKEN env var)",
 			"package"      : "Build and zip site/ into a single archive ([--output=<path>], defaults to site.zip)",
-			"migrate"      : "Convert a GitBook export or mkdocs project into a bx-sites project (--source, required; [--from=gitbook|mkdocs])",
-			"site:check"   : "CI-grade content check on a built site: broken links/images, missing alt text, orphaned pages",
+			"migrate"      : "Convert a GitBook export, mkdocs project, plain zip of Markdown, or Notion export into a bx-sites project (--source, required; [--from=gitbook|mkdocs|markdown-zip|notion])",
+			"audit"        : "CI-grade content check on a built site: broken links/images, missing alt text, orphaned pages",
 			"stats"        : "Report page/word counts, versions/locales, blog, tags, search index, and site size for a built site",
 			"doctor"       : "Check the project/environment for common problems (modules, config, theme override)",
 			"post:new"     : "Scaffold a new blog post (--title, required; [--slug], [--date], [--authors], [--categories], [--tags], [--draft])",

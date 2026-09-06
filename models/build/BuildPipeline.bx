@@ -53,6 +53,25 @@ class {
 	variables.blogBuilder = new "models.build.BlogBuilder@bxsites"()
 	variables.blogFeedGenerator = new "models.build.BlogFeedGenerator@bxsites"()
 	variables.pageCache = new "models.build.BuildCache@bxsites"()
+	// The first tree's own already-written assets/ directory in the
+	// current build() call, once copyAssets() has run for real once -
+	// every later tree hardlinks from here instead of re-copying
+	// identical bytes. Reset at the top of build() (never carried over
+	// from a previous build() call on the same instance); see
+	// copyAssets()'s own docblock.
+	variables.canonicalAssetsDir = ""
+	// A blog post's real built URL (`blog/<slug>/index.html`, BlogDiscoverer.bx's
+	// own convention) diverges from what MarkdownLinkResolver.bx's generic
+	// docs/-relative-path convention would compute for it
+	// (`blog/posts/<slug>/index.html`, mirroring its `docs/blog/posts/`
+	// source location like any other page) - this map, keyed by a post's
+	// own `relativePath`, lets convertMarkdown() hand MarkdownLinkResolver
+	// the real answer instead. Populated once build() loads blogPosts,
+	// before any page's markdown - including another post's own body - is
+	// converted; stays empty (a safe no-op) for the couple of narrower
+	// convertMarkdown() call sites (buildSearchIndex()) that never load
+	// blogPosts at all.
+	variables.blogPostUrlsByPath = {}
 	variables.pluginsOverride = []
 	variables.hasPluginsOverride = false
 	variables.profiling = false
@@ -154,6 +173,7 @@ class {
 		var buildStartedAt = getTickCount()
 		variables.profileTimings = []
 		variables.profileLastAt = buildStartedAt
+		variables.canonicalAssetsDir = ""
 		progress( "Loading configuration and content" )
 		var config = variables.configLoader.load( root )
 		var plugins = resolvePlugins( config )
@@ -243,6 +263,13 @@ class {
 		// the tags page/sitemap/llms.txt/search index, all of which fold
 		// blog posts in too.
 		var blogPosts = variables.blogDiscoverer.load( docsDir, arguments.includeDrafts )
+		// See variables.blogPostUrlsByPath's own docblock - must be set
+		// before renderDocTree()/convertMarkdown() below ever run, since a
+		// page in ANY tree (not just another blog post) might link to one.
+		variables.blogPostUrlsByPath = {}
+		for ( var post in blogPosts ) {
+			variables.blogPostUrlsByPath[ post.relativePath ] = post.urlPath
+		}
 		var blogNavUrl = blogPosts.len() ? "blog/index.html" : ""
 		var mainResult = renderDocTree( mainPages, rootDocsDir, config, themeDir, siteDir, urls.basePath, root, versions, rootVersionLabel, rootDocsRelativePrefix, plugins, urls.absolute, imageManifest, navConfig, locales, defaultLocaleCode, defaultLocaleDir, blogNavUrl, siteOrigin, functions, data )
 		profile( "main tree", buildStartedAt )
@@ -1096,7 +1123,7 @@ class {
 			html = variables.mathProtector.restore( html, mathProtected.formulas )
 			html = variables.tabsProcessor.restore( html, tabsExtracted.groups, variables.markdownRenderer, arguments.config.markdown )
 			html = variables.tryBoxLangProcessor.restore( html, tryBoxLangExtracted.embeds )
-			html = variables.markdownLinkResolver.resolve( html, page.relativePath, arguments.basePath )
+			html = variables.markdownLinkResolver.resolve( html, page.relativePath, arguments.basePath, variables.blogPostUrlsByPath )
 			html = variables.responsiveImageProcessor.resolve( html, page.relativePath, arguments.basePath, arguments.imageManifest )
 			html = variables.tableWrapProcessor.wrap( html )
 
@@ -1727,16 +1754,39 @@ class {
 	}
 
 	/**
-	 * Copies theme assets to `site/assets/theme/`, this module's own shared
-	 * scripts (the search widget when search is enabled; the copy-code
-	 * button, tab widget, `::: prompt` widget, and code line-number/
-	 * highlight widget unconditionally), the vendored third-party CSS/JS every built site
-	 * needs with no CDN/internet access (module spec section 8 - highlight.js
-	 * and Alpine.js always, Bootstrap's own CSS/JS for the `bootstrap` theme,
-	 * MiniSearch alongside search.js, mermaid.js alongside mermaid-init.js when
-	 * `mermaid` is on, Swagger UI alongside openapi-init.js when `openapi`
-	 * is on), and a project's own `docs/assets/**` to `site/assets/`
-	 * (module spec section 5, step 6).
+	 * Every argument copyAssets() takes is identical across every tree in a
+	 * single build() call - same theme, same feature flags, same project
+	 * `docs/assets/**`, same pre-computed imageManifest/cssBundle/jsBundle
+	 * (each already noted as "identical across every tree" in their own
+	 * docblocks below) - so almost everything it writes is byte-for-byte
+	 * identical every time it runs within that build(), only the
+	 * destination (siteDir) differs. The one exception is a tree's own
+	 * `assets/og/*.png` - assignOgImages()'s own per-page, per-tree social
+	 * card output, already written into a version/locale tree's own
+	 * `siteDir/assets/` before this ever runs for that tree - see
+	 * hardlinkDirectory()'s own docblock for how that's handled. Building
+	 * main/next/version/locale/version-locale
+	 * trees for a project with N locales and M versions therefore wrote
+	 * this same handful of MB (vendor/**, fonts/**, docs/assets/**, the
+	 * responsive image variants, the CSS/JS bundle) (1 + N) * (1 + M)
+	 * times over - the actual bytes for real projects, not a hypothetical
+	 * one: this repository's own build (5 locales, 1 version) wrote its
+	 * own vendor/ bundle 10 times for ~63MB of pure duplication, out of
+	 * 131MB total site/ output.
+	 *
+	 * This wrapper runs the real copy (copyAssetsFresh()) exactly once per
+	 * build() call - remembered in variables.canonicalAssetsDir, reset at
+	 * the top of build() - and hardlinks every subsequent tree's own
+	 * assets/ from that first, canonical copy instead: every tree still
+	 * gets a fully real, independent-looking assets/ directory at exactly
+	 * the same paths as before (a hardlink is indistinguishable from a
+	 * regular file to anything that only reads it - the theme templates,
+	 * every deploy target, a browser - so no template or URL changes
+	 * anywhere else in this codebase), just without writing the same bytes
+	 * to disk N extra times. Falls back to a real copy on anything that
+	 * stops a hardlink from working (a siteDir on a different filesystem
+	 * than the canonical one, most likely) - never lets an optimization
+	 * fail a build.
 	 *
 	 * @root Absolute path to the project root
 	 * @themeDir Absolute path to the resolved theme folder
@@ -1753,6 +1803,52 @@ class {
 	 * @fingerprintEnabled `config.assets.fingerprint` - whether the theme's own `assets/style.css` gets renamed to its fingerprinted filename after copying (resolveThemeStyleUrl()'s own docblock); `true` (the default) matches the site-wide default
 	 */
 	private void function copyAssets( required string root, required string themeDir, required string siteDir, required string themeName, required boolean searchEnabled, required boolean mermaidEnabled, boolean mathEnabled = false, boolean openapiEnabled = false, boolean pageActionsEnabled = false, struct imageManifest = {}, struct cssBundle = {}, struct jsBundle = {}, boolean fingerprintEnabled = true ) {
+		var destAssetsDir = arguments.siteDir & "/assets"
+
+		if ( !len( variables.canonicalAssetsDir ) ) {
+			copyAssetsFresh( argumentCollection = arguments )
+			variables.canonicalAssetsDir = destAssetsDir
+			return
+		}
+
+		try {
+			hardlinkDirectory( variables.canonicalAssetsDir, destAssetsDir )
+		} catch ( any e ) {
+			copyAssetsFresh( argumentCollection = arguments )
+		}
+	}
+
+	/**
+	 * The real, always-correct copyAssets() implementation - copies theme
+	 * assets to `site/assets/theme/`, this module's own shared scripts
+	 * (the search widget when search is enabled; the copy-code button, tab
+	 * widget, `::: prompt` widget, and code line-number/highlight widget
+	 * unconditionally), the vendored third-party CSS/JS every built site
+	 * needs with no CDN/internet access (module spec section 8 - highlight.js
+	 * and Alpine.js always, Bootstrap's own CSS/JS for the `bootstrap` theme,
+	 * MiniSearch alongside search.js, mermaid.js alongside mermaid-init.js when
+	 * `mermaid` is on, Swagger UI alongside openapi-init.js when `openapi`
+	 * is on), and a project's own `docs/assets/**` to `site/assets/`
+	 * (module spec section 5, step 6). copyAssets() above calls this
+	 * directly only once per build() (or as its own fallback) - see its
+	 * own docblock for why every other tree hardlinks from that first
+	 * call's own output instead of calling this again.
+	 *
+	 * @root Absolute path to the project root
+	 * @themeDir Absolute path to the resolved theme folder
+	 * @siteDir Absolute path to the build output directory
+	 * @themeName bxsites.json's `theme.name` - selects which vendored theme-specific assets (currently just Bootstrap's own CSS/JS) to copy
+	 * @searchEnabled Whether to copy the shared search.js/MiniSearch widget - searchNeedsLocalIndex()'s own result, so this is only true for the `local` search provider (or one bx-sites doesn't otherwise know about), never `algolia`
+	 * @mermaidEnabled Whether to copy the shared mermaid-init.js widget and the vendored mermaid.js bundle itself
+	 * @mathEnabled Whether to copy the shared math-init.js (KaTeX auto-render) widget
+	 * @openapiEnabled Whether to copy the shared openapi-init.js widget and the vendored Swagger UI bundle/CSS - only ever needed by a project actually using a `::: openapi` block (DirectiveBlockProcessor.bx)
+	 * @pageActionsEnabled Whether to copy the shared page-actions-init.js widget - only ever needed by a project with `pageActions: true` (the GitBook-style Copy/Export dropdown, page.bxm's own `renderPageActions()`)
+	 * @imageManifest ImageVariantGenerator.buildManifest()'s own output - its already-generated variant files get copied into this tree's own site.../assets/, right alongside the plain docs/assets/** copy below; empty (the default) copies nothing extra
+	 * @cssBundle AssetBundler.bundleCss()'s own output (via applyAssetPipeline()) - its cached bundle file gets copied into this tree's own site.../assets/ so the `<link>` config.extraCss now points at actually resolves; empty `cachedPath` (the default) copies nothing
+	 * @jsBundle AssetBundler.bundleJs()'s own output - same as cssBundle, for the `<script>` config.extraJs now points at
+	 * @fingerprintEnabled `config.assets.fingerprint` - whether the theme's own `assets/style.css` gets renamed to its fingerprinted filename after copying (resolveThemeStyleUrl()'s own docblock); `true` (the default) matches the site-wide default
+	 */
+	private void function copyAssetsFresh( required string root, required string themeDir, required string siteDir, required string themeName, required boolean searchEnabled, required boolean mermaidEnabled, boolean mathEnabled = false, boolean openapiEnabled = false, boolean pageActionsEnabled = false, struct imageManifest = {}, struct cssBundle = {}, struct jsBundle = {}, boolean fingerprintEnabled = true ) {
 		var themeAssetsDir = arguments.themeDir & "/assets"
 		if ( directoryExists( themeAssetsDir ) ) {
 			directoryCopy( themeAssetsDir, arguments.siteDir & "/assets/theme", true )
@@ -1827,6 +1923,63 @@ class {
 			if ( len( cachedPath ) ) {
 				fileCopy( cachedPath, arguments.siteDir & "/assets/" & bundle.fileName )
 			}
+		}
+	}
+
+	/**
+	 * Recreates `source`'s own file tree at `dest`, one hardlink per file
+	 * instead of a real copy - `dest`'s own files read exactly the same
+	 * content as `source`'s (same inode, same bytes, indistinguishable to
+	 * anything that only reads them), just without duplicating that
+	 * content on disk. Directories themselves are real directories at
+	 * `dest` (a hardlink is a filesystem concept for files, not whole
+	 * directory trees) - only the files inside them are links.
+	 *
+	 * Skips (never overwrites) a `destFile` that already exists - this
+	 * tree's own `assets/og/*.png` (assignOgImages()'s own per-page,
+	 * per-tree social-card output, generated before copyAssets() runs for
+	 * a version/locale tree) already legitimately differ from the
+	 * canonical tree's own copy, the one part of `dest`'s eventual
+	 * `assets/` that ISN'T actually identical across every tree despite
+	 * copyAssets()'s own inputs being - see copyAssets()'s own docblock.
+	 * A `directoryList()`-driven copy has no way to know in advance which
+	 * paths those are, so it just leaves anything already there alone and
+	 * fills in the rest.
+	 *
+	 * Requires `dest`'s own filesystem to support hardlinks AND be the
+	 * same filesystem `source` itself is on (a hardlink can't cross
+	 * filesystems) - copyAssets() above is the only caller, and always
+	 * wraps this in a try/catch that falls back to a real copy, so a
+	 * platform/filesystem that can't do this never fails a build over it.
+	 *
+	 * @source Absolute path to an existing directory to link from
+	 * @dest Absolute path to recreate source's own tree at - created if missing
+	 */
+	private void function hardlinkDirectory( required string source, required string dest ) {
+		if ( !directoryExists( arguments.source ) ) {
+			return
+		}
+
+		directoryCreate( arguments.dest, true, true )
+
+		var Files = createObject( "java", "java.nio.file.Files" )
+		var Paths = createObject( "java", "java.nio.file.Paths" )
+		var sourcePrefixLength = len( arguments.source ) + 1 // +1 for the separator between source and the relative path below
+
+		for ( var sourceFile in directoryList( arguments.source, true, "path", "*", "asc", "file" ) ) {
+			var relativePath = right( sourceFile, len( sourceFile ) - sourcePrefixLength )
+			var destFile = arguments.dest & "/" & relativePath
+
+			if ( fileExists( destFile ) ) {
+				continue
+			}
+
+			var destFileDir = getDirectoryFromPath( destFile )
+			if ( !directoryExists( destFileDir ) ) {
+				directoryCreate( destFileDir, true, true )
+			}
+
+			Files.createLink( Paths.get( destFile ), Paths.get( sourceFile ) )
 		}
 	}
 
