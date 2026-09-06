@@ -1,11 +1,20 @@
 /**
- * Rewrites `<img src="...">` tags whose `src` resolves to a
- * responsive-image-manifest entry (ImageVariantGenerator.bx's own output)
- * into a `<picture>` element - a WebP `<source>` when WebP variants exist,
- * plus the original format's own `srcset`/`sizes` on the fallback `<img>`
- * when same-format variants exist. An `<img>` with no manifest hit (an
- * SVG/GIF, an external URL, or the responsive pipeline being off) is left
- * completely untouched.
+ * Rewrites every local, relative `<img src="...">` in a page - Markdown-
+ * authored (`![]()`) or raw HTML alike, the regex below doesn't
+ * distinguish - to the correct root/basePath-relative URL, exactly the
+ * same file-relative-to-root-relative transform MarkdownLinkResolver.bx
+ * already does for `.md` page links: an `<img>` is always nested one
+ * level deeper in its BUILT OUTPUT location (`about.md` -> `about/
+ * index.html`) than in `docs/`, so a bare `src="assets/logo.svg"`
+ * written the natural, GitHub-readable, docs/-relative way 404s once
+ * built unless something adjusts it. When `src` ALSO resolves to a
+ * responsive-image-manifest entry (ImageVariantGenerator.bx's own
+ * output), the `<img>` is additionally upgraded to a `<picture>` element
+ * - a WebP `<source>` when WebP variants exist, plus the original
+ * format's own `srcset`/`sizes` on the fallback `<img>` when same-format
+ * variants exist. An asset with no manifest hit (an SVG/GIF, an external
+ * URL, or the responsive pipeline being off) still gets its `src` path
+ * corrected, just without that upgrade.
  *
  * Resolves a relative `src` against the *linking page's own source
  * directory* - the same file-relative convention MarkdownLinkResolver.bx
@@ -55,15 +64,11 @@ class {
 	 * @html Already-rendered page HTML
 	 * @sourceRelativePath The current page's own docs/-relative source path (DocsLoader.bx's `relativePath`)
 	 * @basePath Root-relative base path ending with `/` (BaseUrlResolver's `basePath`)
-	 * @manifest ImageVariantGenerator.buildManifest()'s own output - empty when the responsive pipeline is off, in which case this is a no-op
+	 * @manifest ImageVariantGenerator.buildManifest()'s own output - empty when the responsive pipeline is off, in which case every eligible `<img>` still gets its `src` path corrected, just never upgraded to a `<picture>`
 	 *
-	 * @return html with every manifest-matched `<img>` swapped for a `<picture>`
+	 * @return html with every eligible `<img>` src path-corrected, and every manifest-matched one additionally swapped for a `<picture>`
 	 */
 	string function resolve( required string html, required string sourceRelativePath, required string basePath, required struct manifest ) {
-		if ( arguments.manifest.isEmpty() ) {
-			return arguments.html
-		}
-
 		var currentDir = directoryOf( arguments.sourceRelativePath )
 		var matcher = variables.imgTagPattern.matcher( arguments.html )
 		var buffer = createObject( "java", "java.lang.StringBuilder" ).init()
@@ -154,14 +159,13 @@ class {
 		}
 
 		var key = resolvePath( arguments.currentDir, src )
-		if ( !arguments.manifest.keyExists( key ) ) {
-			return arguments.tag
-		}
 
-		var entry = arguments.manifest[ key ]
-		if ( !entry.originalVariants.len() && !entry.webpVariants.len() ) {
-			return arguments.tag
-		}
+		// A manifest miss (an SVG/GIF, or the responsive pipeline off)
+		// still needs its src path corrected for the page's own nesting
+		// depth - only the <picture>/srcset upgrade below is conditional
+		// on a real manifest entry with actual variants.
+		var entry = arguments.manifest.keyExists( key ) ? arguments.manifest[ key ] : { originalVariants : [], webpVariants : [] }
+		var hasVariants = entry.originalVariants.len() || entry.webpVariants.len()
 
 		// Preserve every other attribute (alt, class, id, loading, ...)
 		// exactly as authored - the src="..."/src='...' piece, plus any
@@ -180,6 +184,10 @@ class {
 			newAttrs &= ' srcset="' & buildSrcset( entry.originalVariants, key, arguments.basePath ) & '" sizes="' & variables.sizesAttr & '"'
 		}
 		var newImg = withoutSrc.reReplaceNoCase( "^<img", "<img" & newAttrs, "one" )
+
+		if ( !hasVariants ) {
+			return newImg
+		}
 
 		var picture = "<picture>"
 		if ( entry.webpVariants.len() ) {

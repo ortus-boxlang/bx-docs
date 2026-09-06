@@ -2,20 +2,31 @@
  * `doctor` CLI verb - a one-shot environment/config health check: is
  * `docs/` (or `src/`) present, does `bxsites.json`/`.yaml` actually parse and validate,
  * are the required BoxLang modules (bx-markdown/bx-esapi/bx-yaml/bx-image)
- * installed/activated, and (if present) does a project-level `theme/`
- * override satisfy the two-required-file `ThemeProvider` contract.
- * Nothing here mutates a project - purely diagnostic, the same "run this
- * before filing a bug report" idea as `flutter doctor`/`brew doctor`.
+ * installed/activated, does this SPECIFIC project also need (and have)
+ * bx-toml (a `.toml` site config or `docs/data/*.toml` file) or bx-ftp (an
+ * `ftp`/`sftp` `deployments/*.json` entry), and (if present) does a
+ * project-level `theme/` override satisfy the two-required-file
+ * `ThemeProvider` contract. Nothing here mutates a project - purely
+ * diagnostic, the same "run this before filing a bug report" idea as
+ * `flutter doctor`/`brew doctor`.
  */
 class {
 
 	/**
-	 * Every required BoxLang module, keyed by its own registered mapping
-	 * name (confirmed against the real installed modules - each module
-	 * declares its own `this.mapping` in its own ModuleConfig.bx, which
-	 * isn't necessarily its box.json/ForgeBox slug; see MarkdownRenderer.bx's
-	 * own docblock for the same caveat) to the human-readable slug used in
-	 * `box install`/`install-bx-module`.
+	 * Every unconditionally required BoxLang module - every build/serve
+	 * needs all four, regardless of project content - keyed by its own
+	 * registered mapping name (confirmed against the real installed
+	 * modules - each module declares its own `this.mapping` in its own
+	 * ModuleConfig.bx, which isn't necessarily its box.json/ForgeBox slug;
+	 * see MarkdownRenderer.bx's own docblock for the same caveat) to the
+	 * human-readable slug used in `box install`/`install-bx-module`.
+	 *
+	 * bx-toml and bx-ftp are deliberately NOT in this table: box.json
+	 * depends on both, but a project only actually needs one when it uses
+	 * a `.toml` config/data file, or the other when it deploys via
+	 * `ftp`/`sftp` - see checkOptionalTomlModule()/checkOptionalFtpModule()
+	 * below for their own conditional checks instead of flagging every
+	 * project that doesn't happen to use either.
 	 */
 	variables.requiredModules = {
 		"bxMarkdown" : "bx-markdown",
@@ -72,6 +83,18 @@ class {
 			checks.append( { label : "Modules", ok : true, detail : "bx-markdown, bx-esapi, bx-yaml, bx-image all present" } )
 		}
 
+		var tomlCheck = checkOptionalTomlModule( root, docsDir, moduleService )
+		if ( !isNull( tomlCheck ) ) {
+			checks.append( tomlCheck )
+			failed = failed || !tomlCheck.ok
+		}
+
+		var ftpCheck = checkOptionalFtpModule( root, moduleService )
+		if ( !isNull( ftpCheck ) ) {
+			checks.append( ftpCheck )
+			failed = failed || !ftpCheck.ok
+		}
+
 		var themeDir = root & "/theme"
 		if ( directoryExists( themeDir ) ) {
 			var missingThemeFiles = [ "layout.bxm", "page.bxm" ].filter( name => !fileExists( themeDir & "/" & name ) )
@@ -87,6 +110,73 @@ class {
 			exitCode : failed ? 1 : 0,
 			message  : formatReport( checks )
 		}
+	}
+
+	/**
+	 * bx-toml is only actually needed when THIS project has a `.toml` file
+	 * bx-sites would try to parse - its own site config
+	 * (`bxsites.toml`/ConfigLoader.bx), or a `docs/data/*.toml` data file
+	 * (DataLoader.bx) - box.json depends on it unconditionally (every
+	 * project gets it installed alongside the other four), so a project
+	 * that never uses `.toml` anywhere is never actually at risk; flagging
+	 * it there would be a false positive, not a real diagnostic.
+	 *
+	 * @root Absolute project root
+	 * @docsDir Absolute path to the project's own docs/ or src/ (SourceDirResolver.bx's own output)
+	 * @moduleService getBoxRuntime().getModuleService()'s own singleton
+	 *
+	 * @return One check struct when this project needs bx-toml, null when it doesn't (nothing to report)
+	 */
+	private any function checkOptionalTomlModule( required string root, required string docsDir, required any moduleService ) {
+		var usesTomlConfig = fileExists( arguments.root & "/bxsites.toml" )
+		var tomlDataFiles = directoryExists( arguments.docsDir & "/data" )
+			? directoryList( arguments.docsDir & "/data", false, "name", "*.toml" )
+			: []
+
+		if ( !usesTomlConfig && !tomlDataFiles.len() ) {
+			return
+		}
+
+		if ( arguments.moduleService.hasModule( "bxtoml" ) ) {
+			return { label : "bx-toml", ok : true, detail : "present (needed for " & ( usesTomlConfig ? "bxsites.toml" : "docs/data/*.toml" ) & ")" }
+		}
+
+		return { label : "bx-toml", ok : false, detail : "missing, but this project uses " & ( usesTomlConfig ? "bxsites.toml" : "a docs/data/*.toml file" ) & " - run `install-bx-module bx-toml`" }
+	}
+
+	/**
+	 * bx-ftp is only actually needed when THIS project has an `ftp`/`sftp`
+	 * `deployments/*.json` entry (models/deploy/targets/FtpTarget.bx,
+	 * SftpTarget.bx) - same reasoning as checkOptionalTomlModule() above:
+	 * box.json depends on it unconditionally, but a project deploying to
+	 * s3/netlify/vercel/etc. (or not deploying at all) is never at risk.
+	 *
+	 * @root Absolute project root
+	 * @moduleService getBoxRuntime().getModuleService()'s own singleton
+	 *
+	 * @return One check struct when this project needs bx-ftp, null when it doesn't (nothing to report)
+	 */
+	private any function checkOptionalFtpModule( required string root, required any moduleService ) {
+		var deployEntries = new "models.deploy.DeploymentConfigResolver@bxsites"().resolve( arguments.root ).entries
+		var ftpEntries = deployEntries.filter( entry => listFindNoCase( "ftp,sftp", entry.target ) )
+
+		if ( !ftpEntries.len() ) {
+			return
+		}
+
+		var entryNames = ftpEntries.map( entry => entry.name ).toList( ", " )
+
+		// The published bx-ftp module's own box.json declares
+		// boxlang.moduleName "ftp" - the identifier hasModule() actually
+		// checks against - even though its ModuleConfig.bx's own
+		// this.mapping is "bxftp" (used for BoxLang mapping-path
+		// resolution, a different concern); confirmed against a real
+		// installed copy, not assumed from either file's own naming.
+		if ( arguments.moduleService.hasModule( "ftp" ) ) {
+			return { label : "bx-ftp", ok : true, detail : "present (needed for deployments/: " & entryNames & ")" }
+		}
+
+		return { label : "bx-ftp", ok : false, detail : "missing, but deployments/: " & entryNames & " need it - run `install-bx-module bx-ftp`" }
 	}
 
 	/**

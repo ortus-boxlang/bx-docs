@@ -87,6 +87,44 @@ class extends="testbox.system.BaseSpec" {
 				expect( result.message ).toInclude( "layout.bxm + page.bxm present" );
 			} );
 
+			it( "never mentions bx-toml or bx-ftp for a project that uses neither", function() {
+				var projectRoot = newProjectRoot();
+
+				var result = verb.run( { projectRoot : projectRoot } );
+
+				expect( result.exitCode ).toBe( 0 );
+				expect( result.message ).notToInclude( "bx-toml" );
+				expect( result.message ).notToInclude( "bx-ftp" );
+			} );
+
+			it( "reports bx-toml when the project has a docs/data/*.toml file - present in this test environment (tests.yml installs it)", function() {
+				var projectRoot = newProjectRoot();
+				directoryCreate( projectRoot & "/docs/data", true, true );
+				fileWrite( projectRoot & "/docs/data/authors.toml", 'name = "Ortus"' );
+
+				var result = verb.run( { projectRoot : projectRoot } );
+
+				expect( result.exitCode ).toBe( 0 );
+				expect( result.message ).toInclude( "bx-toml" );
+				expect( result.message ).toInclude( "present" );
+			} );
+
+			it( "reports bx-ftp when a deployments/*.json entry targets ftp or sftp, whether or not it's actually installed here", function() {
+				var projectRoot = newProjectRoot();
+				directoryCreate( projectRoot & "/deployments", true, true );
+				fileWrite( projectRoot & "/deployments/prod.json", '{"target":"sftp","host":"example.com","remotePath":"/var/www","username":"deploy"}' );
+
+				var result = verb.run( { projectRoot : projectRoot } );
+
+				// Whether bx-ftp happens to be installed in whichever
+				// environment runs this spec isn't the point being tested
+				// here (tests.yml's own module list doesn't include it,
+				// unlike bx-toml) - just that the project's real need for
+				// it is actually detected and surfaced either way.
+				expect( result.message ).toInclude( "bx-ftp" );
+				expect( result.message ).toInclude( "prod" );
+			} );
+
 		} );
 	}
 

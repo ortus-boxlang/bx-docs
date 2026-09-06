@@ -27,16 +27,17 @@ class {
 	 * @html Already-rendered page HTML (MarkdownRenderer.toHtml()'s own output)
 	 * @sourceRelativePath The current page's own docs/-relative source path (DocsLoader.bx's `relativePath`, e.g. "guides/themes.md") - relative links are resolved against its directory, exactly like a `.md` file's own relative links already work when read directly on GitHub
 	 * @basePath Root-relative base path ending with `/` (BaseUrlResolver's `basePath`) - every rewritten link is re-rooted under it, matching every other internal link the theme renders
+	 * @postUrlsByPath Optional override map, keyed by a docs/-relative `.md` path, of its REAL built `urlPath` - a blog post's `blog/<slug>/index.html` (BlogDiscoverer.bx's own convention) diverges from the generic mirrors-its-source-directory convention urlPathFor() below computes, so a link that resolves to one of these keys uses the given urlPath verbatim instead. Defaults to `{}` (today's plain urlPathFor()-only behavior) for every caller that has no such posts (or doesn't know about them, e.g. a standalone search-index rebuild)
 	 *
 	 * @return html with every relative `.md` href resolved to its built URL
 	 */
-	string function resolve( required string html, required string sourceRelativePath, required string basePath ) {
+	string function resolve( required string html, required string sourceRelativePath, required string basePath, struct postUrlsByPath = {} ) {
 		var currentDir = directoryOf( arguments.sourceRelativePath )
 		var matcher = variables.hrefPattern.matcher( arguments.html )
 		var buffer = createObject( "java", "java.lang.StringBuilder" ).init()
 
 		while ( matcher.find() ) {
-			var resolved = resolveHref( matcher.group( 1 ), currentDir, arguments.basePath )
+			var resolved = resolveHref( matcher.group( 1 ), currentDir, arguments.basePath, arguments.postUrlsByPath )
 			matcher.appendReplacement( buffer, quoteReplacement( 'href="' & resolved & '"' ) )
 		}
 		matcher.appendTail( buffer )
@@ -59,10 +60,11 @@ class {
 	 * @href One `href="..."` attribute value, exactly as bx-markdown rendered it
 	 * @currentDir The current page's own docs/-relative directory (directoryOf())
 	 * @basePath Root-relative base path ending with `/`
+	 * @postUrlsByPath resolve()'s own override map, forwarded as-is
 	 *
 	 * @return href unchanged, or resolved to its built root-relative URL
 	 */
-	private string function resolveHref( required string href, required string currentDir, required string basePath ) {
+	private string function resolveHref( required string href, required string currentDir, required string basePath, struct postUrlsByPath = {} ) {
 		if (
 			!len( trim( arguments.href ) )
 			|| arguments.href.reFindNoCase( "^[a-z][a-z0-9+.\-]*:" )
@@ -85,7 +87,8 @@ class {
 		}
 
 		var resolvedPath = resolvePath( arguments.currentDir, path )
-		return arguments.basePath & urlPathFor( resolvedPath ) & suffix
+		var urlPath = arguments.postUrlsByPath.keyExists( resolvedPath ) ? arguments.postUrlsByPath[ resolvedPath ] : urlPathFor( resolvedPath )
+		return arguments.basePath & urlPath & suffix
 	}
 
 	/**
