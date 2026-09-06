@@ -63,6 +63,39 @@ class extends="testbox.system.BaseSpec" {
 				expect( result ).toInclude( 'href="/cli-reference/index.html?x=1"' );
 			} );
 
+			it( "uses postUrlsByPath's real urlPath for a blog-post-to-blog-post link, instead of mirroring its docs/blog/posts/ source directory", function() {
+				// BlogDiscoverer.bx builds a post's own urlPath as
+				// blog/<slug>/index.html, dropping the blog/posts/ source
+				// prefix - the generic urlPathFor() convention this class
+				// otherwise uses would get this specific case wrong
+				// (blog/posts/<slug>/index.html, mirroring the source tree
+				// like a normal docs page), so BuildPipeline.bx hands over
+				// the real answer via this override map.
+				var html = '<a href="pick-your-theme.md">Pick Your Theme</a>';
+				var postUrlsByPath = { "blog/posts/pick-your-theme.md" : "blog/pick-your-theme/index.html" };
+
+				var result = variables.resolver.resolve( html, "blog/posts/get-your-docs-live.md", "/", postUrlsByPath );
+
+				expect( result ).toInclude( 'href="/blog/pick-your-theme/index.html"' );
+			} );
+
+			it( "falls back to the generic urlPathFor() convention for any .md link not in postUrlsByPath", function() {
+				var html = '<a href="../guides/search.md">Search</a>';
+				var postUrlsByPath = { "blog/posts/pick-your-theme.md" : "blog/pick-your-theme/index.html" };
+
+				var result = variables.resolver.resolve( html, "blog/posts/get-your-docs-live.md", "/", postUrlsByPath );
+
+				expect( result ).toInclude( 'href="/guides/search/index.html"' );
+			} );
+
+			it( "defaults postUrlsByPath to empty, keeping today's plain urlPathFor() behavior for every caller that doesn't pass one", function() {
+				var html = '<a href="pick-your-theme.md">Pick Your Theme</a>';
+
+				var result = variables.resolver.resolve( html, "blog/posts/get-your-docs-live.md", "/" );
+
+				expect( result ).toInclude( 'href="/blog/posts/pick-your-theme/index.html"' );
+			} );
+
 		} );
 	}
 

@@ -11,30 +11,48 @@ class extends="testbox.system.BaseSpec" {
 				return { width : 1600, height : 900, originalVariants : arguments.originalVariants, webpVariants : arguments.webpVariants };
 			}
 
-			it( "leaves html untouched when the manifest is empty", function() {
+			it( "still corrects an <img> src for the page's own nesting depth when the manifest is empty, without upgrading it to a <picture>", function() {
 				var html = '<img src="assets/screenshot.png" alt="A screenshot">';
 
-				var result = processor.resolve( html, "index.md", "/", {} );
+				var result = processor.resolve( html, "guides/setup.md", "/", {} );
 
-				expect( result ).toBe( html );
+				expect( result ).notToInclude( "<picture>" );
+				expect( result ).toInclude( 'src="/assets/screenshot.png"' );
+				expect( result ).toInclude( 'alt="A screenshot"' );
 			} );
 
-			it( "leaves an <img> untouched when its src has no manifest entry", function() {
+			it( "still corrects an <img> src with no manifest entry (an SVG, say) - it just isn't upgraded to a <picture>", function() {
 				var html = '<img src="assets/unprocessed.svg" alt="Logo">';
 				var manifest = { "assets/screenshot.png" : entry( [ { width : 800, format : "png", fileName : "screenshot-800w.abc123.png" } ] ) };
 
-				var result = processor.resolve( html, "index.md", "/", manifest );
+				var result = processor.resolve( html, "about.md", "/", manifest );
 
-				expect( result ).toBe( html );
+				expect( result ).notToInclude( "<picture>" );
+				expect( result ).toInclude( 'src="/assets/unprocessed.svg"' );
+				expect( result ).toInclude( 'alt="Logo"' );
 			} );
 
-			it( "leaves an <img> untouched when its manifest entry has no variants at all (image too small to qualify)", function() {
+			it( "still corrects an <img> src whose manifest entry has no variants at all (image too small to qualify) - it just isn't upgraded to a <picture>", function() {
 				var html = '<img src="assets/tiny.png" alt="Tiny">';
 				var manifest = { "assets/tiny.png" : entry() };
 
 				var result = processor.resolve( html, "index.md", "/", manifest );
 
-				expect( result ).toBe( html );
+				expect( result ).notToInclude( "<picture>" );
+				expect( result ).toInclude( 'src="/assets/tiny.png"' );
+				expect( result ).toInclude( 'alt="Tiny"' );
+			} );
+
+			it( "corrects a raw-HTML <img> src the same way as a Markdown-authored one - the rewrite doesn't care how the tag got into the HTML", function() {
+				// The exact shape docs/about.md uses for its light/dark-mode logo
+				// swap - two raw <img> tags CSS toggles between, not a Markdown
+				// ![]() bx-markdown could turn into a single <picture>.
+				var html = '<img class="light" src="assets/logo-light.svg" alt="Logo"><img class="dark" src="assets/logo-dark.svg" alt="Logo">';
+
+				var result = processor.resolve( html, "about.md", "/", {} );
+
+				expect( result ).toInclude( 'src="/assets/logo-light.svg"' );
+				expect( result ).toInclude( 'src="/assets/logo-dark.svg"' );
 			} );
 
 			it( "leaves an external or root-relative <img> src untouched even if it would otherwise resolve to a manifest key", function() {

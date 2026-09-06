@@ -53,6 +53,18 @@ class {
 	variables.blogBuilder = new "models.build.BlogBuilder@bxsites"()
 	variables.blogFeedGenerator = new "models.build.BlogFeedGenerator@bxsites"()
 	variables.pageCache = new "models.build.BuildCache@bxsites"()
+	// A blog post's real built URL (`blog/<slug>/index.html`, BlogDiscoverer.bx's
+	// own convention) diverges from what MarkdownLinkResolver.bx's generic
+	// docs/-relative-path convention would compute for it
+	// (`blog/posts/<slug>/index.html`, mirroring its `docs/blog/posts/`
+	// source location like any other page) - this map, keyed by a post's
+	// own `relativePath`, lets convertMarkdown() hand MarkdownLinkResolver
+	// the real answer instead. Populated once build() loads blogPosts,
+	// before any page's markdown - including another post's own body - is
+	// converted; stays empty (a safe no-op) for the couple of narrower
+	// convertMarkdown() call sites (buildSearchIndex()) that never load
+	// blogPosts at all.
+	variables.blogPostUrlsByPath = {}
 	variables.pluginsOverride = []
 	variables.hasPluginsOverride = false
 	variables.profiling = false
@@ -243,6 +255,13 @@ class {
 		// the tags page/sitemap/llms.txt/search index, all of which fold
 		// blog posts in too.
 		var blogPosts = variables.blogDiscoverer.load( docsDir, arguments.includeDrafts )
+		// See variables.blogPostUrlsByPath's own docblock - must be set
+		// before renderDocTree()/convertMarkdown() below ever run, since a
+		// page in ANY tree (not just another blog post) might link to one.
+		variables.blogPostUrlsByPath = {}
+		for ( var post in blogPosts ) {
+			variables.blogPostUrlsByPath[ post.relativePath ] = post.urlPath
+		}
 		var blogNavUrl = blogPosts.len() ? "blog/index.html" : ""
 		var mainResult = renderDocTree( mainPages, rootDocsDir, config, themeDir, siteDir, urls.basePath, root, versions, rootVersionLabel, rootDocsRelativePrefix, plugins, urls.absolute, imageManifest, navConfig, locales, defaultLocaleCode, defaultLocaleDir, blogNavUrl, siteOrigin, functions, data )
 		profile( "main tree", buildStartedAt )
@@ -1096,7 +1115,7 @@ class {
 			html = variables.mathProtector.restore( html, mathProtected.formulas )
 			html = variables.tabsProcessor.restore( html, tabsExtracted.groups, variables.markdownRenderer, arguments.config.markdown )
 			html = variables.tryBoxLangProcessor.restore( html, tryBoxLangExtracted.embeds )
-			html = variables.markdownLinkResolver.resolve( html, page.relativePath, arguments.basePath )
+			html = variables.markdownLinkResolver.resolve( html, page.relativePath, arguments.basePath, variables.blogPostUrlsByPath )
 			html = variables.responsiveImageProcessor.resolve( html, page.relativePath, arguments.basePath, arguments.imageManifest )
 			html = variables.tableWrapProcessor.wrap( html )
 
