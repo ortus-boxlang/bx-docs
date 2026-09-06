@@ -1,34 +1,36 @@
 ---
-title: CLI Providers
+title: CLI プロバイダー
 order: 6.2
 icon: phosphor-duotone:terminal-window
-tags: [guides, plugins, cli]
+tags: [ガイド, プラグイン, cli]
 ---
 
-# CLI Providers
+# CLI プロバイダー
 
-A [plugin](plugins.md) hooks into the *build* lifecycle - config, nav, page
-markdown/HTML, post-build. A **CLI provider** is the sibling extension
-point for the *command* lifecycle: it lets an installed, activated BoxLang
-module register its own `bxSites <verb>` commands, without touching
-`bx-sites` itself.
+[プラグイン](plugins.md)は*ビルド*ライフサイクル - 設定、nav、ページの
+markdown/HTML、ビルド後処理 - にフックします。**CLI プロバイダー**は
+*コマンド*ライフサイクルのための姉妹拡張ポイントです。インストール済みで有効化された
+BoxLang モジュールが、`bx-sites` 自体には手を加えずに、独自の
+`bxSites <verb>` コマンドを登録できるようにします。
 
-Same activation model as a plugin - a module opts in by name, via
-`bxsites.yaml`'s own [`plugins`](../configuration.md#plugins) array:
+プラグインと同じ有効化モデルです - モジュールは `bxsites.yaml` 独自の
+[`plugins`](../configuration.md#plugins) 配列を通じて、名前でオプトインします:
 
 ```yaml title="bxsites.yaml"
 plugins: [ myBxSitesAddon ]
 ```
 
-A module can implement `models/BxSitesPlugin.bx`, `models/BxSitesCliProvider.bx`,
-both, or neither - installing/activating a module is one step; which
-contracts it implements decides what it actually extends.
+モジュールは `models/BxSitesPlugin.bx`、`models/BxSitesCliProvider.bx`、
+両方、またはどちらも実装しないことができます - モジュールのインストール/有効化は
+1つのステップであり、どちらのコントラクトを実装するかによって、実際に何を拡張するかが
+決まります。
 
-## Writing a CLI provider
+## CLI プロバイダーを書く
 
-A CLI provider needs exactly one thing beyond the usual `box.json`/
-`ModuleConfig.bx`: a `models/BxSitesCliProvider.bx` class exposing a single
-`verbs()` method, returning a struct of verb name → dispatch info:
+CLI プロバイダーに必要なのは、通常の `box.json`/`ModuleConfig.bx` に加えて
+たった一つだけです: 単一の `verbs()` メソッドを公開する
+`models/BxSitesCliProvider.bx` クラスで、動詞名 → ディスパッチ情報の
+struct を返します:
 
 ```bx title="models/BxSitesCliProvider.bx" linenums="1"
 // models/BxSitesCliProvider.bx
@@ -50,9 +52,9 @@ class {
 }
 ```
 
-Each dispatch class follows the exact same shape as a core verb class
-under `bx-sites`' own `models/cli/` - a `struct function run( struct options )`
-returning `{ exitCode, message }`:
+各ディスパッチクラスは、`bx-sites` 自身の `models/cli/` 配下にあるコアの動詞クラスと
+まったく同じ形 - `{ exitCode, message }` を返す
+`struct function run( struct options )` - に従います:
 
 ```bx title="models/cli/cloud/Publish.bx" linenums="1"
 class {
@@ -65,47 +67,46 @@ class {
 }
 ```
 
-### The `@myBxSitesAddon` suffix is required
+### `@myBxSitesAddon` サフィックスは必須です
 
-A bare dotted path like `"models.cli.cloud.Publish"` only resolves
-relative to `bx-sites`' own module root - it's how core verbs reference
-`models/cli/Build.bx` and friends, but it **cannot** reach into a
-different module. A provider's own verb classes must always self-supply
-their module's `@<mapping>` suffix, exactly as shown above. This is also
-why registering into `bx-sites`' own literal verb table isn't something a
-provider can spoof its way into - the class path has to name its own
-module explicitly.
+`"models.cli.cloud.Publish"` のような単純なドット区切りパスは、`bx-sites`
+自身のモジュールルートに対してのみ解決されます - コアの動詞が
+`models/cli/Build.bx` などを参照する方法はこれですが、これでは別のモジュールに
+**到達できません**。プロバイダー自身の動詞クラスは、上記の通り、常に自分自身の
+モジュールの `@<mapping>` サフィックスを自分で付ける必要があります。これはまた、
+プロバイダーが `bx-sites` 自身のリテラルな動詞テーブルに紛れ込むことができない理由でも
+あります - クラスパスは自分自身のモジュールを明示的に指定しなければなりません。
 
-## Verb names: single-token and two-token ("compound")
+## 動詞名: シングルトークンと2トークン（「複合」）
 
-A verb name is registered as one colon-joined string, the same convention
-core already uses for `post:new`/`i18n:status`/`page:rename`. `bxSites`
-also accepts the equivalent **two space-separated argv tokens** as sugar
-over that same registration - `bxSites cloud publish` and
-`bxSites cloud:publish` dispatch identically, once `"cloud:publish"` is a
-registered verb name. There's no separate two-word registration mechanism
-to learn; register `"cloud:publish"`, and both spellings work for free.
+動詞名は、コアがすでに `post:new`/`i18n:status`/`page:rename` に使っているのと
+同じ規約で、コロンで結合された1つの文字列として登録されます。`bxSites` は、
+同じ登録に対する糖衣構文として、**スペースで区切られた2つの argv トークン**の
+同等表現も受け付けます - `"cloud:publish"` が登録済みの動詞名であれば、
+`bxSites cloud publish` と `bxSites cloud:publish` はまったく同じように
+ディスパッチされます。学ぶべき別の2単語登録メカニズムはありません。
+`"cloud:publish"` を登録すれば、両方の書き方が無料で動きます。
 
-## Precedence and failure modes
+## 優先順位と失敗時の挙動
 
-- **Core always wins.** If a provider registers a verb name that collides
-  with one of `bx-sites`' own built-in verbs, the core verb is dispatched
-  and the provider's entry is silently ignored - a provider can add new
-  commands, never shadow an existing one.
-- **First provider wins on a collision between two providers.** If two
-  different activated modules both register the same verb name, whichever
-  is listed earlier in `bxsites.yaml`'s `plugins` array wins.
-- **Discovery never breaks core dispatch.** A missing/malformed
-  `bxsites.yaml`, a project that doesn't exist yet (e.g. running `--help`
-  outside any project), a module listed in `plugins` with no
-  `BxSitesCliProvider.bx` of its own, or a provider whose `verbs()` throws
-  - none of these are errors. They're all treated the same way an
-  unactivated plugin is: the core verb table is simply left untouched, and
-  every built-in `bxSites` command keeps working on its own.
+- **コアが常に勝ちます。** プロバイダーが `bx-sites` 自身の組み込み動詞の
+  いずれかと衝突する動詞名を登録した場合、コアの動詞がディスパッチされ、
+  プロバイダー側のエントリは黙って無視されます - プロバイダーは新しいコマンドを
+  追加できますが、既存のものを覆い隠すことは決してできません。
+- **2つのプロバイダー間で衝突した場合は最初のものが勝ちます。** 2つの異なる
+  有効化済みモジュールが同じ動詞名を登録した場合、`bxsites.yaml` の `plugins`
+  配列でより先に列挙されている方が勝ちます。
+- **ディスカバリーがコアのディスパッチを壊すことは決してありません。** 欠落または
+  不正な形式の `bxsites.yaml`、まだ存在しないプロジェクト（例えばどのプロジェクトの
+  外でも `--help` を実行する場合）、`plugins` に列挙されているが自身の
+  `BxSitesCliProvider.bx` を持たないモジュール、あるいは `verbs()` がエラーを
+  スローするプロバイダー - これらはいずれもエラーとして扱われません。すべて、
+  有効化されていないプラグインと同じように扱われます: コアの動詞テーブルは単に
+  そのまま変更されず、すべての組み込み `bxSites` コマンドはそれ自体で動作し続けます。
 
-## A minimal example
+## 最小限の例
 
-```text title="myBxSitesAddon/ layout"
+```text title="myBxSitesAddon/ の構成"
 myBxSitesAddon/
 ├── box.json                          # boxlang.moduleName is what bxsites.yaml's [plugins] references
 ├── ModuleConfig.bx                    # a normal BoxLang module descriptor
@@ -118,6 +119,6 @@ myBxSitesAddon/
             └── Status.bx              # run( options )
 ```
 
-See [Plugins](plugins.md) for the build-lifecycle side of the same
-module, and the [CLI reference](../cli-reference.md) for every verb core
-itself ships.
+同じモジュールのビルドライフサイクル側については[プラグイン](plugins.md)を、
+コア自身が同梱するすべての動詞については
+[CLI リファレンス](../cli-reference.md)を参照してください。

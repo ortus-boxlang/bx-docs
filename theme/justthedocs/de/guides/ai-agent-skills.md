@@ -1,170 +1,180 @@
 ---
-title: AI Agent Skills
+title: KI-Agenten-Skills
 order: 6.3
 icon: phosphor-duotone:robot
-summary: Give Claude Code, Cursor, Codex, and other AI coding assistants deep, structured knowledge of bx-sites - install the official skill pack via npx, the ColdBox CLI, or bxSites' own skills:install verb.
-tags: [guides, ai, skills]
+summary: Vermitteln Sie Claude Code, Cursor, Codex und anderen KI-Coding-Assistenten fundiertes, strukturiertes Wissen über bx-sites - installieren Sie das offizielle Skill-Paket per npx, über die ColdBox-CLI oder mit bxSites' eigenem Verb skills:install.
+tags: [anleitungen, ai, skills]
 ---
 
-# AI Agent Skills
+# KI-Agenten-Skills
 
-An **[Agent Skill](https://code.claude.com/docs/en/skills)** is a small,
-self-contained `SKILL.md` file that teaches an AI coding assistant how to do
-one specific thing well - the assistant loads it automatically, on demand,
-whenever a task matches what the skill describes. Instead of re-explaining
-bx-sites' own conventions to your assistant in every conversation (how
-`::: card :::` blocks work, what `bxsites.yaml`'s `redirects` key expects,
-how `page:new` differs from a hand-written file), a skill hands it that
-knowledge up front, written the way bx-sites itself works.
+Ein **[Agent Skill](https://code.claude.com/docs/en/skills)** ist eine kleine,
+in sich geschlossene `SKILL.md`-Datei, die einem KI-Coding-Assistenten
+beibringt, eine bestimmte Sache gut zu erledigen - der Assistent lädt sie
+automatisch, bei Bedarf, sobald eine Aufgabe zu dem passt, was der Skill
+beschreibt. Anstatt bx-sites' eigene Konventionen in jedem Gespräch neu zu
+erklären (wie `::: card :::`-Blöcke funktionieren, was `bxsites.yaml`s
+Schlüssel `redirects` erwartet, wie sich `page:new` von einer handgeschriebenen
+Datei unterscheidet), gibt ein Skill dieses Wissen von vornherein weiter,
+geschrieben so, wie bx-sites selbst funktioniert.
 
 [`ortus-boxlang/bx-sites-skills`](https://github.com/ortus-boxlang/bx-sites-skills)
-is the official skill pack for this project - thirteen skills covering
-everything from scaffolding a new project to troubleshooting this
-repository's own GitHub Actions. They work with any assistant that supports
-the Agent Skills format (Claude Code, Cursor, Codex, and others).
+ist das offizielle Skill-Paket für dieses Projekt - dreizehn Skills, die von
+der Gerüstbildung eines neuen Projekts bis zur Fehlerbehebung bei den eigenen
+GitHub Actions dieses Repositorys alles abdecken. Sie funktionieren mit jedem
+Assistenten, der das Agent-Skills-Format unterstützt (Claude Code, Cursor,
+Codex und andere).
 
-## Install
+## Installation
 
-Three ways to install the pack - pick whichever fits your workflow:
+Drei Wege, das Paket zu installieren - wählen Sie, was zu Ihrem Workflow passt:
 
 ### `npx skills add`
 
-The [`skills` CLI](https://github.com/skillslib/skills) works with any
-project, regardless of language or runtime, and needs nothing but Node.js:
+Die [`skills`-CLI](https://github.com/skillslib/skills) funktioniert mit
+jedem Projekt, unabhängig von Sprache oder Laufzeitumgebung, und benötigt
+nichts außer Node.js:
 
-```bash title="Install every skill"
+```bash title="Alle Skills installieren"
 npx skills add ortus-boxlang/bx-sites-skills
 ```
 
-```bash title="Non-interactive (CI, scripts)"
+```bash title="Nicht-interaktiv (CI, Skripte)"
 npx -y skills add ortus-boxlang/bx-sites-skills -y
 ```
 
-Install a single skill instead of the whole set by pointing at it directly:
+Installieren Sie einen einzelnen Skill statt des gesamten Pakets, indem Sie
+direkt darauf verweisen:
 
-```bash title="Install just one skill"
+```bash title="Nur einen Skill installieren"
 npx skills add ortus-boxlang/bx-sites-skills/skills/bx-sites-deployment
 ```
 
 ### `coldbox ai skills install`
 
-If you already have the ColdBox CLI, it can install straight from the same
-GitHub source - see the [BoxLang Skills Directory](https://skills.boxlang.io/):
+Wenn Sie bereits die ColdBox-CLI haben, kann sie direkt aus derselben
+GitHub-Quelle installieren - siehe das
+[BoxLang Skills Directory](https://skills.boxlang.io/):
 
-```bash title="Install a single skill"
+```bash title="Einen einzelnen Skill installieren"
 coldbox ai skills install ortus-boxlang/bx-sites-skills/bx-sites-deployment
 ```
 
 ### `bxSites skills:install`
 
-bx-sites also ships its own one-shot verb - a thin wrapper over `npx skills
-add` that installs the whole pack straight into the current project, so a
-freshly-scaffolded project's AI assistant knows bx-sites from the very first
-prompt:
+bx-sites bringt außerdem sein eigenes One-Shot-Verb mit - ein dünner Wrapper
+um `npx skills add`, der das gesamte Paket direkt in das aktuelle Projekt
+installiert, sodass der KI-Assistent eines frisch gescaffolteten Projekts
+bx-sites schon beim allerersten Prompt kennt:
 
-```bash title="Usage"
+```bash title="Verwendung"
 bxSites skills install
-# or, equivalently:
+# oder, äquivalent:
 bxSites skills:install
 ```
 
-```bash title="Install just one skill"
+```bash title="Nur einen Skill installieren"
 bxSites skills:install --skill=bx-sites-deployment
 ```
 
-Requires Node.js/`npx` on `PATH` (the same requirement `npx skills add` has
-on its own) - see [CLI Reference](../cli-reference.md#skillsinstall) for the
-full flag reference.
+Erfordert Node.js/`npx` im `PATH` (dieselbe Voraussetzung, die auch
+`npx skills add` selbst hat) - die vollständige Flag-Referenz finden Sie in
+der [CLI-Referenz](../cli-reference.md#skillsinstall).
 
-## Available skills
+## Verfügbare Skills
 
-Each skill is a single, self-contained `SKILL.md` (no bundled resource
-files), so it installs correctly through every path above:
+Jeder Skill ist eine einzelne, in sich geschlossene `SKILL.md` (keine
+gebündelten Ressourcendateien), sodass er über jeden der obigen Wege
+korrekt installiert wird:
 
-| Skill | Description |
+| Skill | Beschreibung |
 |---|---|
-| `bx-sites-getting-started` | Install bx-sites, scaffold a new project (or migrate an existing GitBook/mkdocs/Notion one in), project layout, page frontmatter, linking, build/serve/clean. |
-| `bx-sites-content-blocks` | Rich `::: name :::` content blocks - cards, columns, stepper, buttons, embeds, page-link/link-preview, prompt, updates, includes, conditional content, OpenAPI widget. |
-| `bx-sites-markdown` | Admonitions, footnotes, definition lists, content tabs, code-block annotations, Mermaid, math, tables, icons, responsive images, Alpine.js interactivity. |
-| `bx-sites-variables-functions` | Reusable `{{ variables }}` and BoxLang magic functions (`docs/functions.bxs`), including status-badge/rating/progress-bar visualizer recipes. |
-| `bx-sites-blog-versioning-i18n` | The blog (`docs/blog/posts/`), versioned docs (`docs/versions/`), translated locales (`docs/i18n/`), and redirects. |
-| `bx-sites-content-quality` | Pre-build content checks without a full build - `lint`, `blog:drafts`, `blog:find`, `search:query`. |
-| `bx-sites-build` | `build`/`serve`/`clean`/`search-index`, plus `doctor`/`stats`/`check` diagnostics on a built site. |
-| `bx-sites-configuration` | The full `bxsites.yaml`/`bxsites.json` key reference - `baseURL`, `nav`, `redirects`, `markdown`, assets, and more. |
-| `bx-sites-themes` | Choosing, customizing, overriding, installing, or writing a theme; the `ThemeProvider` contract. |
-| `bx-sites-search` | Search providers - local (MiniSearch), Algolia DocSearch, Pagefind, and wiring up a custom provider. |
-| `bx-sites-plugins` | Writing/installing a bx-sites plugin (build-lifecycle hooks) or a CLI provider (new `bxSites` verbs). |
-| `bx-sites-deployment` | Deploy targets (S3/Azure/GCS/Firebase/FTP/SFTP/rsync/Netlify/Vercel/Cloudflare Pages/GitHub Pages), `package`, and the GitHub Actions publishing workflow. |
-| `bx-sites-actions` | Operate and troubleshoot bx-sites' own GitHub Actions workflows (tests, snapshot, release, docs, pages). |
+| `bx-sites-getting-started` | bx-sites installieren, ein neues Projekt gerüstbilden (oder ein bestehendes GitBook-/mkdocs-/Notion-Projekt migrieren), Projektstruktur, Seiten-Frontmatter, Verlinkung, build/serve/clean. |
+| `bx-sites-content-blocks` | Umfangreiche `::: name :::`-Content-Blöcke - Karten, Spalten, Stepper, Buttons, Einbettungen, Seiten-Link/Link-Vorschau, Prompt, Updates, Includes, bedingter Inhalt, OpenAPI-Widget. |
+| `bx-sites-markdown` | Admonitions, Fußnoten, Definitionslisten, Content-Tabs, Codeblock-Annotationen, Mermaid, Mathematik, Tabellen, Icons, responsive Bilder, Alpine.js-Interaktivität. |
+| `bx-sites-variables-functions` | Wiederverwendbare `{{ variables }}` und BoxLang-Magic-Functions (`docs/functions.bxs`), einschließlich Rezepte für Status-Badge-/Bewertungs-/Fortschrittsbalken-Visualizer. |
+| `bx-sites-blog-versioning-i18n` | Der Blog (`docs/blog/posts/`), versionierte Docs (`docs/versions/`), übersetzte Locales (`docs/i18n/`) und Redirects. |
+| `bx-sites-content-quality` | Vorab-Build-Inhaltsprüfungen ohne vollständigen Build - `lint`, `blog:drafts`, `blog:find`, `search:query`. |
+| `bx-sites-build` | `build`/`serve`/`clean`/`search-index`, plus `doctor`/`stats`/`check`-Diagnosen für eine gebaute Site. |
+| `bx-sites-configuration` | Die vollständige Schlüsselreferenz für `bxsites.yaml`/`bxsites.json` - `baseURL`, `nav`, `redirects`, `markdown`, Assets und mehr. |
+| `bx-sites-themes` | Ein Theme auswählen, anpassen, überschreiben, installieren oder schreiben; der `ThemeProvider`-Vertrag. |
+| `bx-sites-search` | Suchanbieter - lokal (MiniSearch), Algolia DocSearch, Pagefind, und einen benutzerdefinierten Anbieter anbinden. |
+| `bx-sites-plugins` | Ein bx-sites-Plugin (Build-Lifecycle-Hooks) oder einen CLI-Provider (neue `bxSites`-Verben) schreiben/installieren. |
+| `bx-sites-deployment` | Deploy-Ziele (S3/Azure/GCS/Firebase/FTP/SFTP/rsync/Netlify/Vercel/Cloudflare Pages/GitHub Pages), `package`, und der GitHub-Actions-Publishing-Workflow. |
+| `bx-sites-actions` | Die eigenen GitHub-Actions-Workflows von bx-sites bedienen und Fehler beheben (tests, snapshot, release, docs, pages). |
 
-## Example prompts
+## Beispiel-Prompts
 
-Once installed, just describe what you want - your assistant picks the
-matching skill on its own:
+Nach der Installation beschreiben Sie einfach, was Sie möchten - Ihr
+Assistent wählt selbstständig den passenden Skill:
 
-```text title="Scaffold a new site"
+```text title="Eine neue Site gerüstbilden"
 Scaffold a new bx-sites project called "acme-docs" using the gitbook
 theme, add a Getting Started page, and start the dev server.
 ```
 
-```text title="Author content"
+```text title="Inhalte verfassen"
 Add a three-step ::: stepper ::: block to docs/getting-started.md walking
 through install, scaffold, and build - and a ::: cards ::: grid linking
 to the three main guides.
 ```
 
-```text title="Ship it"
+```text title="Ausliefern"
 Add a Netlify deploy target to bxsites.yaml and explain which
 environment variable it expects for the auth token.
 ```
 
 ## FAQ
 
-??? faq "What's actually in a SKILL.md file?"
-    A short YAML frontmatter block (`name`, `description` - the trigger an
-    assistant matches against) followed by plain Markdown instructions,
-    conventions, and examples for that one topic. No bundled scripts or
-    resource files - every skill in this pack is a single file, by design,
-    so it installs the same way through `npx skills add`, `coldbox ai
-    skills install`, and `bxSites skills:install` alike.
+??? faq "Was steht eigentlich in einer SKILL.md-Datei?"
+    Ein kurzer YAML-Frontmatter-Block (`name`, `description` - der Trigger,
+    gegen den ein Assistent abgleicht), gefolgt von einfachen
+    Markdown-Anweisungen, Konventionen und Beispielen für dieses eine Thema.
+    Keine gebündelten Skripte oder Ressourcendateien - jeder Skill in diesem
+    Paket ist bewusst eine einzelne Datei, sodass er auf dieselbe Weise über
+    `npx skills add`, `coldbox ai skills install` und
+    `bxSites skills:install` installiert wird.
 
-??? faq "Do I need all thirteen skills?"
-    No - every install path supports installing just one skill by name
-    (see [Install](#install) above). Most projects are fine installing the
-    whole pack, though: an assistant only loads a skill's content when a
-    task actually matches it, so unused skills cost nothing at prompt time.
+??? faq "Brauche ich alle dreizehn Skills?"
+    Nein - jeder Installationsweg unterstützt die Installation nur eines
+    einzelnen Skills nach Namen (siehe [Installation](#installation) oben).
+    Die meisten Projekte fahren aber gut damit, das gesamte Paket zu
+    installieren: Ein Assistent lädt den Inhalt eines Skills nur, wenn eine
+    Aufgabe tatsächlich dazu passt, sodass ungenutzte Skills zur
+    Prompt-Zeit nichts kosten.
 
-??? faq "Which AI assistants does this work with?"
-    Any assistant that supports the Agent Skills format - Claude Code,
-    Cursor, Codex, and others. `npx skills add`/`coldbox ai skills install`
-    detect which assistant(s) your project already has configured and
-    install into each one automatically.
+??? faq "Mit welchen KI-Assistenten funktioniert das?"
+    Mit jedem Assistenten, der das Agent-Skills-Format unterstützt - Claude
+    Code, Cursor, Codex und andere. `npx skills add`/`coldbox ai skills
+    install` erkennen, welche Assistenten in Ihrem Projekt bereits
+    konfiguriert sind, und installieren automatisch in jeden davon.
 
-??? faq "How do I verify a skill actually installed?"
-    Check for a new `SKILL.md` under your assistant's own skills directory
-    (e.g. `.claude/skills/bx-sites-getting-started/SKILL.md` for Claude
-    Code) - or just ask your assistant something the skill covers (e.g.
-    "how do I add a Netlify deploy target?") and see whether its answer
-    matches this documentation.
+??? faq "Wie überprüfe ich, ob ein Skill wirklich installiert wurde?"
+    Prüfen Sie, ob eine neue `SKILL.md` im eigenen Skills-Verzeichnis Ihres
+    Assistenten existiert (z. B. `.claude/skills/bx-sites-getting-started/SKILL.md`
+    für Claude Code) - oder fragen Sie Ihren Assistenten einfach etwas, das
+    der Skill abdeckt (z. B. "Wie füge ich ein Netlify-Deploy-Ziel hinzu?"),
+    und prüfen Sie, ob die Antwort mit dieser Dokumentation übereinstimmt.
 
-??? faq "`bxSites skills:install` failed with an error about npx/Node.js"
-    It shells out to the real `npx skills add` under the hood, so it needs
-    Node.js on `PATH` the same way that command does on its own - install
-    Node.js from [nodejs.org](https://nodejs.org/) and try again. Or skip
-    `bxSites`'s own wrapper entirely and run `npx skills add
-    ortus-boxlang/bx-sites-skills` directly.
+??? faq "`bxSites skills:install` ist mit einem Fehler zu npx/Node.js fehlgeschlagen"
+    Es ruft im Hintergrund das echte `npx skills add` auf und benötigt daher
+    Node.js im `PATH`, genau wie dieser Befehl selbst - installieren Sie
+    Node.js von [nodejs.org](https://nodejs.org/) und versuchen Sie es
+    erneut. Oder überspringen Sie den eigenen Wrapper von `bxSites`
+    vollständig und führen Sie direkt
+    `npx skills add ortus-boxlang/bx-sites-skills` aus.
 
-??? faq "Can I install these into a project that isn't a bx-sites project yet?"
-    Yes - `npx skills add`/`coldbox ai skills install` work in any
-    directory. `bxSites skills:install` specifically needs an existing
-    `--projectRoot` (the current directory by default), same as every
-    other `bxSites` verb, but that project doesn't need to be built yet -
-    installing skills before you've written a single page is exactly the
-    point, so your assistant already knows bx-sites for the very first
-    prompt.
+??? faq "Kann ich diese in ein Projekt installieren, das noch kein bx-sites-Projekt ist?"
+    Ja - `npx skills add`/`coldbox ai skills install` funktionieren in jedem
+    Verzeichnis. `bxSites skills:install` benötigt speziell einen
+    existierenden `--projectRoot` (standardmäßig das aktuelle Verzeichnis),
+    genau wie jedes andere `bxSites`-Verb, aber dieses Projekt muss noch
+    nicht gebaut sein - Skills zu installieren, bevor Sie auch nur eine
+    einzige Seite geschrieben haben, ist genau der Punkt, damit Ihr
+    Assistent bx-sites schon beim allerersten Prompt kennt.
 
-## Source
+## Quelle
 
-- Skills repository: [ortus-boxlang/bx-sites-skills](https://github.com/ortus-boxlang/bx-sites-skills)
-- bx-sites repository: [ortus-boxlang/bx-sites](https://github.com/ortus-boxlang/bx-sites)
+- Skills-Repository: [ortus-boxlang/bx-sites-skills](https://github.com/ortus-boxlang/bx-sites-skills)
+- bx-sites-Repository: [ortus-boxlang/bx-sites](https://github.com/ortus-boxlang/bx-sites)
 - BoxLang Skills Directory: [skills.boxlang.io](https://skills.boxlang.io/)

@@ -1,34 +1,37 @@
 ---
-title: CLI Providers
+title: CLI-Provider
 order: 6.2
 icon: phosphor-duotone:terminal-window
-tags: [guides, plugins, cli]
+tags: [anleitungen, plugins, cli]
 ---
 
-# CLI Providers
+# CLI-Provider
 
-A [plugin](plugins.md) hooks into the *build* lifecycle - config, nav, page
-markdown/HTML, post-build. A **CLI provider** is the sibling extension
-point for the *command* lifecycle: it lets an installed, activated BoxLang
-module register its own `bxSites <verb>` commands, without touching
-`bx-sites` itself.
+Ein [Plugin](plugins.md) klinkt sich in den *Build*-Lifecycle ein - Config,
+Nav, Seiten-Markdown/HTML, Post-Build. Ein **CLI-Provider** ist der
+Schwester-Erweiterungspunkt für den *Command*-Lifecycle: Er erlaubt es
+einem installierten, aktivierten BoxLang-Modul, eigene `bxSites <verb>`-
+Befehle zu registrieren, ohne `bx-sites` selbst anzufassen.
 
-Same activation model as a plugin - a module opts in by name, via
-`bxsites.yaml`'s own [`plugins`](../configuration.md#plugins) array:
+Dasselbe Aktivierungsmodell wie ein Plugin - ein Modul meldet sich über
+`bxsites.yaml`s eigenes [`plugins`](../configuration.md#plugins)-Array
+namentlich an:
 
 ```yaml title="bxsites.yaml"
 plugins: [ myBxSitesAddon ]
 ```
 
-A module can implement `models/BxSitesPlugin.bx`, `models/BxSitesCliProvider.bx`,
-both, or neither - installing/activating a module is one step; which
-contracts it implements decides what it actually extends.
+Ein Modul kann `models/BxSitesPlugin.bx`, `models/BxSitesCliProvider.bx`,
+beides oder keines von beidem implementieren - ein Modul zu installieren/
+aktivieren ist ein Schritt; welche Contracts es implementiert, entscheidet,
+was es tatsächlich erweitert.
 
-## Writing a CLI provider
+## Einen CLI-Provider schreiben
 
-A CLI provider needs exactly one thing beyond the usual `box.json`/
-`ModuleConfig.bx`: a `models/BxSitesCliProvider.bx` class exposing a single
-`verbs()` method, returning a struct of verb name → dispatch info:
+Ein CLI-Provider braucht genau eine Sache zusätzlich zu den üblichen
+`box.json`/`ModuleConfig.bx`: eine Klasse `models/BxSitesCliProvider.bx`,
+die eine einzelne Methode `verbs()` bereitstellt, die einen Struct
+Verbname → Dispatch-Info zurückgibt:
 
 ```bx title="models/BxSitesCliProvider.bx" linenums="1"
 // models/BxSitesCliProvider.bx
@@ -50,9 +53,10 @@ class {
 }
 ```
 
-Each dispatch class follows the exact same shape as a core verb class
-under `bx-sites`' own `models/cli/` - a `struct function run( struct options )`
-returning `{ exitCode, message }`:
+Jede Dispatch-Klasse folgt genau derselben Form wie eine Core-Verb-Klasse
+unter `bx-sites`s eigenem `models/cli/` - eine
+`struct function run( struct options )`, die `{ exitCode, message }`
+zurückgibt:
 
 ```bx title="models/cli/cloud/Publish.bx" linenums="1"
 class {
@@ -65,47 +69,52 @@ class {
 }
 ```
 
-### The `@myBxSitesAddon` suffix is required
+### Das Suffix `@myBxSitesAddon` ist erforderlich
 
-A bare dotted path like `"models.cli.cloud.Publish"` only resolves
-relative to `bx-sites`' own module root - it's how core verbs reference
-`models/cli/Build.bx` and friends, but it **cannot** reach into a
-different module. A provider's own verb classes must always self-supply
-their module's `@<mapping>` suffix, exactly as shown above. This is also
-why registering into `bx-sites`' own literal verb table isn't something a
-provider can spoof its way into - the class path has to name its own
-module explicitly.
+Ein reiner Punktpfad wie `"models.cli.cloud.Publish"` löst sich nur
+relativ zu `bx-sites`s eigenem Modul-Root auf - so verweisen Core-Verben
+auf `models/cli/Build.bx` und ähnliche, aber er **kann nicht** in ein
+anderes Modul hineinreichen. Die eigenen Verb-Klassen eines Providers
+müssen daher immer selbst das Suffix `@<mapping>` ihres eigenen Moduls
+mitliefern, genau wie oben gezeigt. Das ist auch der Grund, warum sich
+kein Provider in `bx-sites`s eigene, wörtliche Verb-Tabelle einschmuggeln
+kann - der Klassenpfad muss sein eigenes Modul explizit benennen.
 
-## Verb names: single-token and two-token ("compound")
+## Verb-Namen: Ein-Token und Zwei-Token ("compound")
 
-A verb name is registered as one colon-joined string, the same convention
-core already uses for `post:new`/`i18n:status`/`page:rename`. `bxSites`
-also accepts the equivalent **two space-separated argv tokens** as sugar
-over that same registration - `bxSites cloud publish` and
-`bxSites cloud:publish` dispatch identically, once `"cloud:publish"` is a
-registered verb name. There's no separate two-word registration mechanism
-to learn; register `"cloud:publish"`, and both spellings work for free.
+Ein Verb-Name wird als eine einzige, durch Doppelpunkt verbundene
+Zeichenkette registriert - dieselbe Konvention, die Core bereits für
+`post:new`/`i18n:status`/`page:rename` verwendet. `bxSites` akzeptiert
+außerdem die äquivalenten **zwei durch Leerzeichen getrennten
+Argv-Tokens** als Zucker über dieselbe Registrierung - `bxSites cloud
+publish` und `bxSites cloud:publish` dispatchen identisch, sobald
+`"cloud:publish"` ein registrierter Verb-Name ist. Es gibt keinen
+separaten Zweiwort-Registrierungsmechanismus zu lernen; registrieren Sie
+`"cloud:publish"`, und beide Schreibweisen funktionieren automatisch.
 
-## Precedence and failure modes
+## Vorrang und Fehlerfälle
 
-- **Core always wins.** If a provider registers a verb name that collides
-  with one of `bx-sites`' own built-in verbs, the core verb is dispatched
-  and the provider's entry is silently ignored - a provider can add new
-  commands, never shadow an existing one.
-- **First provider wins on a collision between two providers.** If two
-  different activated modules both register the same verb name, whichever
-  is listed earlier in `bxsites.yaml`'s `plugins` array wins.
-- **Discovery never breaks core dispatch.** A missing/malformed
-  `bxsites.yaml`, a project that doesn't exist yet (e.g. running `--help`
-  outside any project), a module listed in `plugins` with no
-  `BxSitesCliProvider.bx` of its own, or a provider whose `verbs()` throws
-  - none of these are errors. They're all treated the same way an
-  unactivated plugin is: the core verb table is simply left untouched, and
-  every built-in `bxSites` command keeps working on its own.
+- **Core gewinnt immer.** Registriert ein Provider einen Verb-Namen, der
+  mit einem der eingebauten Verben von `bx-sites` kollidiert, wird das
+  Core-Verb dispatcht und der Eintrag des Providers wird stillschweigend
+  ignoriert - ein Provider kann neue Befehle hinzufügen, aber nie einen
+  bestehenden überschatten.
+- **Bei einer Kollision zwischen zwei Providern gewinnt der erste.** Wenn
+  zwei verschiedene aktivierte Module denselben Verb-Namen registrieren,
+  gewinnt derjenige, der in `bxsites.yaml`s `plugins`-Array zuerst
+  aufgeführt ist.
+- **Discovery bricht nie den Core-Dispatch.** Eine fehlende/fehlerhafte
+  `bxsites.yaml`, ein Projekt, das noch nicht existiert (z. B. `--help`
+  außerhalb eines Projekts auszuführen), ein in `plugins` aufgeführtes
+  Modul ohne eigenes `BxSitesCliProvider.bx`, oder ein Provider, dessen
+  `verbs()` einen Fehler wirft - keiner dieser Fälle ist ein Fehler. Sie
+  werden alle genauso behandelt wie ein nicht aktiviertes Plugin: Die
+  Core-Verb-Tabelle bleibt einfach unangetastet, und jeder eingebaute
+  `bxSites`-Befehl funktioniert weiterhin von selbst.
 
-## A minimal example
+## Ein minimales Beispiel
 
-```text title="myBxSitesAddon/ layout"
+```text title="myBxSitesAddon/-Struktur"
 myBxSitesAddon/
 ├── box.json                          # boxlang.moduleName is what bxsites.yaml's [plugins] references
 ├── ModuleConfig.bx                    # a normal BoxLang module descriptor
@@ -118,6 +127,6 @@ myBxSitesAddon/
             └── Status.bx              # run( options )
 ```
 
-See [Plugins](plugins.md) for the build-lifecycle side of the same
-module, and the [CLI reference](../cli-reference.md) for every verb core
-itself ships.
+Siehe [Plugins](plugins.md) für die Build-Lifecycle-Seite desselben
+Moduls, und die [CLI-Referenz](../cli-reference.md) für jedes Verb, das
+Core selbst mitbringt.

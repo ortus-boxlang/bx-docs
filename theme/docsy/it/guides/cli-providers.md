@@ -1,34 +1,37 @@
 ---
-title: CLI Providers
+title: Provider CLI
 order: 6.2
 icon: phosphor-duotone:terminal-window
-tags: [guides, plugins, cli]
+tags: [guide, plugin, cli]
 ---
 
-# CLI Providers
+# Provider CLI
 
-A [plugin](plugins.md) hooks into the *build* lifecycle - config, nav, page
-markdown/HTML, post-build. A **CLI provider** is the sibling extension
-point for the *command* lifecycle: it lets an installed, activated BoxLang
-module register its own `bxSites <verb>` commands, without touching
-`bx-sites` itself.
+Un [plugin](plugins.md) si aggancia al ciclo di vita della *build* -
+config, nav, markdown/HTML di pagina, post-build. Un **provider CLI** è
+il punto di estensione gemello per il ciclo di vita dei *comandi*:
+consente a un modulo BoxLang installato e attivato di registrare propri
+comandi `bxSites <verbo>`, senza toccare `bx-sites` stesso.
 
-Same activation model as a plugin - a module opts in by name, via
-`bxsites.yaml`'s own [`plugins`](../configuration.md#plugins) array:
+Stesso modello di attivazione di un plugin - un modulo aderisce per nome,
+tramite l'array [`plugins`](../configuration.md#plugins) proprio di
+`bxsites.yaml`:
 
 ```yaml title="bxsites.yaml"
 plugins: [ myBxSitesAddon ]
 ```
 
-A module can implement `models/BxSitesPlugin.bx`, `models/BxSitesCliProvider.bx`,
-both, or neither - installing/activating a module is one step; which
-contracts it implements decides what it actually extends.
+Un modulo può implementare `models/BxSitesPlugin.bx`,
+`models/BxSitesCliProvider.bx`, entrambi, o nessuno dei due - installare/
+attivare un modulo è un passaggio; quali contratti implementa decide cosa
+estende realmente.
 
-## Writing a CLI provider
+## Scrivere un provider CLI
 
-A CLI provider needs exactly one thing beyond the usual `box.json`/
-`ModuleConfig.bx`: a `models/BxSitesCliProvider.bx` class exposing a single
-`verbs()` method, returning a struct of verb name → dispatch info:
+Un provider CLI richiede esattamente una cosa oltre ai soliti
+`box.json`/`ModuleConfig.bx`: una classe `models/BxSitesCliProvider.bx`
+che espone un singolo metodo `verbs()`, che restituisce uno struct nome
+verbo → informazioni di dispatch:
 
 ```bx title="models/BxSitesCliProvider.bx" linenums="1"
 // models/BxSitesCliProvider.bx
@@ -50,9 +53,10 @@ class {
 }
 ```
 
-Each dispatch class follows the exact same shape as a core verb class
-under `bx-sites`' own `models/cli/` - a `struct function run( struct options )`
-returning `{ exitCode, message }`:
+Ogni classe di dispatch segue esattamente la stessa forma di una classe
+di verbo del core sotto il proprio `models/cli/` di `bx-sites` - una
+`struct function run( struct options )` che restituisce
+`{ exitCode, message }`:
 
 ```bx title="models/cli/cloud/Publish.bx" linenums="1"
 class {
@@ -65,47 +69,52 @@ class {
 }
 ```
 
-### The `@myBxSitesAddon` suffix is required
+### Il suffisso `@myBxSitesAddon` è obbligatorio
 
-A bare dotted path like `"models.cli.cloud.Publish"` only resolves
-relative to `bx-sites`' own module root - it's how core verbs reference
-`models/cli/Build.bx` and friends, but it **cannot** reach into a
-different module. A provider's own verb classes must always self-supply
-their module's `@<mapping>` suffix, exactly as shown above. This is also
-why registering into `bx-sites`' own literal verb table isn't something a
-provider can spoof its way into - the class path has to name its own
-module explicitly.
+Un semplice percorso puntato come `"models.cli.cloud.Publish"` si risolve
+solo relativamente al root di modulo proprio di `bx-sites` - è così che i
+verbi del core fanno riferimento a `models/cli/Build.bx` e simili, ma
+**non può** raggiungere un modulo diverso. Le proprie classi di verbo di
+un provider devono sempre fornire da sé il proprio suffisso `@<mapping>`
+di modulo, esattamente come mostrato sopra. Questo è anche il motivo per
+cui registrarsi nella tabella letterale dei verbi propria di `bx-sites`
+non è qualcosa in cui un provider possa intrufolarsi - il percorso della
+classe deve nominare esplicitamente il proprio modulo.
 
-## Verb names: single-token and two-token ("compound")
+## Nomi dei verbi: a token singolo e a due token ("composto")
 
-A verb name is registered as one colon-joined string, the same convention
-core already uses for `post:new`/`i18n:status`/`page:rename`. `bxSites`
-also accepts the equivalent **two space-separated argv tokens** as sugar
-over that same registration - `bxSites cloud publish` and
-`bxSites cloud:publish` dispatch identically, once `"cloud:publish"` is a
-registered verb name. There's no separate two-word registration mechanism
-to learn; register `"cloud:publish"`, and both spellings work for free.
+Un nome di verbo viene registrato come un'unica stringa unita da due
+punti, la stessa convenzione già usata dal core per
+`post:new`/`i18n:status`/`page:rename`. `bxSites` accetta anche
+l'equivalente di **due token argv separati da spazio** come zucchero
+sintattico sulla stessa registrazione - `bxSites cloud publish` e
+`bxSites cloud:publish` fanno dispatch in modo identico, non appena
+`"cloud:publish"` è un nome di verbo registrato. Non c'è un meccanismo di
+registrazione a due parole separato da imparare; registra
+`"cloud:publish"`, ed entrambe le grafie funzionano gratuitamente.
 
-## Precedence and failure modes
+## Precedenza e modalità di fallimento
 
-- **Core always wins.** If a provider registers a verb name that collides
-  with one of `bx-sites`' own built-in verbs, the core verb is dispatched
-  and the provider's entry is silently ignored - a provider can add new
-  commands, never shadow an existing one.
-- **First provider wins on a collision between two providers.** If two
-  different activated modules both register the same verb name, whichever
-  is listed earlier in `bxsites.yaml`'s `plugins` array wins.
-- **Discovery never breaks core dispatch.** A missing/malformed
-  `bxsites.yaml`, a project that doesn't exist yet (e.g. running `--help`
-  outside any project), a module listed in `plugins` with no
-  `BxSitesCliProvider.bx` of its own, or a provider whose `verbs()` throws
-  - none of these are errors. They're all treated the same way an
-  unactivated plugin is: the core verb table is simply left untouched, and
-  every built-in `bxSites` command keeps working on its own.
+- **Il core vince sempre.** Se un provider registra un nome di verbo che
+  entra in collisione con uno dei verbi incorporati di `bx-sites`, viene
+  fatto il dispatch del verbo del core e la voce del provider viene
+  ignorata silenziosamente - un provider può aggiungere nuovi comandi,
+  mai oscurarne uno esistente.
+- **In caso di collisione tra due provider, vince il primo.** Se due
+  moduli attivati diversi registrano lo stesso nome di verbo, vince
+  quello elencato per primo nell'array `plugins` di `bxsites.yaml`.
+- **La discovery non rompe mai il dispatch del core.** Un `bxsites.yaml`
+  mancante o malformato, un progetto che non esiste ancora (es. eseguire
+  `--help` fuori da qualsiasi progetto), un modulo elencato in `plugins`
+  senza un proprio `BxSitesCliProvider.bx`, o un provider il cui
+  `verbs()` genera un errore - nessuno di questi casi è un errore.
+  Vengono trattati tutti allo stesso modo di un plugin non attivato: la
+  tabella dei verbi del core resta semplicemente intatta, e ogni comando
+  incorporato di `bxSites` continua a funzionare da solo.
 
-## A minimal example
+## Un esempio minimo
 
-```text title="myBxSitesAddon/ layout"
+```text title="Struttura di myBxSitesAddon/"
 myBxSitesAddon/
 ├── box.json                          # boxlang.moduleName is what bxsites.yaml's [plugins] references
 ├── ModuleConfig.bx                    # a normal BoxLang module descriptor
@@ -118,6 +127,6 @@ myBxSitesAddon/
             └── Status.bx              # run( options )
 ```
 
-See [Plugins](plugins.md) for the build-lifecycle side of the same
-module, and the [CLI reference](../cli-reference.md) for every verb core
-itself ships.
+Vedi [Plugin](plugins.md) per il lato ciclo di vita della build dello
+stesso modulo, e la [guida di riferimento CLI](../cli-reference.md) per
+ogni verbo che il core stesso include.
