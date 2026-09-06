@@ -413,6 +413,72 @@ class extends="testbox.system.BaseSpec" {
 				expect( fileExists( root & "/site/assets/logo.svg" ) ).toBeTrue();
 			} );
 
+			it( "hardlinks a locale tree's own assets/ from the main tree's already-written copy, instead of writing the same bytes twice", function() {
+				var root = newProject();
+				fileWrite( root & "/docs/index.md", "Home" );
+				directoryCreate( root & "/docs/assets", true, true );
+				fileWrite( root & "/docs/assets/logo.svg", "<svg></svg>" );
+				directoryCreate( root & "/docs/i18n/es", true, true );
+				fileWrite( root & "/docs/i18n/es/index.md", "Inicio" );
+
+				pipeline.build( root );
+
+				var mainCopy = root & "/site/assets/logo.svg";
+				var localeCopy = root & "/site/es/assets/logo.svg";
+				expect( fileExists( mainCopy ) ).toBeTrue();
+				expect( fileExists( localeCopy ) ).toBeTrue();
+				expect( fileRead( localeCopy ) ).toBe( fileRead( mainCopy ) );
+
+				// Not just equal content - the same inode. Two independent
+				// copies of the same bytes would still pass the assertions
+				// above; this is the one that actually proves the second
+				// tree was hardlinked rather than freshly copied.
+				var Files = createObject( "java", "java.nio.file.Files" );
+				var Paths = createObject( "java", "java.nio.file.Paths" );
+				var mainInode = Files.getAttribute( Paths.get( mainCopy ), "unix:ino" );
+				var localeInode = Files.getAttribute( Paths.get( localeCopy ), "unix:ino" );
+				expect( mainInode ).toBe( localeInode );
+			} );
+
+			it( "still writes a locale tree's own og:image PNGs rather than hardlinking the main tree's own (per-page content, not identical across trees)", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"generateOgImages":true}'
+				);
+				fileWrite(
+					root & "/docs/index.md",
+					"---" & char( 10 ) & "title: Home" & char( 10 ) & "---" & char( 10 ) & "Welcome"
+				);
+				directoryCreate( root & "/docs/i18n/es", true, true );
+				fileWrite(
+					root & "/docs/i18n/es/index.md",
+					"---" & char( 10 ) & "title: Inicio" & char( 10 ) & "---" & char( 10 ) & "Bienvenido"
+				);
+
+				pipeline.build( root );
+
+				// generatedOgImageFileName() derives the filename from urlPath
+				// alone (both trees' own root index page -> "home.png"), not
+				// from title - the two files share a name but must not share
+				// content (or an inode).
+				var mainOg = root & "/site/assets/og/home.png";
+				var localeOg = root & "/site/es/assets/og/home.png";
+				expect( fileExists( mainOg ) ).toBeTrue();
+				expect( fileExists( localeOg ) ).toBeTrue();
+
+				// Different pages ("Home" vs "Inicio") generate different
+				// auto-generated social cards - hardlinking this one over
+				// from the main tree, the way vendor/theme/docs assets
+				// correctly are, would silently give the Spanish tree an
+				// English og:image.
+				var Files = createObject( "java", "java.nio.file.Files" );
+				var Paths = createObject( "java", "java.nio.file.Paths" );
+				var mainInode = Files.getAttribute( Paths.get( mainOg ), "unix:ino" );
+				var localeInode = Files.getAttribute( Paths.get( localeOg ), "unix:ino" );
+				expect( mainInode ).notToBe( localeInode );
+			} );
+
 			it( "fingerprints the theme's own style.css with a content hash by default, and rewrites the rendered <link> to match", function() {
 				var root = newProject();
 				fileWrite( root & "/docs/index.md", "Home" );
