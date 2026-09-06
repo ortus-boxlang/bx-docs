@@ -85,7 +85,8 @@ boxlang bxSites <verb> [options]
 | `serve` | Build and serve the site locally with live reload (needs bx-markdown, bx-esapi, bx-yaml and bx-image too) |
 | `search-index` | Rebuild `site/search-index.json` standalone (also runs automatically during `build`) |
 | `clean` | Remove `site/` and any build cache |
-| `migrate` | Convert an existing GitBook export or mkdocs project into `docs/` + `nav.json` (`--from=gitbook`, the default, or `--from=mkdocs`) |
+| `migrate` | Convert an existing GitBook export, mkdocs project, plain zip of Markdown, or Notion export into `docs/` + `nav.json` (`--from=gitbook`, the default, `--from=mkdocs`, `--from=markdown-zip`, or `--from=notion`) |
+| `check` | CI-grade content check on a built `site/`: broken internal links/images, missing alt text, orphaned pages |
 | `stats` | Read-only summary report on a built `site/`: page/word counts, versions/locales, blog, tags, search index, site size |
 | `doctor` | Environment/config health check: JVM, `docs/` (or `src/`), config validity, required modules, theme override |
 | `post:new` | Scaffold a new blog post at `docs/blog/posts/<slug>.md` |
@@ -104,6 +105,7 @@ boxlang bxSites <verb> [options]
 | `blog:find` | Filter blog posts by author/category/tag/date range |
 | `search:query` | Query a built `search-index.json` and rank results |
 | `lint` | Pre-build content checks: heading level skips, blog posts missing a valid date |
+| `gh-deploy` | Build and force-push `site/` to a `gh-pages`-style branch (`--branch`, `--remote`, `--message`) |
 | `deploy` | Build and ship `site/` to a real target (s3, azure, gcs, firebase, ftp, sftp, rsync, netlify, vercel, cloudflare-pages, local, github-pages); no args deploys every `deployments/*.json` entry; `--verbose` |
 | `publish` | Build and publish `site/` to [bxSites Cloud](https://bxsites.io) via `cloud.siteId`/`cloud.apiUrl` in `bxsites.yaml` (`--token`, overrides the `BXSITES_CLOUD_TOKEN` env var) |
 | `package` | Build and zip `site/` into a single archive (`--output=<path>`, defaults to `site.zip`) |
@@ -137,7 +139,6 @@ See [MODULE_SPEC.md](MODULE_SPEC.md) for the design spec driving this module's d
 - `resources/assets` - module-wide shared client-side assets: the search widget (`search.js`, MiniSearch-backed with a Cmd/Ctrl+K palette), the copy-code button, and per-feature init scripts (tabs, Mermaid, math, OpenAPI, prompts, conditional content, ...), plus every vendored third-party library under `vendor/` (Bootstrap, highlight.js, Alpine.js, MiniSearch, Mermaid, Swagger UI) - no CDN, no outbound requests from a built site
 - `docs` / `bxsites.yaml` - this repository's own docs, built by BX Sites itself (`boxlang bxSites build`)
 - `tests/specs` - TestBox specs, one bundle per class under `models/`
-- `bifs`, `components`, `interceptors` - unused by this module today, kept for BoxLang module convention
 - `box.json` - package metadata used to publish to ForgeBox
 - `ModuleConfig.bx` - this module's configuration/CLI entry point
 
@@ -145,7 +146,7 @@ See [MODULE_SPEC.md](MODULE_SPEC.md) for the design spec driving this module's d
 
 `Build.bx` packages this module for distribution to ForgeBox: it produces a zip in `build/` containing everything needed to run the module (`box.json`, `ModuleConfig.bx`, and the rest of the module's own files).
 
-It also produces a second, self-contained artifact - `build/artifacts/bx-sites-<version>-with-deps.zip` - that additionally bundles every runtime dependency from `box.json`'s `dependencies` block (`bx-markdown`, `bx-esapi`, `bx-yaml`, `bx-image`) inside a `modules/` folder alongside the module itself, using BoxLang's [module inception](https://boxlang.ortusbooks.com/boxlang-framework/module-development/module-inception): a module's own `modules/` folder is discovered and activated before the module itself, so this artifact needs nothing pre-installed to run standalone - just drop it into a `modules/` (or `boxlang_modules/`) folder on its own. The primary `bx-sites-<version>.zip` artifact - and the `box forgebox publish` step, which publishes from `build/module` - are unaffected; the bundled dependencies only ever land in the `-with-deps` artifact, built from a separate `build/module-with-deps` copy.
+It also produces a second, self-contained artifact - `build/artifacts/bx-sites-<version>-with-deps.zip` - that additionally bundles every runtime dependency from `box.json`'s `dependencies` block (`bx-markdown`, `bx-esapi`, `bx-yaml`, `bx-image`, `bx-ftp`, `bx-toml`) inside a `modules/` folder alongside the module itself, using BoxLang's [module inception](https://boxlang.ortusbooks.com/boxlang-framework/module-development/module-inception): a module's own `modules/` folder is discovered and activated before the module itself, so this artifact needs nothing pre-installed to run standalone - just drop it into a `modules/` (or `boxlang_modules/`) folder on its own. The primary `bx-sites-<version>.zip` artifact - and the `box forgebox publish` step, which publishes from `build/module` - are unaffected; the bundled dependencies only ever land in the `-with-deps` artifact, built from a separate `build/module-with-deps` copy.
 
 ```bash
 boxlang Build.bx --version=1.1.0
