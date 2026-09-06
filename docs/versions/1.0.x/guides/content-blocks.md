@@ -252,7 +252,7 @@ there's no page to pull a title/summary from automatically. Every field
 comes from the directive's own attributes: only `url` is required, `title`
 falls back to the bare URL when omitted, and `description`/`image` are both
 optional. There's no build-time fetch of the target URL to auto-fill these
-- the same reasoning that keeps [`check`](../cli-reference.md#check) internal-links-only
+- the same reasoning that keeps [`site:check`](../cli-reference.md#sitecheck) internal-links-only
 applies here too, so a slow or unreachable third-party site never affects
 build time:
 

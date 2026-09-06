@@ -89,7 +89,7 @@ files), so it installs correctly through every path above:
 | `bx-sites-variables-functions` | Reusable `{{ variables }}` and BoxLang magic functions (`docs/functions.bxs`), including status-badge/rating/progress-bar visualizer recipes. |
 | `bx-sites-blog-versioning-i18n` | The blog (`docs/blog/posts/`), versioned docs (`docs/versions/`), translated locales (`docs/i18n/`), and redirects. |
 | `bx-sites-content-quality` | Pre-build content checks without a full build - `lint`, `blog:drafts`, `blog:find`, `search:query`. |
-| `bx-sites-build` | `build`/`serve`/`clean`/`search-index`, plus `doctor`/`stats`/`check` diagnostics on a built site. |
+| `bx-sites-build` | `build`/`serve`/`clean`/`search-index`, plus `doctor`/`stats`/`site:check` diagnostics on a built site. |
 | `bx-sites-configuration` | The full `bxsites.yaml`/`bxsites.json` key reference - `baseURL`, `nav`, `redirects`, `markdown`, assets, and more. |
 | `bx-sites-themes` | Choosing, customizing, overriding, installing, or writing a theme; the `ThemeProvider` contract. |
 | `bx-sites-search` | Search providers - local (MiniSearch), Algolia DocSearch, Pagefind, and wiring up a custom provider. |

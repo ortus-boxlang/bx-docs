@@ -254,7 +254,7 @@ obligatorio, `title` recurre a la URL desnuda cuando se omite, y
 `description`/`image` son ambos opcionales. No hay ninguna obtención en
 el momento de la construcción de la URL de destino para autocompletar
 estos campos - el mismo razonamiento que mantiene a
-[`check`](../cli-reference.md) limitado solo a enlaces internos se
+[`site:check`](../cli-reference.md) limitado solo a enlaces internos se
 aplica también aquí, de modo que un sitio de terceros lento o
 inalcanzable nunca afecta al tiempo de construcción:
 

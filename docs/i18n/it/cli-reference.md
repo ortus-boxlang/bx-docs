@@ -259,7 +259,7 @@ destinazione, `bxsites.yaml`, o `docs/nav.json` già esistenti vengono
 sovrascritti (anche questo segnalato), quindi rivedi l'output migrato
 prima di fare il commit.
 
-## `check`
+## `site:check`
 
 Un controllo di qualità del contenuto di livello CI su un `site/` già
 compilato - esegui prima `build`. Verifica:
@@ -280,7 +280,7 @@ compilato - esegui prima `build`. Verifica:
 
 ```bash frame="terminal" title="Terminal" linenums="1"
 bxSites build
-bxSites check
+bxSites site:check
 ```
 
 Esce con `1` quando ci sono link/immagini rotti o immagini senza alt,
@@ -318,7 +318,7 @@ bxSites stats
 ```
 
 Esce sempre con `0` - puramente informativo, niente qui è un gate di
-superamento/fallimento (quello è compito di `check`).
+superamento/fallimento (quello è compito di `site:check`).
 
 ## `doctor`
 
@@ -506,7 +506,7 @@ in seguito.
 Sposta una pagina di documentazione da un percorso a un altro,
 riscrivendo ogni link Markdown relativo in `docs/**` che puntava al
 vecchio percorso - lo stesso problema di link rot relativo ai file che il
-lato HTML compilato già risolve (`check`), applicato invece al sorgente
+lato HTML compilato già risolve (`site:check`), applicato invece al sorgente
 Markdown grezzo al momento della rinomina.
 
 ```bash title="Utilizzo"
@@ -572,7 +572,7 @@ bxSites search:query --query="getting started" [--limit=10]
 ## `lint`
 
 Un passaggio di qualità del contenuto pre-build sul sorgente Markdown
-grezzo di `docs/`, distinto da `check` (che ispeziona solo un `site/` già
+grezzo di `docs/`, distinto da `site:check` (che ispeziona solo un `site/` già
 compilato). Verifica:
 
 - **Salti di livello delle intestazioni** - un corpo di pagina che salta

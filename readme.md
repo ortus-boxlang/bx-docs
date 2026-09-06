@@ -108,7 +108,7 @@ boxlang bxSites <verb> [options]
 | `publish` | Build and publish `site/` to [bxSites Cloud](https://bxsites.io) via `cloud.siteId`/`cloud.apiUrl` in `bxsites.yaml` (`--token`, overrides the `BXSITES_CLOUD_TOKEN` env var) |
 | `package` | Build and zip `site/` into a single archive (`--output=<path>`, defaults to `site.zip`) |
 
-Every verb accepts `--projectRoot=<path>` (or a bare positional path) to target a project other than the current directory. Run `bxSites --help` for full usage.
+Every verb accepts `--projectRoot=<path>` (or a bare positional path) to target a project other than the current directory. Run `bxSites help` (or `bxSites` with no verb at all) for full usage - `-h`/`--help` show BoxLang's own generic runtime help instead, since BoxLang's CLI reserves those as its own global flags before bxSites ever sees them; see [CLI Reference](docs/cli-reference.md#global-options).
 
 ## Documentation
 

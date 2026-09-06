@@ -34,12 +34,21 @@ instead - see [Getting Started](getting-started.md#add-pages) for the
 
 | Flag | Description |
 |---|---|
-| `-h`, `--help` | Show usage and exit |
-| `-v`, `--version` | Show the module version and exit |
+| `-v` | Show the module version and exit |
+| `help`, or no verb at all | Show usage and exit |
+
+`-h`, `--help`, and the long `--version` form are reserved by BoxLang's
+own CLI itself (its own `--help`/`--version` handling short-circuits
+before any module - not just bx-sites - ever sees them), so they never
+reach bx-sites: `-h`/`--help` print BoxLang's own generic runtime help
+instead of bx-sites' usage, and `--version` silently prints usage (not
+the version) since BoxLang strips it from argv before dispatch. Use `-v`
+or `help`/no-args instead - both are unaffected because neither is one of
+BoxLang's own reserved global tokens.
 
 Every verb below ships with core. An installed and activated addon module
 can register further verbs of its own (e.g. a commercial deploy/hosting
-addon adding `bxSites cloud publish`) - `--help` lists whatever's
+addon adding `bxSites cloud publish`) - `help`/no-args lists whatever's
 currently activated in your project alongside the verbs below. See
 [CLI Providers](guides/cli-providers.md) if you're writing one.
 
@@ -277,7 +286,7 @@ destination file, `bxsites.yaml`, or `docs/nav.json` that already exists
 is overwritten (also reported), so review the migrated output before
 committing it.
 
-## `check`
+## `site:check`
 
 A CI-grade content quality gate over an already-built `site/` - run `build`
 first. Checks for:
@@ -296,7 +305,7 @@ first. Checks for:
 
 ```bash frame="terminal" title="Terminal" linenums="1"
 bxSites build
-bxSites check
+bxSites site:check
 ```
 
 Exits `1` when there are any broken links/images or missing-alt images,
@@ -329,7 +338,7 @@ bxSites stats
 ```
 
 Always exits `0` - purely informational, nothing here is a pass/fail gate
-(that's `check`'s job).
+(that's `site:check`'s job).
 
 ## `doctor`
 
@@ -530,7 +539,7 @@ doesn't get translated, and what to check afterward.
 Move a docs page from one path to another, rewriting every relative
 Markdown link across `docs/**` that pointed at the old path - the same
 file-relative link-rot problem the built HTML side already solves
-(`check`), applied to raw Markdown source at rename time instead.
+(`site:check`), applied to raw Markdown source at rename time instead.
 
 ```bash title="Usage"
 bxSites page:rename --from=guides/old-name.md --to=guides/new-name.md
@@ -594,7 +603,7 @@ bxSites search:query --query="getting started" [--limit=10]
 ## `lint`
 
 A pre-build content quality pass over raw `docs/` Markdown source,
-distinct from `check` (which only inspects an already-built `site/`).
+distinct from `site:check` (which only inspects an already-built `site/`).
 Checks for:
 
 - **Heading level skips** - a page body jumping straight from `##` to

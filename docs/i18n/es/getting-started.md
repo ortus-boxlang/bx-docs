@@ -125,7 +125,7 @@ de carpetas se convierte automáticamente en anidamiento de navegación:
     `docs/` es lo que genera `new` y lo que usa cada ejemplo de esta guía,
     pero un proyecto que en espíritu no es realmente "docs" (un sitio de
     marketing, un portafolio) puede usar `src/` en su lugar, sin ningún
-    otro cambio: cada verbo (`build`, `serve`, `check`, `lint`,
+    otro cambio: cada verbo (`build`, `serve`, `site:check`, `lint`,
     `page:new`, ...) busca primero `docs/` y recurre a `src/` cuando es
     lo que realmente existe. El resultado de la construcción siempre
     termina en `site/` de cualquier forma - los dos nunca chocan, ya que

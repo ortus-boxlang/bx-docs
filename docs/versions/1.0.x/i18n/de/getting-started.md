@@ -125,7 +125,7 @@ automatisch zu Navigationsverschachtelung:
     `docs/` ist das, was `new` erzeugt und was jedes Beispiel hier
     verwendet - aber ein Projekt, das inhaltlich gar nicht "docs" ist (eine
     Marketing-Seite, ein Portfolio), kann stattdessen `src/` verwenden, ganz
-    ohne weitere Änderungen: jeder Befehl (`build`, `serve`, `check`,
+    ohne weitere Änderungen: jeder Befehl (`build`, `serve`, `site:check`,
     `lint`, `page:new`, ...) sucht zuerst nach `docs/` und weicht auf
     `src/` aus, falls das tatsächlich existiert. Das Build-Ergebnis landet
     in jedem Fall in `site/` - beide kollidieren nie, da `site/` selbst
