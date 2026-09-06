@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -28,10 +27,17 @@ import java.util.concurrent.TimeUnit;
  * consistent error-message prefix), and - for a verb with a defined output
  * artifact - confirming that artifact actually exists and is non-empty.
  * Either signal means failure, regardless of the reported exit code.
+ *
+ * <p>The command-construction and success-evaluation logic below is
+ * deliberately split into package-private static methods so it can be unit
+ * tested (see {@code BxSitesInvokerTest}) without actually launching a
+ * subprocess - only {@link #invoke} itself needs a real process, and that
+ * part is exercised by both plugins' functional/integration test tiers
+ * against the real network instead.
  */
 public final class BxSitesInvoker {
 
-    private static final String BOX_RUNNER_CLASS = "ortus.boxlang.runtime.BoxRunner";
+    static final String BOX_RUNNER_CLASS = "ortus.boxlang.runtime.BoxRunner";
 
     private final Path miniserverJar;
     private final Path boxlangHomeDir;
@@ -54,15 +60,7 @@ public final class BxSitesInvoker {
      *                      no single defined output to check
      */
     public InvocationResult invoke(BxSitesVerb verb, Path projectRoot, List<String> extraArgs, Path expectedOutput) {
-        List<String> command = new ArrayList<>();
-        command.add(javaExecutable());
-        command.add("-cp");
-        command.add(miniserverJar.toAbsolutePath().toString());
-        command.add(BOX_RUNNER_CLASS);
-        command.add("module:bxSites");
-        command.add(verb.verbId());
-        command.add("--projectRoot=" + projectRoot.toAbsolutePath());
-        command.addAll(extraArgs);
+        List<String> command = buildCommand(miniserverJar, verb, projectRoot, extraArgs);
 
         ProcessBuilder pb = new ProcessBuilder(command)
                 .redirectErrorStream(true)
@@ -86,11 +84,38 @@ public final class BxSitesInvoker {
             throw new IllegalStateException("Interrupted while running bxSites " + verb.verbId(), e);
         }
 
+        boolean success = evaluateSuccess(exitCode, output, expectedOutput);
+        return new InvocationResult(success, exitCode, output);
+    }
+
+    /**
+     * Builds the exact argv for invoking {@code verb} against
+     * {@code projectRoot} - a pure function of its inputs, split out purely
+     * so it's unit-testable without launching a process.
+     */
+    static List<String> buildCommand(Path miniserverJar, BxSitesVerb verb, Path projectRoot, List<String> extraArgs) {
+        List<String> command = new ArrayList<>();
+        command.add(javaExecutable());
+        command.add("-cp");
+        command.add(miniserverJar.toAbsolutePath().toString());
+        command.add(BOX_RUNNER_CLASS);
+        command.add("module:bxSites");
+        command.add(verb.verbId());
+        command.add("--projectRoot=" + projectRoot.toAbsolutePath());
+        command.addAll(extraArgs);
+        return command;
+    }
+
+    /**
+     * Decides whether one invocation actually succeeded - never trusting
+     * the subprocess exit code alone (confirmed unreliable, see class
+     * doc). Split out purely so this bug-prone logic is unit-testable
+     * without launching a process.
+     */
+    static boolean evaluateSuccess(int exitCode, String output, Path expectedOutput) {
         boolean errorLinePresent = output.lines().anyMatch(line -> line.startsWith("Error:"));
         boolean outputArtifactMissing = expectedOutput != null && !isNonEmptyFile(expectedOutput);
-        boolean success = exitCode == 0 && !errorLinePresent && !outputArtifactMissing;
-
-        return new InvocationResult(success, exitCode, output);
+        return exitCode == 0 && !errorLinePresent && !outputArtifactMissing;
     }
 
     private static boolean isNonEmptyFile(Path path) {
