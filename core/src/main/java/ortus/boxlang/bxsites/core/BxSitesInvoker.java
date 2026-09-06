@@ -1,0 +1,113 @@
+package ortus.boxlang.bxsites.core;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Runs one bx-sites CLI verb as a subprocess, identically whether called
+ * from a Gradle task or a Maven Mojo.
+ *
+ * <p><b>Confirmed exact invocation (M0 spike, against live artifacts):</b>
+ * {@code java -cp <miniserver-jar> ortus.boxlang.runtime.BoxRunner
+ * module:bxSites <verb> --projectRoot=<path> [flags...]}, with
+ * {@code BOXLANG_HOME} set as an environment variable. The miniserver jar's
+ * own default {@code java -jar} entrypoint launches an embedded web server
+ * instead (a different {@code Main-Class} in the same jar) - the CLI runner
+ * class must be selected explicitly via {@code -cp}.
+ *
+ * <p><b>The subprocess exit code is not reliable on failure</b> - confirmed
+ * directly: a real configuration error still exits {@code 0}. Every
+ * invocation is therefore verified two other ways: scanning captured output
+ * for a line starting with {@code Error:} (the CLI dispatcher's own,
+ * consistent error-message prefix), and - for a verb with a defined output
+ * artifact - confirming that artifact actually exists and is non-empty.
+ * Either signal means failure, regardless of the reported exit code.
+ */
+public final class BxSitesInvoker {
+
+    private static final String BOX_RUNNER_CLASS = "ortus.boxlang.runtime.BoxRunner";
+
+    private final Path miniserverJar;
+    private final Path boxlangHomeDir;
+
+    public BxSitesInvoker(Path miniserverJar, Path boxlangHomeDir) {
+        this.miniserverJar = miniserverJar;
+        this.boxlangHomeDir = boxlangHomeDir;
+    }
+
+    /**
+     * Runs {@code verb} against {@code projectRoot}.
+     *
+     * @param verb          the verb to invoke
+     * @param projectRoot   the target bx-sites project directory
+     * @param extraArgs     any additional CLI flags, verbatim (e.g.
+     *                      {@code "--port=9090"})
+     * @param expectedOutput a file whose existence and non-emptiness proves
+     *                      success (e.g. {@code site/index.html} after
+     *                      {@code build}), or {@code null} if this verb has
+     *                      no single defined output to check
+     */
+    public InvocationResult invoke(BxSitesVerb verb, Path projectRoot, List<String> extraArgs, Path expectedOutput) {
+        List<String> command = new ArrayList<>();
+        command.add(javaExecutable());
+        command.add("-cp");
+        command.add(miniserverJar.toAbsolutePath().toString());
+        command.add(BOX_RUNNER_CLASS);
+        command.add("module:bxSites");
+        command.add(verb.verbId());
+        command.add("--projectRoot=" + projectRoot.toAbsolutePath());
+        command.addAll(extraArgs);
+
+        ProcessBuilder pb = new ProcessBuilder(command)
+                .redirectErrorStream(true)
+                .directory(projectRoot.toFile());
+        pb.environment().put("BOXLANG_HOME", boxlangHomeDir.toAbsolutePath().toString());
+
+        String output;
+        int exitCode;
+        try {
+            Process process = pb.start();
+            output = new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            if (!process.waitFor(30, TimeUnit.MINUTES)) {
+                process.destroyForcibly();
+                throw new IllegalStateException("bxSites " + verb.verbId() + " timed out after 30 minutes");
+            }
+            exitCode = process.exitValue();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to launch bxSites " + verb.verbId() + " subprocess", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while running bxSites " + verb.verbId(), e);
+        }
+
+        boolean errorLinePresent = output.lines().anyMatch(line -> line.startsWith("Error:"));
+        boolean outputArtifactMissing = expectedOutput != null && !isNonEmptyFile(expectedOutput);
+        boolean success = exitCode == 0 && !errorLinePresent && !outputArtifactMissing;
+
+        return new InvocationResult(success, exitCode, output);
+    }
+
+    private static boolean isNonEmptyFile(Path path) {
+        try {
+            return Files.isRegularFile(path) && Files.size(path) > 0;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private static String javaExecutable() {
+        String javaHome = System.getProperty("java.home");
+        Path candidate = Path.of(javaHome, "bin", "java");
+        return Files.isExecutable(candidate) ? candidate.toString() : "java";
+    }
+
+    /** The outcome of one verb invocation. */
+    public record InvocationResult(boolean success, int exitCode, String output) {
+    }
+}
