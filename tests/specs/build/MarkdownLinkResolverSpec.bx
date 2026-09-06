@@ -80,7 +80,9 @@ class extends="testbox.system.BaseSpec" {
 			} );
 
 			it( "falls back to the generic urlPathFor() convention for any .md link not in postUrlsByPath", function() {
-				var html = '<a href="../guides/search.md">Search</a>';
+				// "blog/posts/get-your-docs-live.md" -> directory "blog/posts" - needs to
+				// escape two levels ("../../") to reach "guides/search.md", not one.
+				var html = '<a href="../../guides/search.md">Search</a>';
 				var postUrlsByPath = { "blog/posts/pick-your-theme.md" : "blog/pick-your-theme/index.html" };
 
 				var result = variables.resolver.resolve( html, "blog/posts/get-your-docs-live.md", "/", postUrlsByPath );

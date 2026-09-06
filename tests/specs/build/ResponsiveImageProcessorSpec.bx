@@ -12,7 +12,8 @@ class extends="testbox.system.BaseSpec" {
 			}
 
 			it( "still corrects an <img> src for the page's own nesting depth when the manifest is empty, without upgrading it to a <picture>", function() {
-				var html = '<img src="assets/screenshot.png" alt="A screenshot">';
+				// "guides/setup.md" -> directory "guides" -> "../assets/screenshot.png" resolves to "assets/screenshot.png" (same convention the manifest-hit case below already tests)
+				var html = '<img src="../assets/screenshot.png" alt="A screenshot">';
 
 				var result = processor.resolve( html, "guides/setup.md", "/", {} );
 
