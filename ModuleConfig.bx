@@ -119,7 +119,7 @@ class {
 			"deploy"       : "Build and ship site/ to a real target: s3, azure, gcs, firebase, ftp, sftp, rsync, netlify, vercel, cloudflare-pages, local, github-pages ([--entry=<deployments/*.json entry name>] or [--target] with its own flags; no args deploys every deployments/*.json entry; [--verbose])",
 			"publish"      : "Build and publish site/ to bxSites Cloud, using [cloud.siteId]/[cloud.apiUrl] in bxsites.yaml ([--token], overrides the BXSITES_CLOUD_TOKEN env var)",
 			"package"      : "Build and zip site/ into a single archive ([--output=<path>], defaults to site.zip)",
-			"migrate"      : "Convert a GitBook export or mkdocs project into a bx-sites project (--source, required; [--from=gitbook|mkdocs])",
+			"migrate"      : "Convert a GitBook export, mkdocs project, plain zip of Markdown, or Notion export into a bx-sites project (--source, required; [--from=gitbook|mkdocs|markdown-zip|notion])",
 			"check"        : "CI-grade content check on a built site: broken links/images, missing alt text, orphaned pages",
 			"stats"        : "Report page/word counts, versions/locales, blog, tags, search index, and site size for a built site",
 			"doctor"       : "Check the project/environment for common problems (modules, config, theme override)",
