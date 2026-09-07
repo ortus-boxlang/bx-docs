@@ -56,6 +56,13 @@ tuo build.
 | `bxSitesBuild` | Renderizza il sito. Controllo reale di aggiornamento: viene rieseguito solo quando i contenuti, la configurazione o le versioni fissate cambiano davvero. |
 | `bxSitesServe` | Compila e serve il sito localmente con live reload. Viene eseguito in foreground finché non viene interrotto. |
 | `bxSitesClean` | Rimuove la directory `site/` generata. |
+| `bxSitesSearchIndex` | Ricostruisce `site/search-index.json` senza un build completo del sito. |
+| `bxSitesLint` | Esegue il lint dei sorgenti Markdown in docs/. Collegato a `check` di default (vedi `hookIntoCheck` più sotto). |
+| `bxSitesDeploy` | Compila il sito e lo distribuisce alla destinazione configurata. |
+| `bxSitesPublish` | Compila il sito e lo pubblica su bxSites Cloud. |
+| `bxSitesPackage` | Compila il sito e lo comprime in `site.zip`. |
+| `bxSitesStats` | Riporta il conteggio di pagine/parole e altre statistiche sul sito compilato. |
+| `bxSitesDoctor` | Esegue la diagnostica di salute del progetto propria di bx-sites. |
 
 `bxSitesBuild` non viene mai eseguito automaticamente come parte di
 `assemble` a meno che non lo si attivi esplicitamente (vedi
@@ -72,7 +79,7 @@ bxSites {
     bxSitesVersion.set("1.0.0-snapshot")               // versione fissata di bx-sites
     boxlangHomeDir.set(layout.buildDirectory.dir("bxsites/boxlang-home"))
     hookIntoAssemble.set(false)                        // opzionale: esegue bxSitesBuild come parte di assemble
-    hookIntoCheck.set(true)                            // verbi lint/check attivi di default (in arrivo, non ancora implementato)
+    hookIntoCheck.set(true)                            // collega bxSitesLint a `check` di default
 }
 ```
 
@@ -85,7 +92,6 @@ un'impostazione che comunque non verrebbe rispettata.
 
 - **Generazione di documentazione per Spring Boot** (OpenAPI, Javadoc, scansione dei controller) - pianificato.
 - **Lo streaming dell'output live di `bxSitesServe`** - attualmente bufferizza l'output con un timeout di 30 minuti, entrambi sbagliati per un task pensato per l'esecuzione indefinita.
-- Task wrapper per gli altri verbi di bx-sites (`deploy`, `publish`, `package`, `lint`, `check`, ecc.) oltre ai quattro principali sopra.
 
 Vedi la guida al [Plugin Maven](maven-plugin.md) per l'equivalente sul
 lato Maven - entrambi i plugin racchiudono la stessa logica sottostante,

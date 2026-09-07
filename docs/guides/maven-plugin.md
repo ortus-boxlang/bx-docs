@@ -62,9 +62,16 @@ schema, it only wires up *how* and *when* bx-sites runs from your build.
 | Goal | What it does |
 |---|---|
 | `bxsites:new` | Scaffolds a new bx-sites project (content dir + config file). |
-| `bxsites:build` | Renders the site into `<projectRoot>/site/`. |
+| `bxsites:build` | Renders the site into `<projectRoot>/site/`. Skips re-running the subprocess when nothing under the content dir or config file has changed since the last build - see [Build staleness checking](#build-staleness-checking) below. |
 | `bxsites:serve` | Builds and serves the site locally with live reload. Runs in the foreground until you stop it (Ctrl+C). |
 | `bxsites:clean` | Removes `<projectRoot>/site/`. Plain directory delete - no subprocess. |
+| `bxsites:search-index` | Rebuilds `site/search-index.json` without a full site build. |
+| `bxsites:lint` | Lints the docs/ Markdown source. |
+| `bxsites:deploy` | Builds the site and deploys it to the configured target. |
+| `bxsites:publish` | Builds the site and publishes it to bxSites Cloud. |
+| `bxsites:package` | Builds the site and zips it to `site.zip`. |
+| `bxsites:stats` | Reports page/word counts and other stats for the built site. |
+| `bxsites:doctor` | Runs bx-sites' own project health diagnostics. |
 
 Each goal provisions (downloads/caches) what it needs itself, on first
 run - unlike the Gradle plugin, there's no separate "provision" goal to
@@ -74,6 +81,20 @@ No goal is bound to any Maven lifecycle phase by default - run them
 explicitly. If you'd like `bxsites:build` to run automatically, bind it
 yourself in an `<executions>` block, e.g. to `pre-site` (a natural pairing
 with Maven's own built-in `site` lifecycle).
+
+## Build staleness checking
+
+Maven has no Gradle-style built-in incremental-build engine, so
+`bxsites:build` implements its own lightweight manual check: it compares
+the newest last-modified timestamp anywhere under the content directory
+(plus the config file, if one exists) against the newest timestamp already
+present in `<projectRoot>/site/`. If nothing is newer, the goal logs that
+it's skipping and returns without re-invoking bx-sites at all. Force a
+rebuild regardless with:
+
+```bash
+mvn bxsites:build -Dbxsites.build.forceRebuild=true
+```
 
 ## Configuration
 
@@ -99,8 +120,6 @@ rather than exposing a setting that wouldn't actually be honored.
 
 - **Spring Boot doc generation** (OpenAPI, Javadoc, controller-scan) - planned.
 - **`bxsites:serve`'s live output streaming** - currently buffers output with a 30-minute timeout, both wrong for a goal meant to run indefinitely.
-- **Up-to-date/staleness checking** - Maven has no Gradle-style built-in incremental-build engine; `bxsites:build` currently re-runs the full build every invocation rather than skipping when nothing changed (the Gradle plugin does have real up-to-date checking for `bxSitesBuild`).
-- Wrapper goals for bx-sites' other verbs (`deploy`, `publish`, `package`, `lint`, `check`, etc.) beyond the core four above.
 
 See the [Gradle Plugin](gradle-plugin.md) guide for the equivalent on the
 Gradle side - both wrap the same underlying logic, so verb coverage and

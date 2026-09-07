@@ -65,9 +65,16 @@ mvn bxsites:serve   # ビルドしてライブリロード付きでローカル�
 | Goal | 内容 |
 |---|---|
 | `bxsites:new` | 新しい bx-sites プロジェクト（コンテンツディレクトリ + 設定ファイル）を生成します。 |
-| `bxsites:build` | サイトを `<projectRoot>/site/` にレンダリングします。 |
+| `bxsites:build` | サイトを `<projectRoot>/site/` にレンダリングします。前回のビルド以降、コンテンツディレクトリや設定ファイルの下で何も変更されていない場合はサブプロセスの再実行をスキップします - 詳細は下記の[ビルドの Staleness チェック](#ビルドの-staleness-チェック)を参照してください。 |
 | `bxsites:serve` | サイトをビルドしてライブリロード付きでローカル配信します。停止するまで（Ctrl+C）フォアグラウンドで実行され続けます。 |
 | `bxsites:clean` | `<projectRoot>/site/` を削除します。単純なディレクトリ削除で、サブプロセスは使いません。 |
+| `bxsites:search-index` | サイト全体をビルドせずに `site/search-index.json` を再構築します。 |
+| `bxsites:lint` | docs/ 配下の Markdown ソースを lint します。 |
+| `bxsites:deploy` | サイトをビルドし、設定済みのターゲットへデプロイします。 |
+| `bxsites:publish` | サイトをビルドし、bxSites Cloud に公開します。 |
+| `bxsites:package` | サイトをビルドし、`site.zip` に圧縮します。 |
+| `bxsites:stats` | ビルド済みサイトのページ数・単語数などの統計を報告します。 |
+| `bxsites:doctor` | bx-sites 自身のプロジェクトヘルス診断を実行します。 |
 
 各 goal は初回実行時に、自分で必要なものをプロビジョニング
 （ダウンロード/キャッシュ）します - Gradle プラグインとは異なり、事前に
@@ -100,12 +107,24 @@ mvn bxsites:serve   # ビルドしてライブリロード付きでローカル�
 実際には反映されない設定項目を用意する代わりに、プラグインがそれを
 導出するだけです。
 
+## ビルドの Staleness チェック
+
+Maven には Gradle のような組み込みの増分ビルドエンジンがないため、
+`bxsites:build` は独自の軽量なチェックを実装しています - コンテンツ
+ディレクトリ配下（および存在すれば設定ファイル）の最新の更新時刻
+（mtime）と、`<projectRoot>/site/` にすでに存在する最新の更新時刻を
+比較します。何も新しくなければ、goal はスキップする旨をログに記録し、
+bx-sites を一切再呼び出しせずに終了します。それでも強制的にリビルド
+するには:
+
+```bash
+mvn bxsites:build -Dbxsites.build.forceRebuild=true
+```
+
 ## まだ実装されていないもの
 
 - **Spring Boot ドキュメント生成**（OpenAPI、Javadoc、コントローラースキャン）- 計画中。
 - **`bxsites:serve` のライブ出力ストリーミング** - 現在は出力をバッファリングし30分のタイムアウトを適用していますが、どちらも無期限に実行され続けるべき goal としては誤った挙動です。
-- **Up-to-date/staleness チェック** - Maven には Gradle のような組み込みの増分ビルドエンジンがないため、`bxsites:build` は現在、何も変更がなくてもスキップせず、呼び出しごとに常にフルビルドを実行します（Gradle プラグインの `bxSitesBuild` にはすでに実際の up-to-date チェックがあります）。
-- 上記の中核となる4つを超える、bx-sites の他の verb（`deploy`、`publish`、`package`、`lint`、`check` など）のラッパー goal。
 
 Gradle 側の対応物については [Gradle プラグイン](gradle-plugin.md) の
 ガイドを参照してください - どちらのプラグインも同じ基盤ロジックを

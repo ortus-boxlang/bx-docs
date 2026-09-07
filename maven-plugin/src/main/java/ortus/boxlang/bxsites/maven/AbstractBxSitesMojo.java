@@ -53,8 +53,24 @@ public abstract class AbstractBxSitesMojo extends AbstractMojo {
         return null;
     }
 
+    /**
+     * Pre-flight staleness check - when this returns true, {@link #execute()}
+     * skips provisioning and invocation entirely. Default: never skip;
+     * overridden by {@link BuildMojo}, the only goal with a meaningful
+     * notion of "nothing changed since last time" (Maven has no Gradle-style
+     * built-in incremental-build engine to lean on instead).
+     */
+    protected boolean isUpToDate() {
+        return false;
+    }
+
     @Override
     public final void execute() throws MojoExecutionException {
+        if (isUpToDate()) {
+            getLog().info("bxSites " + verb().verbId() + " skipped - content and config unchanged since the last build");
+            return;
+        }
+
         BxSitesInvoker.InvocationResult result;
         try {
             Provisioner provisioner = new Provisioner(Downloader.httpClient(), BxSitesConfig.defaultCacheDir());

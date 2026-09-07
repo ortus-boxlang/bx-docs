@@ -66,9 +66,16 @@ tuo build.
 | Goal | Cosa fa |
 |---|---|
 | `bxsites:new` | Genera un nuovo progetto bx-sites (directory dei contenuti + file di configurazione). |
-| `bxsites:build` | Renderizza il sito in `<projectRoot>/site/`. |
+| `bxsites:build` | Renderizza il sito in `<projectRoot>/site/`. Salta la riesecuzione del sottoprocesso quando nulla sotto la directory dei contenuti o nel file di configurazione è cambiato dall'ultimo build - vedi [Controllo di staleness del build](#controllo-di-staleness-del-build) più sotto. |
 | `bxsites:serve` | Compila e serve il sito localmente con live reload. Viene eseguito in foreground finché non lo interrompi (Ctrl+C). |
 | `bxsites:clean` | Rimuove `<projectRoot>/site/`. Semplice cancellazione di directory - nessun sottoprocesso. |
+| `bxsites:search-index` | Ricostruisce `site/search-index.json` senza un build completo del sito. |
+| `bxsites:lint` | Esegue il lint dei sorgenti Markdown in docs/. |
+| `bxsites:deploy` | Compila il sito e lo distribuisce alla destinazione configurata. |
+| `bxsites:publish` | Compila il sito e lo pubblica su bxSites Cloud. |
+| `bxsites:package` | Compila il sito e lo comprime in `site.zip`. |
+| `bxsites:stats` | Riporta il conteggio di pagine/parole e altre statistiche sul sito compilato. |
+| `bxsites:doctor` | Esegue la diagnostica di salute del progetto propria di bx-sites. |
 
 Ogni goal si autoprovvisiona (scarica/cache) ciò di cui ha bisogno, alla
 prima esecuzione - a differenza del plugin Gradle, non esiste un goal di
@@ -101,12 +108,24 @@ qui - bx-sites stesso la fissa a `<projectRoot>/site/`, quindi il plugin
 la deriva invece di esporre un'impostazione che comunque non verrebbe
 rispettata.
 
+## Controllo di staleness del build
+
+Maven non ha un motore di build incrementale integrato in stile Gradle,
+quindi `bxsites:build` implementa un proprio controllo leggero: confronta
+il timestamp (mtime) più recente sotto la directory dei contenuti (più il
+file di configurazione, se presente) con il timestamp più recente già
+presente in `<projectRoot>/site/`. Se nulla è più recente, il goal
+registra che sta saltando l'esecuzione e ritorna senza invocare affatto
+bx-sites. Forza comunque un rebuild con:
+
+```bash
+mvn bxsites:build -Dbxsites.build.forceRebuild=true
+```
+
 ## Cosa non è ancora stato costruito
 
 - **Generazione di documentazione per Spring Boot** (OpenAPI, Javadoc, scansione dei controller) - pianificato.
 - **Lo streaming dell'output live di `bxsites:serve`** - attualmente bufferizza l'output con un timeout di 30 minuti, entrambi sbagliati per un goal pensato per l'esecuzione indefinita.
-- **Controllo di aggiornamento/staleness** - Maven non ha un motore di build incrementale integrato in stile Gradle; `bxsites:build` attualmente riesegue l'intero build a ogni invocazione invece di saltarlo quando nulla è cambiato (il plugin Gradle ha invece un controllo reale di aggiornamento per `bxSitesBuild`).
-- Goal wrapper per gli altri verbi di bx-sites (`deploy`, `publish`, `package`, `lint`, `check`, ecc.) oltre ai quattro principali sopra.
 
 Vedi la guida al [Plugin Gradle](gradle-plugin.md) per l'equivalente sul
 lato Gradle - entrambi i plugin racchiudono la stessa logica sottostante,

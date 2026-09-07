@@ -52,6 +52,13 @@ schema, it only wires up *how* and *when* bx-sites runs from your build.
 | `bxSitesBuild` | Renders the site. Real up-to-date checking: reruns only when your content, config, or the pinned versions actually change. |
 | `bxSitesServe` | Builds and serves the site locally with live reload. Runs in the foreground until stopped. |
 | `bxSitesClean` | Removes the built `site/` directory. |
+| `bxSitesSearchIndex` | Rebuilds `site/search-index.json` without a full site build. |
+| `bxSitesLint` | Lints the docs/ Markdown source. Wired into `check` by default (see `hookIntoCheck` below). |
+| `bxSitesDeploy` | Builds the site and deploys it to the configured target. |
+| `bxSitesPublish` | Builds the site and publishes it to bxSites Cloud. |
+| `bxSitesPackage` | Builds the site and zips it to `site.zip`. |
+| `bxSitesStats` | Reports page/word counts and other stats for the built site. |
+| `bxSitesDoctor` | Runs bx-sites' own project health diagnostics. |
 
 `bxSitesBuild` never runs automatically as part of `assemble` unless you
 opt in (see `hookIntoAssemble` below) - a docs build is a distinct,
@@ -66,7 +73,7 @@ bxSites {
     bxSitesVersion.set("1.0.0-snapshot")               // pinned bx-sites version
     boxlangHomeDir.set(layout.buildDirectory.dir("bxsites/boxlang-home"))
     hookIntoAssemble.set(false)                        // opt-in: run bxSitesBuild as part of assemble
-    hookIntoCheck.set(true)                            // lint/check-style verbs on by default (fast-follow, not yet implemented)
+    hookIntoCheck.set(true)                            // wires bxSitesLint into `check` by default
 }
 ```
 
@@ -79,7 +86,6 @@ honored.
 
 - **Spring Boot doc generation** (OpenAPI, Javadoc, controller-scan) - planned.
 - **`bxSitesServe`'s live output streaming** - currently buffers output with a 30-minute timeout, both wrong for a task meant to run indefinitely.
-- Wrapper tasks for bx-sites' other verbs (`deploy`, `publish`, `package`, `lint`, `check`, etc.) beyond the core four above.
 
 See the [Maven Plugin](maven-plugin.md) guide for the equivalent on the
 Maven side - both wrap the same underlying logic, so verb coverage and

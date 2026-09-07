@@ -55,6 +55,13 @@ plugins {
 | `bxSitesBuild` | サイトをレンダリングします。実際の up-to-date チェックを行い、コンテンツ・設定・固定バージョンが実際に変わった場合のみ再実行されます。 |
 | `bxSitesServe` | サイトをビルドしてライブリロード付きでローカル配信します。停止するまでフォアグラウンドで実行され続けます。 |
 | `bxSitesClean` | ビルド済みの `site/` ディレクトリを削除します。 |
+| `bxSitesSearchIndex` | サイト全体をビルドせずに `site/search-index.json` を再構築します。 |
+| `bxSitesLint` | docs/ 配下の Markdown ソースを lint します。デフォルトで `check` に組み込まれます（下記の `hookIntoCheck` を参照）。 |
+| `bxSitesDeploy` | サイトをビルドし、設定済みのターゲットへデプロイします。 |
+| `bxSitesPublish` | サイトをビルドし、bxSites Cloud に公開します。 |
+| `bxSitesPackage` | サイトをビルドし、`site.zip` に圧縮します。 |
+| `bxSitesStats` | ビルド済みサイトのページ数・単語数などの統計を報告します。 |
+| `bxSitesDoctor` | bx-sites 自身のプロジェクトヘルス診断を実行します。 |
 
 `bxSitesBuild` は、明示的に有効化しない限り（下記の `hookIntoAssemble`
 を参照）`assemble` の一部として自動実行されることはありません - ドキュメント
@@ -70,7 +77,7 @@ bxSites {
     bxSitesVersion.set("1.0.0-snapshot")               // 固定された bx-sites バージョン
     boxlangHomeDir.set(layout.buildDirectory.dir("bxsites/boxlang-home"))
     hookIntoAssemble.set(false)                        // オプトイン: bxSitesBuild を assemble の一部として実行する
-    hookIntoCheck.set(true)                            // lint/check 系の verb はデフォルトで有効（今後追加予定、まだ未実装）
+    hookIntoCheck.set(true)                            // デフォルトで bxSitesLint を `check` に組み込む
 }
 ```
 
@@ -83,7 +90,6 @@ bxSites {
 
 - **Spring Boot ドキュメント生成**（OpenAPI、Javadoc、コントローラースキャン）- 計画中。
 - **`bxSitesServe` のライブ出力ストリーミング** - 現在は出力をバッファリングし30分のタイムアウトを適用していますが、どちらも無期限に実行され続けるべきタスクとしては誤った挙動です。
-- 上記の中核となる4つを超える、bx-sites の他の verb（`deploy`、`publish`、`package`、`lint`、`check` など）のラッパータスク。
 
 Maven 側の対応物については [Maven プラグイン](maven-plugin.md) のガイドを
 参照してください - どちらのプラグインも同じ基盤ロジックをラップしている

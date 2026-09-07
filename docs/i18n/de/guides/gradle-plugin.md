@@ -56,6 +56,13 @@ Plugin duplitziert dieses Schema nirgendwo, es regelt nur *wie* und
 | `bxSitesBuild` | Rendert die Website. Echte Up-to-date-Prüfung: läuft nur erneut, wenn sich Content, Konfiguration oder die gepinnten Versionen tatsächlich geändert haben. |
 | `bxSitesServe` | Baut die Website und serviert sie lokal mit Live-Reload. Läuft im Vordergrund, bis er gestoppt wird. |
 | `bxSitesClean` | Entfernt das gebaute Verzeichnis `site/`. |
+| `bxSitesSearchIndex` | Baut `site/search-index.json` neu, ohne einen vollständigen Site-Build. |
+| `bxSitesLint` | Prüft die Markdown-Quellen unter docs/. Standardmäßig in `check` eingebunden (siehe `hookIntoCheck` unten). |
+| `bxSitesDeploy` | Baut die Website und deployt sie zum konfigurierten Ziel. |
+| `bxSitesPublish` | Baut die Website und veröffentlicht sie in bxSites Cloud. |
+| `bxSitesPackage` | Baut die Website und packt sie als `site.zip`. |
+| `bxSitesStats` | Meldet Seiten-/Wortzahlen und weitere Statistiken zur gebauten Website. |
+| `bxSitesDoctor` | Führt bx-sites' eigene Projekt-Diagnose aus. |
 
 `bxSitesBuild` läuft nie automatisch als Teil von `assemble`, außer man
 aktiviert das gezielt (siehe `hookIntoAssemble` unten) - ein Docs-Build
@@ -71,7 +78,7 @@ bxSites {
     bxSitesVersion.set("1.0.0-snapshot")               // gepinnte bx-sites-Version
     boxlangHomeDir.set(layout.buildDirectory.dir("bxsites/boxlang-home"))
     hookIntoAssemble.set(false)                        // Opt-in: bxSitesBuild als Teil von assemble ausführen
-    hookIntoCheck.set(true)                            // Lint-/Check-Verben standardmäßig aktiv (folgt später, noch nicht implementiert)
+    hookIntoCheck.set(true)                            // bindet bxSitesLint standardmäßig in `check` ein
 }
 ```
 
@@ -84,7 +91,6 @@ Einstellung anzubieten, die ohnehin nicht beachtet würde.
 
 - **Spring-Boot-Doku-Generierung** (OpenAPI, Javadoc, Controller-Scan) - geplant.
 - **Live-Output-Streaming von `bxSitesServe`** - puffert derzeit die Ausgabe mit einem 30-Minuten-Timeout, beides falsch für einen Task, der unbegrenzt laufen soll.
-- Wrapper-Tasks für die übrigen bx-sites-Verben (`deploy`, `publish`, `package`, `lint`, `check`, usw.) über die vier oben genannten Kern-Tasks hinaus.
 
 Siehe den Guide zum [Maven-Plugin](maven-plugin.md) für das Gegenstück
 auf der Maven-Seite - beide Plugins kapseln dieselbe zugrunde liegende
