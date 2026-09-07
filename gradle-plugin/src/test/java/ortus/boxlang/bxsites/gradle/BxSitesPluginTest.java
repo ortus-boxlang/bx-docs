@@ -207,6 +207,25 @@ class BxSitesPluginTest {
     }
 
     @Test
+    void apply_registersTheJavadocDocTask(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        assertNotNull(project.getTasks().findByName("bxSitesJavadocDoc"));
+    }
+
+    @Test
+    void springBootJavadocExtension_hasSensibleDefaults(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        var javadoc = project.getExtensions().getByType(BxSitesExtension.class).getSpringBoot().getJavadoc();
+
+        assertFalse(javadoc.getEnabled().get());
+        assertEquals("api/javadoc", javadoc.getPagePathPrefix().get());
+        assertEquals(java.util.List.of("api", "javadoc"), javadoc.getTags().get());
+        assertTrue(javadoc.getSourceFiles().isEmpty());
+    }
+
+    @Test
     void extension_hookIntoAssembleTrue_wiresBxSitesBuildIntoAssemble(@TempDir Path projectDir) {
         // BxSitesPlugin registers its `assemble` wiring via Tasks.named(...),
         // which defers evaluation until `assemble` is actually realized/

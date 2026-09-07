@@ -19,6 +19,7 @@ import ortus.boxlang.bxsites.gradle.tasks.AbstractBxSitesVerbTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesBuildTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesDeployTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesDoctorTask;
+import ortus.boxlang.bxsites.gradle.tasks.BxSitesJavadocDocTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesLintTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesNewTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesOpenApiDocTask;
@@ -155,6 +156,20 @@ public class BxSitesPlugin implements Plugin<Project> {
             task.getOpenApiAssetsDir().set(task.getContentDir().dir("assets/openapi"));
             task.getPageFile().set(task.getContentDir().flatMap(dir -> task.getPagePath().map(dir::file)));
             task.onlyIf(t -> openApi.getEnabled().get());
+        });
+
+        project.getTasks().register("bxSitesJavadocDoc", BxSitesJavadocDocTask.class, task -> {
+            task.setGroup("bx-sites");
+            task.setDescription("Emits one Markdown page per public top-level Java type.");
+            var javadoc = extension.getSpringBoot().getJavadoc();
+            task.getSourceFiles().from(javadoc.getSourceFiles());
+            task.getContentDir().set(project.getLayout().dir(
+                    project.provider(() -> resolveContentDir(project,
+                            extension.getProjectRoot().get().getAsFile().toPath()).toFile())));
+            task.getPagePathPrefix().set(javadoc.getPagePathPrefix());
+            task.getTags().set(javadoc.getTags());
+            task.getJavadocPagesDir().set(task.getContentDir().dir(javadoc.getPagePathPrefix()));
+            task.onlyIf(t -> javadoc.getEnabled().get());
         });
 
         project.getTasks().named("assemble", task -> {

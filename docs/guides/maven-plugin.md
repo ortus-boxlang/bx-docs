@@ -153,10 +153,47 @@ Swagger UI renders entirely client-side, so per-endpoint text never
 reaches bx-sites' own search index - only the wrapper page's
 title/frontmatter is indexed.
 
-**Javadoc and controller-scan generation** - planned, not yet built.
+`bxsites:javadoc` emits one Markdown page per public top-level Java type,
+using the JDK's own Javadoc doclet SPI in-process (no `javadoc`
+subprocess). Not bound to any lifecycle phase by default:
+
+```bash
+mvn bxsites:javadoc
+```
+
+```xml title="pom.xml"
+<plugin>
+  <groupId>io.boxlang</groupId>
+  <artifactId>bxsites-maven-plugin</artifactId>
+  <configuration>
+    <sourceRoots>${project.compileSourceRoots}</sourceRoots>  <!-- this is the default -->
+    <pagePathPrefix>api/javadoc</pagePathPrefix>              <!-- this is the default -->
+    <tags><tag>api</tag><tag>javadoc</tag></tags>             <!-- this is the default -->
+  </configuration>
+</plugin>
+```
+
+**Deliberately scoped down for v1, not a complete Javadoc-to-Markdown
+converter** - this is the heaviest of the three Spring Boot generators
+and a full doclet-spec-compliant implementation is a much larger effort
+than this milestone budgeted for. What it covers: public/protected
+constructors and methods of public top-level types (nested and
+package-private types, and fields, are skipped entirely), each member's
+own doc comment (not inherited ones), and `@param`/`@return`/`@throws`/
+`@deprecated` tags. What it deliberately doesn't do yet: inline HTML in
+doc comments is stripped rather than converted to Markdown (a best-effort
+text extraction, not a full HTML-to-Markdown converter); `{@link}`/
+`{@see}` render as inline code with no cross-page hyperlink resolution;
+no index/nav page is generated - wiring pages into your site's own
+navigation is left to you. Runs against source files directly, so records'
+compiler-generated accessors/`toString`/`equals`/`hashCode` show up too,
+matching the standard `javadoc` tool's own behavior.
+
+**Controller-scan generation** - planned, not yet built.
 
 ## What's not built yet
 
+- **Controller/endpoint reflection-scan generation** - planned.
 - **`bxsites:serve`'s live output streaming** - currently buffers output with a 30-minute timeout, both wrong for a goal meant to run indefinitely.
 
 See the [Gradle Plugin](gradle-plugin.md) guide for the equivalent on the

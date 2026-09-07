@@ -186,6 +186,46 @@ class BxSitesPluginFunctionalTest {
         Files.writeString(projectDir.resolve("build.gradle.kts"), extra, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
     }
 
+    @Test
+    void bxSitesJavadocDoc_isSkippedByDefault() {
+        BuildResult result = runner("bxSitesJavadocDoc").build();
+
+        assertEquals(SKIPPED, result.task(":bxSitesJavadocDoc").getOutcome());
+    }
+
+    @Test
+    void bxSitesJavadocDoc_generatesAPageForAPublicJavaType() throws IOException {
+        Path sourceFile = projectDir.resolve("src").resolve("main").resolve("java")
+                .resolve("com").resolve("example").resolve("Widget.java");
+        Files.createDirectories(sourceFile.getParent());
+        Files.writeString(sourceFile, """
+                package com.example;
+
+                /** A single widget on a shelf. */
+                public class Widget {
+                }
+                """);
+        appendToBuildScript("""
+                bxSites {
+                    springBoot {
+                        javadoc {
+                            enabled.set(true)
+                            sourceFiles.from("src/main/java/com/example/Widget.java")
+                        }
+                    }
+                }
+                """);
+
+        BuildResult result = runner("bxSitesJavadocDoc").build();
+
+        assertEquals(SUCCESS, result.task(":bxSitesJavadocDoc").getOutcome());
+        Path page = projectDir.resolve("docs").resolve("api").resolve("javadoc")
+                .resolve("com").resolve("example").resolve("Widget.md");
+        String content = Files.readString(page);
+        assertTrue(content.contains("title: \"Widget\""));
+        assertTrue(content.contains("A single widget on a shelf."));
+    }
+
     private static void deleteRecursively(Path root) {
         if (!Files.exists(root)) {
             return;

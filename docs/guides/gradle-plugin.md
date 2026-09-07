@@ -118,10 +118,44 @@ Swagger UI renders entirely client-side, so per-endpoint text never
 reaches bx-sites' own search index - only the wrapper page's
 title/frontmatter is indexed.
 
-**Javadoc and controller-scan generation** - planned, not yet built.
+`bxSitesJavadocDoc` emits one Markdown page per public top-level Java
+type, using the JDK's own Javadoc doclet SPI in-process (no `javadoc`
+subprocess). Also opt-in, not wired into any lifecycle by default:
+
+```kotlin title="build.gradle.kts"
+bxSites {
+    springBoot {
+        javadoc {
+            enabled.set(true)
+            sourceFiles.from(sourceSets.getByName("main").allJava)
+            pagePathPrefix.set("api/javadoc")   // this is the default
+            tags.set(listOf("api", "javadoc"))  // this is the default
+        }
+    }
+}
+```
+
+**Deliberately scoped down for v1, not a complete Javadoc-to-Markdown
+converter** - this is the heaviest of the three Spring Boot generators
+and a full doclet-spec-compliant implementation is a much larger effort
+than this milestone budgeted for. What it covers: public/protected
+constructors and methods of public top-level types (nested and
+package-private types, and fields, are skipped entirely), each member's
+own doc comment (not inherited ones), and `@param`/`@return`/`@throws`/
+`@deprecated` tags. What it deliberately doesn't do yet: inline HTML in
+doc comments is stripped rather than converted to Markdown (a best-effort
+text extraction, not a full HTML-to-Markdown converter); `{@link}`/
+`{@see}` render as inline code with no cross-page hyperlink resolution;
+no index/nav page is generated - wiring pages into your site's own
+navigation is left to you. Runs against source files directly, so records'
+compiler-generated accessors/`toString`/`equals`/`hashCode` show up too,
+matching the standard `javadoc` tool's own behavior.
+
+**Controller-scan generation** - planned, not yet built.
 
 ## What's not built yet
 
+- **Controller/endpoint reflection-scan generation** - planned.
 - **`bxSitesServe`'s live output streaming** - currently buffers output with a 30-minute timeout, both wrong for a task meant to run indefinitely.
 
 See the [Maven Plugin](maven-plugin.md) guide for the equivalent on the

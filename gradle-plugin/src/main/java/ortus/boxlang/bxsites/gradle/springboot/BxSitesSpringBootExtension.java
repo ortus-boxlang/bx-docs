@@ -16,10 +16,12 @@ import org.gradle.api.Project;
 public abstract class BxSitesSpringBootExtension {
 
     private final BxSitesOpenApiExtension openApi;
+    private final BxSitesJavadocExtension javadoc;
 
     @Inject
     public BxSitesSpringBootExtension(Project project) {
         openApi = project.getObjects().newInstance(BxSitesOpenApiExtension.class, project);
+        javadoc = project.getObjects().newInstance(BxSitesJavadocExtension.class, project);
     }
 
     public BxSitesOpenApiExtension getOpenApi() {
@@ -28,5 +30,13 @@ public abstract class BxSitesSpringBootExtension {
 
     public void openApi(Action<? super BxSitesOpenApiExtension> action) {
         action.execute(openApi);
+    }
+
+    public BxSitesJavadocExtension getJavadoc() {
+        return javadoc;
+    }
+
+    public void javadoc(Action<? super BxSitesJavadocExtension> action) {
+        action.execute(javadoc);
     }
 }
