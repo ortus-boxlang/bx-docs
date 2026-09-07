@@ -1,8 +1,13 @@
 plugins {
     `java-gradle-plugin`
+    id("com.gradle.plugin-publish") version "1.3.1"
 }
 
-group = "com.ortussolutions.bxsites"
+// io.boxlang is the Sonatype-verified namespace BoxLang's own runtime jars
+// already publish under - kept consistent with maven-plugin/core even
+// though the Gradle Plugin Portal itself doesn't require domain
+// verification the way Maven Central does.
+group = "io.boxlang"
 version = "0.1.0-SNAPSHOT"
 
 java {
@@ -16,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.ortussolutions.bxsites:bxsites-core")
+    implementation("io.boxlang:bxsites-core")
 
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -27,12 +32,18 @@ dependencies {
 }
 
 gradlePlugin {
+    // Required by the Gradle Plugin Portal (com.gradle.plugin-publish) -
+    // publishing fails without these two.
+    website.set("https://github.com/ortus-boxlang/bx-sites")
+    vcsUrl.set("https://github.com/ortus-boxlang/bx-sites.git")
+
     plugins {
         create("bxSites") {
-            id = "com.ortussolutions.bxsites"
+            id = "io.boxlang.bxsites"
             implementationClass = "ortus.boxlang.bxsites.gradle.BxSitesPlugin"
             displayName = "BX Sites"
             description = "Generate a bx-sites documentation site from a Gradle build, with zero prerequisite installs beyond a JDK."
+            tags.set(listOf("boxlang", "documentation", "static-site", "bxsites"))
         }
     }
     // Wires up the functionalTest source set below as a Gradle TestKit-backed

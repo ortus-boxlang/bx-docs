@@ -40,7 +40,7 @@ class BxSitesPluginFunctionalTest {
         Files.writeString(projectDir.resolve("settings.gradle.kts"), "rootProject.name = \"functional-test-fixture\"\n");
         Files.writeString(projectDir.resolve("build.gradle.kts"), """
                 plugins {
-                    id("com.ortussolutions.bxsites")
+                    id("io.boxlang.bxsites")
                 }
                 """);
     }

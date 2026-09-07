@@ -1,0 +1,66 @@
+# Publishes the bx-sites Maven plugin (and shades in core/) to Maven
+# Central via the Sonatype Central Portal, mirroring how the boxlang
+# runtime repo (ortus-boxlang/boxlang) does the same thing with Gradle's
+# maven-publish + signing + com.gradleup.nmcp.aggregation - see
+# .github/workflows/release.yml there for the reference implementation
+# this one is adapted from. Same four secrets, same Central Portal account:
+#   MAVEN_USERNAME / MAVEN_PASSWORD - the Central Portal user token
+#     (generate one at https://central.sonatype.com/account under
+#     "Generate User Token" - it gives you this username/password pair,
+#     it is not your login password).
+#   GPG_KEY / GPG_PASSWORD - the ASCII-armored private signing key
+#     (`gpg --armor --export-secret-keys KEYID`) and its passphrase.
+# If these already exist as org-level or boxlang-repo secrets and this repo
+# can see them, nothing further to add; otherwise copy them into this
+# repo's own Settings -> Secrets.
+name: Maven Plugin Release
+
+on:
+  push:
+    tags:
+      - "maven-plugin-v*"
+
+jobs:
+  publish:
+    name: Publish to Maven Central
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          # Writes ~/.m2/settings.xml's <server id="central"> block from
+          # these two env vars - matches <publishingServerId>central</...>
+          # in maven-plugin/pom.xml's central-release profile.
+          server-id: central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Publish core/ to the local Maven repository
+        working-directory: core
+        run: ./gradlew publishToMavenLocal --stacktrace
+
+      - name: Import GPG signing key
+        run: |
+          echo "${GPG_KEY}" | gpg --batch --import
+        env:
+          GPG_KEY: ${{ secrets.GPG_KEY }}
+
+      - name: Test before publishing
+        working-directory: maven-plugin
+        run: mvn --batch-mode verify
+
+      - name: Publish to Maven Central
+        working-directory: maven-plugin
+        run: mvn --batch-mode -Pcentral-release -DskipTests deploy -Dgpg.passphrase="${GPG_PASSWORD}"
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}

@@ -7,10 +7,21 @@ on:
       - "master"
       - "development"
       - "releases/v*"
+    # The Java subprojects (core/, gradle-plugin/, maven-plugin/) have their
+    # own CI (gradle-plugin-ci.yml, maven-plugin-ci.yml) and build/test with
+    # entirely different tooling - keep the two decoupled.
+    paths-ignore:
+      - "core/**"
+      - "gradle-plugin/**"
+      - "maven-plugin/**"
   pull_request:
     branches:
       - "releases/v*"
       - development
+    paths-ignore:
+      - "core/**"
+      - "gradle-plugin/**"
+      - "maven-plugin/**"
 
 jobs:
   tests:

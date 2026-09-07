@@ -1,0 +1,40 @@
+name: Gradle Plugin CI
+
+on:
+  push:
+    branches: [development, main, master]
+    paths:
+      - "core/**"
+      - "gradle-plugin/**"
+      - ".github/workflows/gradle-plugin-ci.yml"
+  pull_request:
+    paths:
+      - "core/**"
+      - "gradle-plugin/**"
+      - ".github/workflows/gradle-plugin-ci.yml"
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # core/ is never published anywhere - gradle-plugin resolves it as a
+      # composite build (see gradle-plugin/settings.gradle.kts), so nothing
+      # extra is needed here; Gradle builds core as part of the same
+      # invocation automatically.
+
+      - name: Build & Test gradle-plugin (unit + functional)
+        working-directory: gradle-plugin
+        run: ./gradlew check --stacktrace

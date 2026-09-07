@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.ortussolutions.bxsites.it</groupId>
+  <groupId>io.boxlang.bxsites.it</groupId>
   <artifactId>plain-docs-project</artifactId>
   <version>0.0.1</version>
   <packaging>pom</packaging>

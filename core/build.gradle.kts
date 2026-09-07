@@ -3,7 +3,12 @@ plugins {
     `maven-publish`
 }
 
-group = "com.ortussolutions.bxsites"
+// Matches io.boxlang - the Sonatype-verified namespace BoxLang's own
+// runtime jars already publish under (io.boxlang:boxlang, :boxlang-miniserver).
+// core itself is never actually published there (see the publishing note
+// below) - this just keeps local coordinates consistent with the plugins
+// that consume it.
+group = "io.boxlang"
 version = "0.1.0-SNAPSHOT"
 
 java {

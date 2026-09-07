@@ -1,0 +1,42 @@
+name: Maven Plugin CI
+
+on:
+  push:
+    branches: [development, main, master]
+    paths:
+      - "core/**"
+      - "maven-plugin/**"
+      - ".github/workflows/maven-plugin-ci.yml"
+  pull_request:
+    paths:
+      - "core/**"
+      - "maven-plugin/**"
+      - ".github/workflows/maven-plugin-ci.yml"
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      # core/ is a Gradle project; maven-plugin resolves it from the local
+      # Maven repository (Maven has no composite-build equivalent) - see
+      # core/build.gradle.kts's publishing note.
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Publish core/ to the local Maven repository
+        working-directory: core
+        run: ./gradlew publishToMavenLocal --stacktrace
+
+      - name: Build & Test maven-plugin (unit + integration)
+        working-directory: maven-plugin
+        run: mvn --batch-mode verify
