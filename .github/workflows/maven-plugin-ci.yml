@@ -36,6 +36,13 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # publishToMavenLocal doesn't imply `check` - without this, core's own
+      # unit tests never gated this workflow despite core/** being in its
+      # path filter.
+      - name: Build & Test core (unit)
+        working-directory: core
+        run: ./gradlew check --stacktrace
+
       - name: Publish core/ to the local Maven repository
         working-directory: core
         run: ./gradlew publishToMavenLocal --stacktrace
