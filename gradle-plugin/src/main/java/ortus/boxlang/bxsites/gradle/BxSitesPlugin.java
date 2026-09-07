@@ -1,8 +1,12 @@
 package ortus.boxlang.bxsites.gradle;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.BasePlugin;
+import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.tasks.Delete;
 
 import ortus.boxlang.bxsites.core.ConfigFileResolver;
@@ -44,7 +48,7 @@ public class BxSitesPlugin implements Plugin<Project> {
             task.setDescription("Builds the bx-sites documentation site.");
             wireCommonProperties(task, extension, provision.get());
             task.getContentDir().set(project.getLayout().dir(
-                    project.provider(() -> ContentDirResolver.resolve(
+                    project.provider(() -> resolveContentDir(project,
                             extension.getProjectRoot().get().getAsFile().toPath()).toFile())));
             // Only contributed when it actually exists - see BxSitesBuildTask's
             // own javadoc on why this is a file collection, not @InputFile.
@@ -81,6 +85,21 @@ public class BxSitesPlugin implements Plugin<Project> {
                 task.dependsOn(project.getTasks().named("bxSitesBuild"));
             }
         });
+    }
+
+    /**
+     * {@link ContentDirResolver#resolve} falls back to {@code src/} when
+     * {@code docs/} doesn't exist yet - correct for a standalone docs
+     * project, but wrong for this plugin's headline use case (adding docs
+     * to an existing Java project): in a project with the Java plugin
+     * applied, {@code src/} is the Java source root, not bx-sites content.
+     * Never fall back to it there - default to {@code docs/} instead,
+     * matching what {@code bxSitesNew} would scaffold into anyway.
+     */
+    private static Path resolveContentDir(Project project, Path projectRoot) {
+        Path docs = projectRoot.resolve("docs");
+        boolean skipSrcFallback = Files.isDirectory(docs) || project.getPlugins().hasPlugin(JavaBasePlugin.class);
+        return skipSrcFallback ? docs : ContentDirResolver.resolve(projectRoot);
     }
 
     private static void wireCommonProperties(AbstractBxSitesVerbTask task, BxSitesExtension extension, BxSitesProvisionTask provision) {

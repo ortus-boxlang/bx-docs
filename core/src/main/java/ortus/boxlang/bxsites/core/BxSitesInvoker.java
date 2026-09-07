@@ -64,6 +64,8 @@ public final class BxSitesInvoker {
     public InvocationResult invoke(BxSitesVerb verb, Path projectRoot, List<String> extraArgs, Path expectedOutput) {
         List<String> command = buildCommand(miniserverJar, verb, projectRoot, extraArgs);
 
+        ensureProjectRootExistsForScaffoldingVerb(verb, projectRoot);
+
         ProcessBuilder pb = new ProcessBuilder(command)
                 .redirectErrorStream(true)
                 .directory(projectRoot.toFile());
@@ -131,6 +133,25 @@ public final class BxSitesInvoker {
         command.add("--projectRoot=" + projectRoot.toAbsolutePath());
         command.addAll(extraArgs);
         return command;
+    }
+
+    /**
+     * `new`'s whole purpose is scaffolding into a project root that may not
+     * exist yet (e.g. a fresh subdirectory) - every other verb expects an
+     * already-existing project and should keep failing loudly if
+     * {@code projectRoot} is missing, but {@link ProcessBuilder} itself
+     * would otherwise throw an opaque "No such file or directory"
+     * {@link IOException} here for this one verb specifically.
+     */
+    static void ensureProjectRootExistsForScaffoldingVerb(BxSitesVerb verb, Path projectRoot) {
+        if (verb != BxSitesVerb.NEW) {
+            return;
+        }
+        try {
+            Files.createDirectories(projectRoot);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to create project root " + projectRoot, e);
+        }
     }
 
     /**

@@ -75,6 +75,30 @@ class BxSitesPluginTest {
     }
 
     @Test
+    void bxSitesBuild_contentDirFallsBackToSrcWhenNoJavaPluginIsApplied(@TempDir Path projectDir) throws IOException {
+        Files.createDirectories(projectDir.resolve("src"));
+        Project project = newProject(projectDir);
+
+        BxSitesBuildTask build = (BxSitesBuildTask) project.getTasks().getByName("bxSitesBuild");
+
+        assertEquals(projectDir.resolve("src"), build.getContentDir().get().getAsFile().toPath());
+    }
+
+    @Test
+    void bxSitesBuild_contentDirNeverFallsBackToSrcWhenTheJavaPluginIsApplied(@TempDir Path projectDir) throws IOException {
+        // src/ is the Java source root here, not bx-sites content - falling
+        // back to it would silently point the docs build at Java sources.
+        Files.createDirectories(projectDir.resolve("src").resolve("main").resolve("java"));
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
+        project.getPluginManager().apply("java");
+        project.getPluginManager().apply(BxSitesPlugin.class);
+
+        BxSitesBuildTask build = (BxSitesBuildTask) project.getTasks().getByName("bxSitesBuild");
+
+        assertEquals(projectDir.resolve("docs"), build.getContentDir().get().getAsFile().toPath());
+    }
+
+    @Test
     void bxSitesBuild_configFileIsEmptyWhenNoConfigFileExists(@TempDir Path projectDir) {
         Project project = newProject(projectDir);
 

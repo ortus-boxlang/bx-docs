@@ -97,4 +97,22 @@ class BxSitesInvokerTest {
         // Verbs like `serve`/`new` have no single defined output file to check.
         assertTrue(BxSitesInvoker.evaluateSuccess(0, "Created new BX Sites project\n", null));
     }
+
+    @Test
+    void ensureProjectRootExists_createsTheDirectoryForTheNewVerb(@TempDir Path tmp) {
+        Path freshSubdir = tmp.resolve("does-not-exist-yet").resolve("nested");
+
+        BxSitesInvoker.ensureProjectRootExistsForScaffoldingVerb(BxSitesVerb.NEW, freshSubdir);
+
+        assertTrue(Files.isDirectory(freshSubdir), "new should scaffold into a project root that doesn't exist yet");
+    }
+
+    @Test
+    void ensureProjectRootExists_leavesOtherVerbsAlone(@TempDir Path tmp) {
+        Path missing = tmp.resolve("does-not-exist");
+
+        BxSitesInvoker.ensureProjectRootExistsForScaffoldingVerb(BxSitesVerb.BUILD, missing);
+
+        assertFalse(Files.exists(missing), "only `new` should create a missing project root - build/serve/etc. expect one to already exist");
+    }
 }
