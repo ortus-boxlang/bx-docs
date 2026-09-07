@@ -20,7 +20,13 @@ class{
 			"^site$",
 			"^\.cache$",
 			"^examples$",
-			"^apidocs$"
+			"^apidocs$",
+			// Java/Gradle/Maven build-tool plugins - net-new, self-contained
+			// Java subprojects living alongside the BoxLang module (own
+			// build/CI/release pipeline), never part of the module itself.
+			"^core$",
+			"^gradle-plugin$",
+			"^maven-plugin$"
 	    ];
 	    // Current working directories
 	    cwd = server.cli.executionPath & "/";
