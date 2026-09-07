@@ -226,6 +226,93 @@ class BxSitesPluginFunctionalTest {
         assertTrue(content.contains("A single widget on a shelf."));
     }
 
+    @Test
+    void bxSitesControllerScanDoc_isSkippedByDefaultWhenOpenApiIsAlsoOff() {
+        BuildResult result = runner("bxSitesControllerScanDoc").build();
+
+        // Default policy: enabled unless openApi is on - openApi is off by
+        // default too here, so this should actually run (successfully,
+        // producing zero pages since classesDir/runtimeClasspath are unset).
+        assertEquals(SUCCESS, result.task(":bxSitesControllerScanDoc").getOutcome());
+    }
+
+    @Test
+    void bxSitesControllerScanDoc_isSkippedWhenOpenApiIsEnabled() throws IOException {
+        appendToBuildScript("""
+                bxSites {
+                    springBoot {
+                        openApi {
+                            enabled.set(true)
+                        }
+                    }
+                }
+                """);
+
+        BuildResult result = runner("bxSitesControllerScanDoc").build();
+
+        assertEquals(SKIPPED, result.task(":bxSitesControllerScanDoc").getOutcome());
+    }
+
+    @Test
+    void bxSitesControllerScanDoc_findsARealSpringControllerInAForkedJvm() throws IOException {
+        // Needs real network - resolves spring-web/spring-context from Maven
+        // Central, same as this fixture already needs it for the plugin's
+        // own provisioning elsewhere in this test class.
+        Path controllerFile = projectDir.resolve("src").resolve("main").resolve("java")
+                .resolve("com").resolve("example").resolve("BookController.java");
+        Files.createDirectories(controllerFile.getParent());
+        Files.writeString(controllerFile, """
+                package com.example;
+
+                import org.springframework.web.bind.annotation.GetMapping;
+                import org.springframework.web.bind.annotation.RequestMapping;
+                import org.springframework.web.bind.annotation.RestController;
+
+                @RestController
+                @RequestMapping("/api/books")
+                public class BookController {
+                    @GetMapping
+                    public String list() {
+                        return "[]";
+                    }
+                }
+                """);
+        Files.writeString(projectDir.resolve("build.gradle.kts"), """
+                plugins {
+                    id("io.boxlang.bxsites")
+                    java
+                }
+                repositories {
+                    mavenCentral()
+                }
+                dependencies {
+                    implementation("org.springframework:spring-web:6.1.13")
+                    implementation("org.springframework:spring-context:6.1.13")
+                }
+                bxSites {
+                    springBoot {
+                        controllerScan {
+                            enabled.set(true)
+                            classesDir.set(layout.buildDirectory.dir("classes/java/main"))
+                            runtimeClasspath.from(configurations.getByName("runtimeClasspath"))
+                        }
+                    }
+                }
+                tasks.named("bxSitesControllerScanDoc") {
+                    dependsOn("compileJava")
+                }
+                """);
+
+        BuildResult result = runner("bxSitesControllerScanDoc").build();
+
+        assertEquals(SUCCESS, result.task(":bxSitesControllerScanDoc").getOutcome());
+        Path page = projectDir.resolve("docs").resolve("api").resolve("controllers")
+                .resolve("com").resolve("example").resolve("BookController.md");
+        String content = Files.readString(page);
+        assertTrue(content.contains("title: \"BookController\""));
+        assertTrue(content.contains("| GET | `/api/books` |"));
+    }
+
     private static void deleteRecursively(Path root) {
         if (!Files.exists(root)) {
             return;

@@ -25,6 +25,15 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // Test-only, never a main/runtime dependency of this module (which stays
+    // Spring-agnostic, resolving Spring's annotations purely by name via
+    // reflection at scan time - see ControllerScanGenerator). Used here only
+    // to write real, compiled Spring-annotated fixture classes so
+    // ControllerScanGeneratorTest exercises the real annotation types, not
+    // fakes standing in for them.
+    testImplementation("org.springframework:spring-web:6.1.13")
+    testImplementation("org.springframework:spring-context:6.1.13")
 }
 
 tasks.test {

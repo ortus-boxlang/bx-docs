@@ -189,11 +189,43 @@ navigation is left to you. Runs against source files directly, so records'
 compiler-generated accessors/`toString`/`equals`/`hashCode` show up too,
 matching the standard `javadoc` tool's own behavior.
 
-**Controller-scan generation** - planned, not yet built.
+`bxsites:controller-scan` reflection-scans compiled classes for Spring
+MVC controllers and emits one page per controller listing its mapped
+endpoints - the fallback generator, for projects without OpenAPI
+generation on. Not bound to any lifecycle phase by default:
+
+```bash
+mvn bxsites:controller-scan
+```
+
+```xml title="pom.xml"
+<plugin>
+  <groupId>io.boxlang</groupId>
+  <artifactId>bxsites-maven-plugin</artifactId>
+  <configuration>
+    <classesDir>${project.build.outputDirectory}</classesDir>  <!-- this is the default -->
+    <pagePathPrefix>api/controllers</pagePathPrefix>           <!-- this is the default -->
+    <tags><tag>api</tag><tag>controllers</tag></tags>          <!-- this is the default -->
+  </configuration>
+</plugin>
+```
+
+Runs the scan in a forked JVM against your project's own runtime
+classpath (Spring included, resolved via `project.getRuntimeClasspathElements()`)
+- never in this plugin's own JVM, which stays Spring-agnostic. Requires
+`requiresDependencyResolution=RUNTIME`, so bind it after `compile` if you
+wire it into your own build (e.g. to `process-classes`). **Deliberately
+scoped down**: only classes directly annotated
+`@Controller`/`@RestController` are recognized (a custom stereotype
+annotation built on `@Controller` isn't); only directly annotated
+`@RequestMapping`/`@GetMapping`/`@PostMapping`/`@PutMapping`/
+`@DeleteMapping`/`@PatchMapping` methods are recognized; nested classes
+are skipped; and since reflection has no access to source-level doc
+comments, generated pages list endpoints (method, path, handler
+signature) with no per-endpoint description text.
 
 ## What's not built yet
 
-- **Controller/endpoint reflection-scan generation** - planned.
 - **`bxsites:serve`'s live output streaming** - currently buffers output with a 30-minute timeout, both wrong for a goal meant to run indefinitely.
 
 See the [Gradle Plugin](gradle-plugin.md) guide for the equivalent on the

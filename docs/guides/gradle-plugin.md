@@ -151,11 +151,38 @@ navigation is left to you. Runs against source files directly, so records'
 compiler-generated accessors/`toString`/`equals`/`hashCode` show up too,
 matching the standard `javadoc` tool's own behavior.
 
-**Controller-scan generation** - planned, not yet built.
+`bxSitesControllerScanDoc` reflection-scans compiled classes for Spring
+MVC controllers and emits one page per controller listing its mapped
+endpoints - the fallback generator, for projects without OpenAPI
+generation on:
+
+```kotlin title="build.gradle.kts"
+bxSites {
+    springBoot {
+        controllerScan {
+            // enabled defaults to true unless springBoot.openApi.enabled is true
+            classesDir.set(layout.buildDirectory.dir("classes/java/main"))
+            runtimeClasspath.from(configurations.getByName("runtimeClasspath"))
+            pagePathPrefix.set("api/controllers")     // this is the default
+            tags.set(listOf("api", "controllers"))    // this is the default
+        }
+    }
+}
+```
+
+Runs the scan in a forked JVM against your project's own runtime
+classpath (Spring included) - never in this plugin's own JVM, which stays
+Spring-agnostic. **Deliberately scoped down**: only classes directly
+annotated `@Controller`/`@RestController` are recognized (a custom
+stereotype annotation built on `@Controller` isn't); only directly
+annotated `@RequestMapping`/`@GetMapping`/`@PostMapping`/`@PutMapping`/
+`@DeleteMapping`/`@PatchMapping` methods are recognized; nested classes
+are skipped; and since reflection has no access to source-level doc
+comments, generated pages list endpoints (method, path, handler
+signature) with no per-endpoint description text.
 
 ## What's not built yet
 
-- **Controller/endpoint reflection-scan generation** - planned.
 - **`bxSitesServe`'s live output streaming** - currently buffers output with a 30-minute timeout, both wrong for a task meant to run indefinitely.
 
 See the [Maven Plugin](maven-plugin.md) guide for the equivalent on the

@@ -17,6 +17,7 @@ import ortus.boxlang.bxsites.core.SiteDirResolver;
 import ortus.boxlang.bxsites.core.provisioning.ArtifactCoordinates;
 import ortus.boxlang.bxsites.gradle.tasks.AbstractBxSitesVerbTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesBuildTask;
+import ortus.boxlang.bxsites.gradle.tasks.BxSitesControllerScanDocTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesDeployTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesDoctorTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesJavadocDocTask;
@@ -170,6 +171,21 @@ public class BxSitesPlugin implements Plugin<Project> {
             task.getTags().set(javadoc.getTags());
             task.getJavadocPagesDir().set(task.getContentDir().dir(javadoc.getPagePathPrefix()));
             task.onlyIf(t -> javadoc.getEnabled().get());
+        });
+
+        project.getTasks().register("bxSitesControllerScanDoc", BxSitesControllerScanDocTask.class, task -> {
+            task.setGroup("bx-sites");
+            task.setDescription("Reflection-scans compiled classes for Spring MVC controllers and emits one page per controller.");
+            var controllerScan = extension.getSpringBoot().getControllerScan();
+            task.getClassesDir().set(controllerScan.getClassesDir());
+            task.getRuntimeClasspath().from(controllerScan.getRuntimeClasspath());
+            task.getContentDir().set(project.getLayout().dir(
+                    project.provider(() -> resolveContentDir(project,
+                            extension.getProjectRoot().get().getAsFile().toPath()).toFile())));
+            task.getPagePathPrefix().set(controllerScan.getPagePathPrefix());
+            task.getTags().set(controllerScan.getTags());
+            task.getControllerPagesDir().set(task.getContentDir().dir(controllerScan.getPagePathPrefix()));
+            task.onlyIf(t -> controllerScan.getEnabled().get());
         });
 
         project.getTasks().named("assemble", task -> {
