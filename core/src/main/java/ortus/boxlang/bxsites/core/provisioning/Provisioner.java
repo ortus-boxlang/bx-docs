@@ -83,11 +83,46 @@ public final class Provisioner {
      *
      * @return {@code boxlangHomeDir}, for convenience chaining
      */
-    public Path provisionBoxlangHome(String bxSitesVersion, Path boxlangHomeDir) {
-        Path moduleDir = boxlangHomeDir.resolve("modules").resolve(ArtifactCoordinates.BXSITES_MODULE_MAPPING_NAME);
-        if (Files.exists(moduleDir.resolve("ModuleConfig.bx"))) {
-            return boxlangHomeDir;
+public Path provisionBoxlangHome(String bxSitesVersion, Path boxlangHomeDir) {
+    Path moduleDir = boxlangHomeDir.resolve("modules").resolve(ArtifactCoordinates.BXSITES_MODULE_MAPPING_NAME);
+    Path versionMarker = moduleDir.resolve(".bxsites-version");
+
+    if (Files.exists(moduleDir.resolve("ModuleConfig.bx")) && Files.exists(versionMarker)) {
+        try {
+            if (bxSitesVersion.equals(Files.readString(versionMarker).trim())) {
+                return boxlangHomeDir;
+            }
+        } catch (IOException e) {
+            // Fall through to reprovision.
         }
+    }
+
+    if (Files.exists(moduleDir)) {
+        try (var walk = Files.walk(moduleDir)) {
+            walk.sorted(java.util.Comparator.reverseOrder()).forEach(path -> {
+                try {
+                    Files.deleteIfExists(path);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (UncheckedIOException e) {
+            throw new UncheckedIOException("Failed to clear existing " + moduleDir + " for reprovision", e.getCause());
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to clear existing " + moduleDir + " for reprovision", e);
+        }
+    }
+
+    Path zip = resolveWithDepsZip(bxSitesVersion);
+    try {
+        Files.createDirectories(moduleDir);
+        unzip(zip, moduleDir);
+        Files.writeString(versionMarker, bxSitesVersion, java.nio.charset.StandardCharsets.UTF_8);
+    } catch (IOException e) {
+        throw new UncheckedIOException("Failed to unpack " + zip + " into " + moduleDir, e);
+    }
+    return boxlangHomeDir;
+}
         Path zip = resolveWithDepsZip(bxSitesVersion);
         try {
             Files.createDirectories(moduleDir);
