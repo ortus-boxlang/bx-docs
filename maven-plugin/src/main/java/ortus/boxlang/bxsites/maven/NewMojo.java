@@ -5,7 +5,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import ortus.boxlang.bxsites.core.BxSitesVerb;
 
 /** {@code mvn bxsites:new} - scaffolds a new bx-sites project (content dir + config file). */
-@Mojo(name = "new")
+@Mojo(name = "new", threadSafe = true)
 public class NewMojo extends AbstractBxSitesMojo {
 
     @Override

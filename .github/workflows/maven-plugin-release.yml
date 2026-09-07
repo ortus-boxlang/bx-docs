@@ -68,14 +68,30 @@ jobs:
       # (matching the boxlang runtime repo's own convention, which gates
       # its Central Portal publish step behind the same non-snapshot check),
       # so every tagged release still needs a real version set here.
+      #
+      # Pinned to a specific versions-maven-plugin release (fully-qualified
+      # goal, not the bare `versions:set` prefix) so a release build never
+      # silently resolves whatever that plugin's latest happens to be on
+      # the day the tag is pushed.
       - name: Set the release version from the tag
         working-directory: maven-plugin
-        run: mvn --batch-mode versions:set -DnewVersion="${GITHUB_REF_NAME#maven-plugin-v}" -DgenerateBackupPoms=false
+        run: mvn --batch-mode org.codehaus.mojo:versions-maven-plugin:2.21.0:set -DnewVersion="${GITHUB_REF_NAME#maven-plugin-v}" -DgenerateBackupPoms=false
 
+      # -Dinvoker.skip=true: -DskipTests only skips the surefire unit tests -
+      # maven-invoker-plugin's own install/run goals (bound to
+      # integration-test, which `deploy` triggers as an earlier lifecycle
+      # phase) are a separate switch, and without this the release build ran
+      # the full network-backed invoker IT a second time (verify already ran
+      # it above), needlessly widening the release's failure surface.
+      #
+      # MAVEN_GPG_PASSPHRASE: maven-gpg-plugin reads this automatically
+      # (passphraseEnvName defaults to it since 3.2.0) - preferred over
+      # -Dgpg.passphrase, which the plugin itself documents as deprecated
+      # because it can leak the passphrase into process listings/logs.
       - name: Publish to Maven Central
         working-directory: maven-plugin
-        run: mvn --batch-mode -Pcentral-release -DskipTests deploy -Dgpg.passphrase="${GPG_PASSWORD}"
+        run: mvn --batch-mode -Pcentral-release -DskipTests -Dinvoker.skip=true deploy
         env:
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
-          GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSWORD }}

@@ -16,7 +16,7 @@ import ortus.boxlang.bxsites.core.BxSitesVerb;
  * live-streamed output. Live streaming and signal-forwarding are real,
  * not-yet-implemented follow-up work.
  */
-@Mojo(name = "serve")
+@Mojo(name = "serve", threadSafe = true)
 public class ServeMojo extends AbstractBxSitesMojo {
 
     @Override

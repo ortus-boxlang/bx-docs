@@ -128,6 +128,15 @@
         <version>3.7.0</version>
         <configuration>
           <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+          <!--
+            Isolated from the real ~/.m2 - without this, `invoker:install`
+            installs this plugin's own jar into the developer's/CI runner's
+            actual local repository, which can silently overwrite an
+            already-installed build of the same SNAPSHOT version (observed
+            during review: a plain `mvn verify` clobbered a previously
+            shaded, release-profile install with an unshaded one).
+          -->
+          <localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
           <goals>
             <goal>io.boxlang:bxsites-maven-plugin:${project.version}:build</goal>
           </goals>
@@ -177,6 +186,19 @@
                     </includes>
                   </artifactSet>
                   <createDependencyReducedPom>true</createDependencyReducedPom>
+                  <!--
+                    core has no runtime dependencies of its own today, so
+                    this is a no-op right now - but without it, the day core
+                    gains one, that dependency would silently vanish from
+                    both the shaded jar (only bxsites-core itself is in
+                    artifactSet.includes above) and the reduced POM (dropped
+                    along with bxsites-core, the default shade behavior),
+                    with no build-time warning - just a NoClassDefFoundError
+                    for whoever consumes the published plugin. This promotes
+                    such a dependency back to a normal, resolvable direct
+                    dependency of the reduced POM instead.
+                  -->
+                  <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                 </configuration>
               </execution>
             </executions>

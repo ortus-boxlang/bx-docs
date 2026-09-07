@@ -1,6 +1,7 @@
 package ortus.boxlang.bxsites.maven;
 
 import java.io.File;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,19 +35,19 @@ public abstract class AbstractBxSitesMojo extends AbstractMojo {
     static final String DEFAULT_MINISERVER_VERSION = "1.18.0-snapshot";
     static final String DEFAULT_BXSITES_VERSION = "1.0.0-snapshot";
 
-    @Parameter(defaultValue = "${project.basedir}", required = true)
+    @Parameter(property = "bxsites.projectRoot", defaultValue = "${project.basedir}", required = true)
     protected File projectRoot;
 
-    @Parameter(defaultValue = "${project.build.directory}/bxsites/boxlang-home", required = true)
+    @Parameter(property = "bxsites.boxlangHomeDir", defaultValue = "${project.build.directory}/bxsites/boxlang-home", required = true)
     protected File boxlangHomeDir;
 
-    @Parameter(defaultValue = DEFAULT_MINISERVER_VERSION, required = true)
+    @Parameter(property = "bxsites.boxlangMiniserverVersion", defaultValue = DEFAULT_MINISERVER_VERSION, required = true)
     protected String boxlangMiniserverVersion;
 
-    @Parameter(defaultValue = DEFAULT_BXSITES_VERSION, required = true)
+    @Parameter(property = "bxsites.bxSitesVersion", defaultValue = DEFAULT_BXSITES_VERSION, required = true)
     protected String bxSitesVersion;
 
-    @Parameter
+    @Parameter(property = "bxsites.extraArgs")
     protected List<String> extraArgs = new ArrayList<>();
 
     protected abstract BxSitesVerb verb();
@@ -58,17 +59,29 @@ public abstract class AbstractBxSitesMojo extends AbstractMojo {
 
     @Override
     public final void execute() throws MojoExecutionException {
-        Provisioner provisioner = new Provisioner(Downloader.httpClient(), BxSitesConfig.defaultCacheDir());
-        Path miniserverJar = provisioner.resolveMiniserverJar(boxlangMiniserverVersion);
-        Path boxlangHome = provisioner.provisionBoxlangHome(bxSitesVersion, boxlangHomeDir.toPath());
-        File expectedOutput = expectedOutputFile();
+        BxSitesInvoker.InvocationResult result;
+        try {
+            Provisioner provisioner = new Provisioner(Downloader.httpClient(), BxSitesConfig.defaultCacheDir());
+            Path miniserverJar = provisioner.resolveMiniserverJar(boxlangMiniserverVersion);
+            Path boxlangHome = provisioner.provisionBoxlangHome(bxSitesVersion, boxlangHomeDir.toPath());
+            File expectedOutput = expectedOutputFile();
 
-        BxSitesInvoker invoker = new BxSitesInvoker(miniserverJar, boxlangHome);
-        BxSitesInvoker.InvocationResult result = invoker.invoke(
-                verb(),
-                projectRoot.toPath(),
-                extraArgs,
-                expectedOutput == null ? null : expectedOutput.toPath());
+            BxSitesInvoker invoker = new BxSitesInvoker(miniserverJar, boxlangHome);
+            result = invoker.invoke(
+                    verb(),
+                    projectRoot.toPath(),
+                    extraArgs,
+                    expectedOutput == null ? null : expectedOutput.toPath());
+        } catch (UncheckedIOException | IllegalStateException e) {
+            // Provisioner/BxSitesInvoker throw these as plain unchecked
+            // exceptions (shared with the Gradle plugin, which lets Gradle's
+            // own exception handling deal with it) - wrapped here so a
+            // provisioning failure (network error, checksum mismatch, a bad
+            // pinned version), a subprocess launch failure, or a timeout all
+            // surface as a normal Maven build failure rather than an opaque
+            // PluginExecutionException wrapping an arbitrary unchecked type.
+            throw new MojoExecutionException("Failed to run the " + verb().verbId() + " goal", e);
+        }
 
         getLog().info(result.output());
 

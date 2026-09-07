@@ -21,10 +21,10 @@ import ortus.boxlang.bxsites.core.SiteDirResolver;
  * plugin's {@code bxSitesClean}, which is a plain {@code Delete} task for
  * the same reason.
  */
-@Mojo(name = "clean")
+@Mojo(name = "clean", threadSafe = true)
 public class CleanMojo extends AbstractMojo {
 
-    @Parameter(defaultValue = "${project.basedir}", required = true)
+    @Parameter(property = "bxsites.projectRoot", defaultValue = "${project.basedir}", required = true)
     private File projectRoot;
 
     @Override

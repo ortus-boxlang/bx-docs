@@ -23,7 +23,7 @@ import ortus.boxlang.bxsites.core.SiteDirResolver;
  * output) - every invocation currently re-runs the full build. Flagged as a
  * fast-follow, not silently treated as done.
  */
-@Mojo(name = "build")
+@Mojo(name = "build", threadSafe = true)
 public class BuildMojo extends AbstractBxSitesMojo {
 
     @Override
