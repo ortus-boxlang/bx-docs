@@ -172,6 +172,41 @@ class BxSitesPluginTest {
     }
 
     @Test
+    void apply_registersTheOpenApiDocTask(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        assertNotNull(project.getTasks().findByName("bxSitesOpenApiDoc"));
+    }
+
+    @Test
+    void springBootOpenApiExtension_hasSensibleDefaults(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        var openApi = project.getExtensions().getByType(BxSitesExtension.class).getSpringBoot().getOpenApi();
+
+        assertFalse(openApi.getEnabled().get());
+        assertEquals("API Reference", openApi.getPageTitle().get());
+        assertEquals("api/openapi.md", openApi.getPagePath().get());
+        assertFalse(openApi.getAutoPatchConfig().get());
+    }
+
+    @Test
+    void springBootOpenApiExtension_isConfigurableViaTheNestedDsl(@TempDir Path projectDir) {
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
+        project.getPluginManager().apply(BxSitesPlugin.class);
+        BxSitesExtension extension = project.getExtensions().getByType(BxSitesExtension.class);
+
+        extension.springBoot(springBoot -> springBoot.openApi(openApi -> {
+            openApi.getEnabled().set(true);
+            openApi.getPageTitle().set("Bookshelf API");
+        }));
+
+        var openApi = extension.getSpringBoot().getOpenApi();
+        assertTrue(openApi.getEnabled().get());
+        assertEquals("Bookshelf API", openApi.getPageTitle().get());
+    }
+
+    @Test
     void extension_hookIntoAssembleTrue_wiresBxSitesBuildIntoAssemble(@TempDir Path projectDir) {
         // BxSitesPlugin registers its `assemble` wiring via Tasks.named(...),
         // which defers evaluation until `assemble` is actually realized/

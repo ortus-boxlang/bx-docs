@@ -1,7 +1,6 @@
 package ortus.boxlang.bxsites.maven;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.apache.maven.plugins.annotations.Mojo;
@@ -10,7 +9,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import ortus.boxlang.bxsites.core.BuildStalenessChecker;
 import ortus.boxlang.bxsites.core.BxSitesVerb;
 import ortus.boxlang.bxsites.core.ConfigFileResolver;
-import ortus.boxlang.bxsites.core.ContentDirResolver;
 import ortus.boxlang.bxsites.core.SiteDirResolver;
 
 /**
@@ -53,24 +51,8 @@ public class BuildMojo extends AbstractBxSitesMojo {
         }
         Path root = projectRoot.toPath();
         return BuildStalenessChecker.isUpToDate(
-                resolveContentDir(root),
+                MavenContentDirs.resolve(root),
                 ConfigFileResolver.resolve(root),
                 SiteDirResolver.resolve(root));
-    }
-
-    /**
-     * {@link ContentDirResolver#resolve} falls back to {@code src/} when
-     * {@code docs/} doesn't exist yet - correct for a standalone docs
-     * project, but wrong here in a typical Maven Java project (this
-     * plugin's headline use case): {@code src/main/java} is Java source,
-     * not bx-sites content. Mirrors the same guard the Gradle plugin
-     * applies via {@code JavaBasePlugin} - Maven has no plugin-applied
-     * signal to check, so a {@code src/main/java} directory is used as the
-     * equivalent "this is a Java project" marker instead.
-     */
-    private static Path resolveContentDir(Path projectRoot) {
-        Path docs = projectRoot.resolve("docs");
-        boolean skipSrcFallback = Files.isDirectory(docs) || Files.isDirectory(projectRoot.resolve("src/main/java"));
-        return skipSrcFallback ? docs : ContentDirResolver.resolve(projectRoot);
     }
 }

@@ -21,6 +21,7 @@ import ortus.boxlang.bxsites.gradle.tasks.BxSitesDeployTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesDoctorTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesLintTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesNewTask;
+import ortus.boxlang.bxsites.gradle.tasks.BxSitesOpenApiDocTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesPackageTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesProvisionTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesPublishTask;
@@ -134,6 +135,26 @@ public class BxSitesPlugin implements Plugin<Project> {
             task.setGroup("bx-sites");
             task.setDescription("Runs bx-sites' own project health diagnostics.");
             wireCommonProperties(task, extension, provision.get());
+        });
+
+        // Spring Boot doc generators - build-tool-native tasks, not verb
+        // wrappers, since they never invoke the bx-sites subprocess at all.
+        project.getTasks().register("bxSitesOpenApiDoc", BxSitesOpenApiDocTask.class, task -> {
+            task.setGroup("bx-sites");
+            task.setDescription("Wires a springdoc-generated OpenAPI spec into the bx-sites site.");
+            var openApi = extension.getSpringBoot().getOpenApi();
+            task.getSpecFile().set(openApi.getSpecFile());
+            task.getContentDir().set(project.getLayout().dir(
+                    project.provider(() -> resolveContentDir(project,
+                            extension.getProjectRoot().get().getAsFile().toPath()).toFile())));
+            task.getConfigFile().from(project.provider(() -> resolveConfigFileIfPresent(
+                    extension.getProjectRoot().get().getAsFile().toPath())));
+            task.getPageTitle().set(openApi.getPageTitle());
+            task.getPagePath().set(openApi.getPagePath());
+            task.getAutoPatchConfig().set(openApi.getAutoPatchConfig());
+            task.getOpenApiAssetsDir().set(task.getContentDir().dir("assets/openapi"));
+            task.getPageFile().set(task.getContentDir().flatMap(dir -> task.getPagePath().map(dir::file)));
+            task.onlyIf(t -> openApi.getEnabled().get());
         });
 
         project.getTasks().named("assemble", task -> {

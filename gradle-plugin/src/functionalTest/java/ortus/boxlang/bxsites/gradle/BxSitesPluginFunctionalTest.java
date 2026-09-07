@@ -1,6 +1,7 @@
 package ortus.boxlang.bxsites.gradle;
 
 import static org.gradle.testkit.runner.TaskOutcome.FROM_CACHE;
+import static org.gradle.testkit.runner.TaskOutcome.SKIPPED;
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS;
 import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -114,6 +115,75 @@ class BxSitesPluginFunctionalTest {
         BuildResult second = runner("bxSitesBuild", "--build-cache").build();
 
         assertEquals(FROM_CACHE, second.task(":bxSitesProvision").getOutcome());
+    }
+
+    @Test
+    void bxSitesOpenApiDoc_isSkippedByDefault() {
+        BuildResult result = runner("bxSitesOpenApiDoc").build();
+
+        assertEquals(SKIPPED, result.task(":bxSitesOpenApiDoc").getOutcome());
+    }
+
+    @Test
+    void bxSitesOpenApiDoc_failsWhenOpenApiIsNotEnabledInConfigAndAutoPatchIsOff() throws IOException {
+        writeOpenApiSpecFixture();
+        appendToBuildScript("""
+                bxSites {
+                    springBoot {
+                        openApi {
+                            enabled.set(true)
+                            specFile.set(file("openapi-fixture.json"))
+                        }
+                    }
+                }
+                """);
+
+        BuildResult result = runner("bxSitesOpenApiDoc").buildAndFail();
+
+        assertTrue(result.getOutput().contains("openapi: true is not set"),
+                "expected the actionable openapi-not-enabled error in the output");
+    }
+
+    @Test
+    void bxSitesOpenApiDoc_generatesThePageAndAutoPatchesTheConfigWhenRequested() throws IOException {
+        writeOpenApiSpecFixture();
+        appendToBuildScript("""
+                bxSites {
+                    springBoot {
+                        openApi {
+                            enabled.set(true)
+                            specFile.set(file("openapi-fixture.json"))
+                            pageTitle.set("Bookshelf API")
+                            autoPatchConfig.set(true)
+                        }
+                    }
+                }
+                """);
+
+        BuildResult result = runner("bxSitesOpenApiDoc").build();
+
+        assertEquals(SUCCESS, result.task(":bxSitesOpenApiDoc").getOutcome());
+
+        Path copiedSpec = projectDir.resolve("docs").resolve("assets").resolve("openapi").resolve("openapi.json");
+        assertTrue(Files.exists(copiedSpec), "the spec should have been copied into docs/assets/openapi/");
+
+        Path page = projectDir.resolve("docs").resolve("api").resolve("openapi.md");
+        String pageContent = Files.readString(page);
+        assertTrue(pageContent.contains("title: \"Bookshelf API\""), "expected the page's frontmatter title");
+        assertTrue(pageContent.contains("::: openapi src=\"assets/openapi/openapi.json\" title=\"Bookshelf API\""),
+                "expected the openapi content block");
+
+        String config = Files.readString(projectDir.resolve("bxsites.yaml"));
+        assertTrue(config.contains("openapi: true"), "expected openapi: true to have been auto-patched into bxsites.yaml");
+    }
+
+    private void writeOpenApiSpecFixture() throws IOException {
+        Files.writeString(projectDir.resolve("openapi-fixture.json"),
+                "{\"openapi\":\"3.0.0\",\"info\":{\"title\":\"Bookshelf API\",\"version\":\"1.0\"},\"paths\":{}}");
+    }
+
+    private void appendToBuildScript(String extra) throws IOException {
+        Files.writeString(projectDir.resolve("build.gradle.kts"), extra, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
     }
 
     private static void deleteRecursively(Path root) {

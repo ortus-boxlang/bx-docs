@@ -2,11 +2,13 @@ package ortus.boxlang.bxsites.gradle;
 
 import javax.inject.Inject;
 
+import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.Property;
 
 import ortus.boxlang.bxsites.core.BxSitesConfig;
+import ortus.boxlang.bxsites.gradle.springboot.BxSitesSpringBootExtension;
 
 /**
  * The {@code bxSites { }} DSL block. Deliberately thin - it covers only
@@ -16,6 +18,8 @@ import ortus.boxlang.bxsites.core.BxSitesConfig;
  */
 public abstract class BxSitesExtension {
 
+    private final BxSitesSpringBootExtension springBoot;
+
     @Inject
     public BxSitesExtension(Project project) {
         getProjectRoot().convention(project.getLayout().getProjectDirectory());
@@ -24,6 +28,16 @@ public abstract class BxSitesExtension {
         getBoxlangHomeDir().convention(project.getLayout().getBuildDirectory().dir("bxsites/boxlang-home"));
         getHookIntoAssemble().convention(false);
         getHookIntoCheck().convention(true);
+        springBoot = project.getObjects().newInstance(BxSitesSpringBootExtension.class, project);
+    }
+
+    /** The {@code springBoot { }} nested block - Spring Boot doc generators (OpenAPI, Javadoc, controller-scan). */
+    public BxSitesSpringBootExtension getSpringBoot() {
+        return springBoot;
+    }
+
+    public void springBoot(Action<? super BxSitesSpringBootExtension> action) {
+        action.execute(springBoot);
     }
 
     /** The bx-sites project root; defaults to this Gradle project's own directory. */

@@ -82,9 +82,46 @@ here at all - bx-sites itself hardcodes it to `<projectRoot>/site/`, so the
 plugin derives it rather than exposing a setting that wouldn't actually be
 honored.
 
+## Spring Boot doc generation
+
+`bxSitesOpenApiDoc` wires a springdoc-generated OpenAPI/Swagger spec into
+your site as an interactive widget, using bx-sites' own native
+`::: openapi :::` content block - no OpenAPI parsing happens on our side
+at all. It's not wired into any lifecycle by default (bind it yourself
+once your project's springdoc plugin has produced a spec file, e.g.
+`tasks.named("bxSitesBuild") { dependsOn("bxSitesOpenApiDoc") }`):
+
+```kotlin title="build.gradle.kts"
+bxSites {
+    springBoot {
+        openApi {
+            enabled.set(true)
+            specFile.set(layout.buildDirectory.file("openapi/openapi.json"))
+            pageTitle.set("Bookshelf API")     // default: "API Reference"
+            pagePath.set("api/openapi.md")     // relative to the content dir; this is the default
+            autoPatchConfig.set(false)         // set true to auto-add openapi: true to bxsites.yaml/.toml instead of failing
+        }
+    }
+}
+```
+
+Requires your own springdoc Gradle plugin already applied and configured
+to generate the spec file this points at - `bxSitesOpenApiDoc` only
+*consumes* that file, copying it into the content dir's
+`assets/openapi/` and writing a thin wrapper page. It also expects
+`bxsites.yaml`'s `openapi: true` to already be set (see
+[Configuration](../configuration.md#openapi)) - fails with an actionable
+error if it isn't, unless `autoPatchConfig` is on (YAML/TOML configs
+only; JSON is never auto-patched, since safely inserting a key into
+arbitrary JSON without a real parser is too risky). **Known limitation:**
+Swagger UI renders entirely client-side, so per-endpoint text never
+reaches bx-sites' own search index - only the wrapper page's
+title/frontmatter is indexed.
+
+**Javadoc and controller-scan generation** - planned, not yet built.
+
 ## What's not built yet
 
-- **Spring Boot doc generation** (OpenAPI, Javadoc, controller-scan) - planned.
 - **`bxSitesServe`'s live output streaming** - currently buffers output with a 30-minute timeout, both wrong for a task meant to run indefinitely.
 
 See the [Maven Plugin](maven-plugin.md) guide for the equivalent on the

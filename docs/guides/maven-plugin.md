@@ -116,9 +116,47 @@ of these. The output directory isn't settable here at all - bx-sites
 itself hardcodes it to `<projectRoot>/site/`, so the plugin derives it
 rather than exposing a setting that wouldn't actually be honored.
 
+## Spring Boot doc generation
+
+`bxsites:openapi` wires a springdoc-generated OpenAPI/Swagger spec into
+your site as an interactive widget, using bx-sites' own native
+`::: openapi :::` content block - no OpenAPI parsing happens on our side
+at all. Not bound to any lifecycle phase by default:
+
+```bash
+mvn bxsites:openapi -Dbxsites.openapi.specFile=target/openapi/openapi.json
+```
+
+```xml title="pom.xml"
+<plugin>
+  <groupId>io.boxlang</groupId>
+  <artifactId>bxsites-maven-plugin</artifactId>
+  <configuration>
+    <specFile>${project.build.directory}/openapi/openapi.json</specFile>
+    <pageTitle>Bookshelf API</pageTitle>       <!-- default: "API Reference" -->
+    <pagePath>api/openapi.md</pagePath>         <!-- relative to the content dir; this is the default -->
+    <autoPatchConfig>false</autoPatchConfig>    <!-- set true to auto-add openapi: true instead of failing -->
+  </configuration>
+</plugin>
+```
+
+Requires your own springdoc Maven plugin already applied and configured
+to generate the spec file `specFile` points at - `bxsites:openapi` only
+*consumes* that file, copying it into the content dir's
+`assets/openapi/` and writing a thin wrapper page. It also expects
+`bxsites.yaml`'s `openapi: true` to already be set (see
+[Configuration](../configuration.md#openapi)) - fails with an actionable
+error if it isn't, unless `autoPatchConfig` is on (YAML/TOML configs
+only; JSON is never auto-patched, since safely inserting a key into
+arbitrary JSON without a real parser is too risky). **Known limitation:**
+Swagger UI renders entirely client-side, so per-endpoint text never
+reaches bx-sites' own search index - only the wrapper page's
+title/frontmatter is indexed.
+
+**Javadoc and controller-scan generation** - planned, not yet built.
+
 ## What's not built yet
 
-- **Spring Boot doc generation** (OpenAPI, Javadoc, controller-scan) - planned.
 - **`bxsites:serve`'s live output streaming** - currently buffers output with a 30-minute timeout, both wrong for a goal meant to run indefinitely.
 
 See the [Gradle Plugin](gradle-plugin.md) guide for the equivalent on the
