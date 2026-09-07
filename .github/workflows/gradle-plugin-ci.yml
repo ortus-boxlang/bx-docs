@@ -13,6 +13,9 @@ on:
       - "gradle-plugin/**"
       - ".github/workflows/gradle-plugin-ci.yml"
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build & Test

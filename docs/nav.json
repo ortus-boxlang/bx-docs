@@ -65,6 +65,13 @@
 		]
 	},
 	{
+		"title": "Java Integration",
+		"children": [
+			"guides/gradle-plugin.md",
+			"guides/maven-plugin.md"
+		]
+	},
+	{
 		"title": "Help",
 		"children": [
 			"troubleshooting.md",

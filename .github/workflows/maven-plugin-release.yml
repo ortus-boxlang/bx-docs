@@ -20,6 +20,9 @@ on:
     tags:
       - "maven-plugin-v*"
 
+permissions:
+  contents: read
+
 jobs:
   publish:
     name: Publish to Maven Central

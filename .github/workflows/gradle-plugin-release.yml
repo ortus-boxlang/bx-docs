@@ -13,6 +13,9 @@ on:
     tags:
       - "gradle-plugin-v*"
 
+permissions:
+  contents: read
+
 jobs:
   publish:
     name: Publish to Gradle Plugin Portal
