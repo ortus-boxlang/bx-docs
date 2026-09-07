@@ -560,6 +560,30 @@ class extends="testbox.system.BaseSpec" {
 				} ).toThrow( "BxSites.InvalidConfig" );
 			} );
 
+			it( "defaults [mcp] to false", function() {
+				var dir = newProjectDir( '{"name":"My Docs"}' );
+				expect( loader.load( dir ).mcp ).toBeFalse();
+			} );
+
+			it( "preserves a user-supplied [mcp]", function() {
+				var dir = newProjectDir( '{"name":"My Docs","mcp":true}' );
+				expect( loader.load( dir ).mcp ).toBeTrue();
+			} );
+
+			it( "throws BxSites.InvalidConfig when [mcp] is not a boolean", function() {
+				var dir = newProjectDir( '{"name":"My Docs","mcp":"yes please"}' );
+				expect( function() {
+					loader.load( dir );
+				} ).toThrow( "BxSites.InvalidConfig" );
+			} );
+
+			it( "allows [mcp] to be true independently of [search] and [searchProvider]", function() {
+				var dir = newProjectDir( '{"name":"My Docs","mcp":true,"search":false}' );
+				var config = loader.load( dir );
+				expect( config.mcp ).toBeTrue();
+				expect( config.search ).toBeFalse();
+			} );
+
 			it( "defaults [mermaid] to false", function() {
 				var dir = newProjectDir( '{"name":"My Docs"}' );
 				expect( loader.load( dir ).mermaid ).toBeFalse();

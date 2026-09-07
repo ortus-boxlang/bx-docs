@@ -27,6 +27,7 @@ somehow has more than one, `bxsites.yaml` wins, then `bxsites.yml`, then
       logo: ""
       favicon: ""
     search: true
+    mcp: false
     searchProvider:
       provider: local
       algolia: { appId: "", apiKey: "", indexName: "", insights: false }
@@ -86,6 +87,7 @@ somehow has more than one, `bxsites.yaml` wins, then `bxsites.yml`, then
     		"favicon": ""
     	},
     	"search": true,
+    	"mcp": false,
     	"searchProvider": {
     		"provider": "local",
     		"algolia": { "appId": "", "apiKey": "", "indexName": "", "insights": false }
@@ -133,6 +135,7 @@ somehow has more than one, `bxsites.yaml` wins, then `bxsites.yml`, then
     description = ""
     baseURL = "/"
     search = true
+    mcp = false
     nav = []
     social = []
     footer = false
@@ -509,6 +512,15 @@ Which search UI `search: true` wires up:
       	}
       }
       ```
+
+## `mcp`
+
+`false` (the default) skips it entirely. `true` writes `site/mcp-index.json`
+on every `build` - a full-text, untruncated content index for
+[bxSites Cloud](https://bxsites.io/cloud)'s public, read-only MCP server
+for your published site. Entirely independent of `search`/`searchProvider`
+above - it's produced no matter which search provider (or none) is
+configured. See [MCP Server](guides/mcp.md).
 
 ## `nav`
 

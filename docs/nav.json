@@ -44,7 +44,8 @@
 			"guides/openapi.md",
 			"guides/plugins.md",
 			"guides/cli-providers.md",
-			"guides/ai-agent-skills.md"
+			"guides/ai-agent-skills.md",
+			"guides/mcp.md"
 		]
 	},
 	{
