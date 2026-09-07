@@ -18,6 +18,7 @@
 	<url><loc>https://bxsites.io/theme/tailwind/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/troubleshooting/index.html</loc></url>
@@ -348,6 +349,7 @@
 	<url><loc>https://bxsites.io/theme/tailwind/es/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/es/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/es/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/es/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/es/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/es/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/es/troubleshooting/index.html</loc></url>
@@ -403,6 +405,7 @@
 	<url><loc>https://bxsites.io/theme/tailwind/it/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/it/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/it/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/it/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/it/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/it/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/it/troubleshooting/index.html</loc></url>
@@ -458,6 +461,7 @@
 	<url><loc>https://bxsites.io/theme/tailwind/de/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/de/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/de/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/de/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/de/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/de/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/de/troubleshooting/index.html</loc></url>
@@ -513,6 +517,7 @@
 	<url><loc>https://bxsites.io/theme/tailwind/ja/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/ja/troubleshooting/index.html</loc></url>

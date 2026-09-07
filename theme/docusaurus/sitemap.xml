@@ -18,6 +18,7 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/troubleshooting/index.html</loc></url>
@@ -348,6 +349,7 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/es/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/troubleshooting/index.html</loc></url>
@@ -403,6 +405,7 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/it/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/troubleshooting/index.html</loc></url>
@@ -458,6 +461,7 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/de/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/troubleshooting/index.html</loc></url>
@@ -513,6 +517,7 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/troubleshooting/index.html</loc></url>

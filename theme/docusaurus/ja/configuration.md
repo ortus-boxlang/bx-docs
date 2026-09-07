@@ -14,6 +14,7 @@ tags: [リファレンス, 設定]
   description = ""
   baseURL = "/"
   search = true
+  mcp = false
   nav = []
   social = []
   footer = false
@@ -56,6 +57,7 @@ tags: [リファレンス, 設定]
       logo: ""
       favicon: ""
     search: true
+    mcp: false
     searchProvider:
       provider: local
       algolia: { appId: "", apiKey: "", indexName: "", insights: false }
@@ -104,6 +106,7 @@ tags: [リファレンス, 設定]
     		"favicon": ""
     	},
     	"search": true,
+    	"mcp": false,
     	"searchProvider": {
     		"provider": "local",
     		"algolia": { "appId": "", "apiKey": "", "indexName": "", "insights": false }
@@ -405,6 +408,19 @@ tags: [リファレンス, 設定]
       	}
       }
       ```
+
+## `mcp`
+
+`false`(デフォルト)は完全にスキップします。`true` にすると、`build`
+のたびに `site/mcp-index.json` が書き出されます - 公開したサイト向けの、
+[bxSites Cloud](https://bxsites.io/cloud) の公開・読み取り専用 MCP
+サーバー用の、完全かつ切り詰められていないコンテンツインデックスです。
+上記の `search`/`searchProvider` とは完全に独立しており、どの検索
+プロバイダーが設定されていても(あるいは何も設定されていなくても)
+生成されます。ファイル自体の生成は無料です。bxSites Cloud が実際に
+稼働する MCP サーバーとして提供するのは有料プランのみであり、無料
+プランには含まれません。[MCPサーバー](guides/mcp.md) を参照して
+ください。
 
 ## `nav`
 

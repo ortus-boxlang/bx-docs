@@ -18,6 +18,7 @@
 	<url><loc>https://bxsites.io/theme/vuepress/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/troubleshooting/index.html</loc></url>
@@ -348,6 +349,7 @@
 	<url><loc>https://bxsites.io/theme/vuepress/es/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/es/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/troubleshooting/index.html</loc></url>
@@ -403,6 +405,7 @@
 	<url><loc>https://bxsites.io/theme/vuepress/it/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/it/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/troubleshooting/index.html</loc></url>
@@ -458,6 +461,7 @@
 	<url><loc>https://bxsites.io/theme/vuepress/de/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/de/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/troubleshooting/index.html</loc></url>
@@ -513,6 +517,7 @@
 	<url><loc>https://bxsites.io/theme/vuepress/ja/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/troubleshooting/index.html</loc></url>

@@ -18,6 +18,7 @@
 	<url><loc>https://bxsites.io/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/troubleshooting/index.html</loc></url>
@@ -348,6 +349,7 @@
 	<url><loc>https://bxsites.io/es/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/es/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/es/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/es/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/es/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/es/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/es/troubleshooting/index.html</loc></url>
@@ -403,6 +405,7 @@
 	<url><loc>https://bxsites.io/it/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/it/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/it/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/it/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/it/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/it/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/it/troubleshooting/index.html</loc></url>
@@ -458,6 +461,7 @@
 	<url><loc>https://bxsites.io/de/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/de/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/de/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/de/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/de/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/de/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/de/troubleshooting/index.html</loc></url>
@@ -513,6 +517,7 @@
 	<url><loc>https://bxsites.io/ja/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/ja/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/ja/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/ja/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/ja/guides/theme-import/index.html</loc></url>
 	<url><loc>https://bxsites.io/ja/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/ja/troubleshooting/index.html</loc></url>

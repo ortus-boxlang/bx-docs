@@ -28,6 +28,7 @@ luego `bxsites.yml`, luego `bxsites.json`.
       logo: ""
       favicon: ""
     search: true
+    mcp: false
     searchProvider:
       provider: local
       algolia: { appId: "", apiKey: "", indexName: "", insights: false }
@@ -72,6 +73,7 @@ luego `bxsites.yml`, luego `bxsites.json`.
     		"favicon": ""
     	},
     	"search": true,
+    	"mcp": false,
     	"searchProvider": {
     		"provider": "local",
     		"algolia": { "appId": "", "apiKey": "", "indexName": "", "insights": false }
@@ -114,6 +116,7 @@ luego `bxsites.yml`, luego `bxsites.json`.
     description = ""
     baseURL = "/"
     search = true
+    mcp = false
     nav = []
     social = []
     footer = false
@@ -419,6 +422,18 @@ Qué interfaz de búsqueda conecta `search: true`:
       	}
       }
       ```
+
+## `mcp`
+
+`false` (predeterminado) lo omite por completo. `true` escribe
+`site/mcp-index.json` en cada `build` - un índice de contenido completo y
+sin truncar para el servidor MCP público de solo lectura de
+[bxSites Cloud](https://bxsites.io/cloud) para tu sitio publicado.
+Totalmente independiente de `search`/`searchProvider` anterior - se
+genera sin importar qué proveedor de búsqueda (o ninguno) esté
+configurado. Generar el archivo en sí es gratis; bxSites Cloud solo lo
+expone realmente como servidor MCP activo en sus planes de pago, no en
+el plan gratuito. Consulta [Servidor MCP](guides/mcp.md).
 
 ## `nav`
 
