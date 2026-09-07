@@ -20,13 +20,39 @@ class extends="testbox.system.BaseSpec" {
 				string title,
 				string urlPath,
 				string contentHtml,
-				boolean hidden = false
+				boolean hidden = false,
+				struct frontmatter = {}
 			) {
 				return {
 					title       : arguments.title,
 					urlPath     : arguments.urlPath,
 					contentHtml : arguments.contentHtml,
-					hidden      : arguments.hidden
+					hidden      : arguments.hidden,
+					frontmatter : arguments.frontmatter
+				};
+			}
+
+			/**
+			 * A blog post struct always carries a `categories` key (even when
+			 * empty) - the same shape BlogDiscoverer.bx/BlogBuilder.bx hand
+			 * McpIndexer.build(), and the exact signal buildEntry() uses to
+			 * tell a post apart from a plain docs page (see McpIndexer.bx's
+			 * own docblock).
+			 */
+			private struct function post(
+				string title,
+				string urlPath,
+				string contentHtml,
+				string date = "2026-01-15",
+				array categories = []
+			) {
+				return {
+					title       : arguments.title,
+					urlPath     : arguments.urlPath,
+					contentHtml : arguments.contentHtml,
+					hidden      : false,
+					date        : arguments.date,
+					categories  : arguments.categories
 				};
 			}
 
@@ -149,6 +175,72 @@ class extends="testbox.system.BaseSpec" {
 				var second = indexer.build( [ pageStruct ] );
 
 				expect( second[ 1 ].body ).toInclude( "Changed body" );
+			} );
+
+			it( "marks a docs page as type page with no categories", function() {
+				var index = indexer.build( [ page( title = "Guide", urlPath = "guide/index.html", contentHtml = "<p>Body</p>" ) ] );
+
+				expect( index[ 1 ].type ).toBe( "page" );
+				expect( index[ 1 ].categories ).toBeArray();
+				expect( index[ 1 ].categories.len() ).toBe( 0 );
+			} );
+
+			it( "uses a docs page's own frontmatter date as updatedAt when it sets one", function() {
+				var pageStruct = page(
+					title       = "Guide",
+					urlPath     = "guide/index.html",
+					contentHtml = "<p>Body</p>",
+					frontmatter = { date : "2026-03-01" }
+				);
+
+				var index = indexer.build( [ pageStruct ] );
+
+				expect( index[ 1 ].updatedAt ).toBe( "2026-03-01" );
+			} );
+
+			it( "falls back to the source file's own last-modified time for a docs page's updatedAt when it has no frontmatter date", function() {
+				var dir = createTempDirectory( prefix = "bxsites-mcpindexer-" );
+				tempDirs.append( dir );
+				var sourcePath = dir & "/page.md";
+				fileWrite( sourcePath, "content" );
+
+				var pageStruct = page( title = "Guide", urlPath = "guide/index.html", contentHtml = "<p>Body</p>" );
+				pageStruct.sourcePath = sourcePath;
+
+				var index = indexer.build( [ pageStruct ] );
+
+				expect( len( index[ 1 ].updatedAt ) ).toBeGT( 0 );
+				expect( isDate( index[ 1 ].updatedAt ) ).toBeTrue();
+			} );
+
+			it( "returns an empty updatedAt for a docs page with neither a frontmatter date nor a sourcePath", function() {
+				var index = indexer.build( [ page( title = "Guide", urlPath = "guide/index.html", contentHtml = "<p>Body</p>" ) ] );
+
+				expect( index[ 1 ].updatedAt ).toBe( "" );
+			} );
+
+			it( "marks a blog post as type post, carrying its own categories and date as updatedAt", function() {
+				var index = indexer.build( [
+					post(
+						title      = "Release Notes",
+						urlPath    = "blog/release-notes/index.html",
+						contentHtml = "<p>We shipped.</p>",
+						date       = "2026-02-10",
+						categories = [ "Releases", "Engineering" ]
+					)
+				] );
+
+				expect( index[ 1 ].type ).toBe( "post" );
+				expect( index[ 1 ].categories ).toBe( [ "Releases", "Engineering" ] );
+				expect( index[ 1 ].updatedAt ).toBe( "2026-02-10" );
+			} );
+
+			it( "marks a blog post as type post even when its categories array is empty", function() {
+				var index = indexer.build( [ post( title = "Uncategorized", urlPath = "blog/uncategorized/index.html", contentHtml = "<p>Body</p>" ) ] );
+
+				expect( index[ 1 ].type ).toBe( "post" );
+				expect( index[ 1 ].categories ).toBeArray();
+				expect( index[ 1 ].categories.len() ).toBe( 0 );
 			} );
 
 		} );

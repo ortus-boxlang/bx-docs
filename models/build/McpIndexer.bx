@@ -31,9 +31,9 @@ class {
 	 * of them - a page that isn't linked from the nav shouldn't be exposed
 	 * to the MCP server either.
 	 *
-	 * @pages Array of page structs with an added `contentHtml` key (BuildPipeline sets this before calling)
+	 * @pages Array of page structs with an added `contentHtml` key (BuildPipeline sets this before calling) - a blog post's own struct (BlogDiscoverer.bx/BlogBuilder.bx) always carries a `categories` key (even when empty), which is this method's own signal that a given entry is a post rather than a docs page - see buildEntry()'s own docblock
 	 *
-	 * @return Array of { title, url, headings, body, tags } - body is the full, untruncated plain-text page content
+	 * @return Array of { title, url, headings, body, tags, type, categories, updatedAt } - body is the full, untruncated plain-text page content
 	 */
 	array function build( required array pages ) {
 		return arguments.pages
@@ -46,6 +46,16 @@ class {
 	 * by the page's own `sourcePath` + last-modified time) the same way
 	 * SearchIndexer.bx's own buildEntry() does - see its docblock.
 	 *
+	 * A blog post (BlogDiscoverer.bx's own struct shape, always carrying a
+	 * `categories` key even when it's empty - a plain docs page's own
+	 * struct, DocsLoader.bx, never has one) gets `type: "post"`, its own
+	 * `categories`, and its own frontmatter `date` as `updatedAt`. A docs
+	 * page gets `type: "page"`, `categories: []` (docs pages don't have
+	 * categories), and `updatedAt` from its own frontmatter `date` when a
+	 * project happens to set one (not an officially documented docs-page
+	 * field, just reachable through DocsLoader.bx's raw `frontmatter`
+	 * passthrough), else the source file's own last-modified time.
+	 *
 	 * @page A page struct with `contentHtml`/`sourcePath` already set
 	 */
 	private struct function buildEntry( required struct page ) {
@@ -56,12 +66,17 @@ class {
 			return cached
 		}
 
+		var isPost = arguments.page.keyExists( "categories" )
+
 		var entry = {
-			title    : arguments.page.title,
-			url      : arguments.page.urlPath,
-			headings : variables.textExtractor.extractHeadings( arguments.page.contentHtml ),
-			body     : variables.textExtractor.stripTags( arguments.page.contentHtml ),
-			tags     : arguments.page.tags ?: []
+			title      : arguments.page.title,
+			url        : arguments.page.urlPath,
+			headings   : variables.textExtractor.extractHeadings( arguments.page.contentHtml ),
+			body       : variables.textExtractor.stripTags( arguments.page.contentHtml ),
+			tags       : arguments.page.tags ?: [],
+			type       : isPost ? "post" : "page",
+			categories : isPost ? arguments.page.categories : [],
+			updatedAt  : isPost ? arguments.page.date : docPageUpdatedAt( arguments.page, mtime )
 		}
 
 		if ( len( sourcePath ) ) {
@@ -69,6 +84,26 @@ class {
 		}
 
 		return entry
+	}
+
+	/**
+	 * A docs page's own `updatedAt`: its frontmatter `date` when a project
+	 * happens to set one, else the source file's own last-modified time
+	 * (already computed once by buildEntry() for the cache key, reused here
+	 * rather than re-stat'ing the file), as an ISO-8601 instant - "" when
+	 * neither is available (no sourcePath at all, e.g. a synthetic page
+	 * built with no real source file).
+	 *
+	 * @page A docs page struct with `frontmatter` already set
+	 * @mtime The source file's own last-modified time in epoch millis, or 0 when there's no sourcePath
+	 */
+	private string function docPageUpdatedAt( required struct page, required numeric mtime ) {
+		var frontmatter = arguments.page.frontmatter ?: {}
+		var fmDate = trim( frontmatter.date ?: "" )
+		if ( len( fmDate ) ) {
+			return fmDate
+		}
+		return arguments.mtime > 0 ? createObject( "java", "java.time.Instant" ).ofEpochMilli( arguments.mtime ).toString() : ""
 	}
 
 	/**

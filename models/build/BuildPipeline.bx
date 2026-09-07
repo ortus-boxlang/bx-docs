@@ -274,7 +274,25 @@ class {
 		var blogNavUrl = blogPosts.len() ? "blog/index.html" : ""
 		var mainResult = renderDocTree( mainPages, rootDocsDir, config, themeDir, siteDir, urls.basePath, root, versions, rootVersionLabel, rootDocsRelativePrefix, plugins, urls.absolute, imageManifest, navConfig, locales, defaultLocaleCode, defaultLocaleDir, blogNavUrl, siteOrigin, functions, data )
 		profile( "main tree", buildStartedAt )
-		progress( "Copying main site assets" )
+		// Every tree that gets its own mcp-index.json/mcp-nav.json
+		// (writeMcpIndex()'s own call sites below), gathered as build()
+		// renders each one - mcp-manifest.json's own source of truth (see
+		// writeMcpManifest()'s own docblock).
+		//
+		// Each entry: { path (join with "/mcp-index.json" for that tree's
+		// own index file - "" at the site root), label (human-readable,
+		// mirroring the version/locale switcher's own labels), version
+		// (a docs/versions/<name>/ name, or "" when this tree isn't a
+		// named version), locale (this tree's own locale code - always
+		// set, even for a tree with no locale sub-trees of its own), default
+		// (true for the one tree that renders at the site root) }.
+		var mcpManifestTrees = [ {
+			path    : "",
+			label   : rootVersionLabel,
+			version : hasDefaultVersion ? defaultVersionName : javacast( "null", "" ),
+			locale  : defaultLocaleCode,
+			default : true
+		} ]
 		var allPages = duplicate( mainResult.pages )
 		copyAssets( root, themeDir, siteDir, config.theme.name, searchNeedsLocalIndex( config ), config.mermaid, config.math, config.openapi, config.pageActions, imageManifest, assetPipeline.cssBundle, assetPipeline.jsBundle, config.assets.fingerprint )
 		profile( "main assets", buildStartedAt )
@@ -306,6 +324,13 @@ class {
 				plugins, urls.absolute, imageManifest, nextNavConfig, nextLocales, defaultLocaleCode, defaultLocaleDir, "", siteOrigin, functions, data
 			)
 			allPages.append( prefixPageUrls( nextResult.pages, "next/" ), true )
+			mcpManifestTrees.append( {
+				path    : "next",
+				label   : "Next",
+				version : javacast( "null", "" ),
+				locale  : defaultLocaleCode,
+				default : false
+			} )
 			copyAssets( root, themeDir, nextOutputDir, config.theme.name, searchNeedsLocalIndex( config ), config.mermaid, config.math, config.openapi, config.pageActions, imageManifest, assetPipeline.cssBundle, assetPipeline.jsBundle, config.assets.fingerprint )
 			writeTagsPage( nextResult.pages, nextResult.nav, config, themeDir, nextOutputDir, nextBasePath, versions, nextLocales, defaultLocaleCode, siteOrigin, functions, "Next", data )
 			variables.redirectGenerator.write( nextResult.pages, nextOutputDir, nextBasePath )
@@ -351,6 +376,13 @@ class {
 				data
 			)
 			allPages.append( prefixPageUrls( versionResult.pages, "versions/" & versionName & "/" ), true )
+			mcpManifestTrees.append( {
+				path    : "versions/" & versionName,
+				label   : versionName,
+				version : versionName,
+				locale  : defaultLocaleCode,
+				default : false
+			} )
 			copyAssets( root, themeDir, versionOutputDir, config.theme.name, searchNeedsLocalIndex( config ), config.mermaid, config.math, config.openapi, config.pageActions, imageManifest, assetPipeline.cssBundle, assetPipeline.jsBundle, config.assets.fingerprint )
 			writeTagsPage( versionResult.pages, versionResult.nav, config, themeDir, versionOutputDir, versionBasePath, versions, versionLocales, defaultLocaleCode, siteOrigin, functions, versionName, data )
 			variables.redirectGenerator.write( versionResult.pages, versionOutputDir, versionBasePath )
@@ -386,6 +418,13 @@ class {
 					data
 				)
 				allPages.append( prefixPageUrls( versionLocaleResult.pages, "versions/" & versionName & "/" & versionLocale.code & "/" ), true )
+				mcpManifestTrees.append( {
+					path    : "versions/" & versionName & "/" & versionLocale.code,
+					label   : versionName & " / " & versionLocale.label,
+					version : versionName,
+					locale  : versionLocale.code,
+					default : false
+				} )
 				copyAssets( root, themeDir, versionLocaleOutputDir, config.theme.name, searchNeedsLocalIndex( config ), config.mermaid, config.math, config.openapi, config.pageActions, imageManifest, assetPipeline.cssBundle, assetPipeline.jsBundle, config.assets.fingerprint )
 				writeTagsPage( versionLocaleResult.pages, versionLocaleResult.nav, config, themeDir, versionLocaleOutputDir, versionBasePath & versionLocale.code & "/", versions, versionLocales, versionLocale.code, siteOrigin, functions, versionName, data )
 				variables.redirectGenerator.write( versionLocaleResult.pages, versionLocaleOutputDir, versionBasePath & versionLocale.code & "/" )
@@ -425,6 +464,13 @@ class {
 				data
 			)
 			allPages.append( prefixPageUrls( localeResult.pages, locale.code & "/" ), true )
+			mcpManifestTrees.append( {
+				path    : locale.code,
+				label   : locale.label,
+				version : hasDefaultVersion ? defaultVersionName : javacast( "null", "" ),
+				locale  : locale.code,
+				default : false
+			} )
 			copyAssets( root, themeDir, localeOutputDir, config.theme.name, searchNeedsLocalIndex( config ), config.mermaid, config.math, config.openapi, config.pageActions, imageManifest, assetPipeline.cssBundle, assetPipeline.jsBundle, config.assets.fingerprint )
 			writeTagsPage( localeResult.pages, localeResult.nav, config, themeDir, localeOutputDir, urls.basePath & locale.code & "/", versions, locales, locale.code, siteOrigin, functions, rootVersionLabel, data )
 			variables.redirectGenerator.write( localeResult.pages, localeOutputDir, urls.basePath & locale.code & "/" )
@@ -489,9 +535,11 @@ class {
 			if ( searchNeedsLocalIndex( config ) ) {
 				writeSearchIndex( tagsPages, siteDir, plugins, config )
 			}
-			writeMcpIndex( tagsPages, siteDir, config )
+			writeMcpIndex( tagsPages, siteDir, config, mainResult.nav )
 		}
 		profile( "blog", buildStartedAt )
+
+		writeMcpManifest( mcpManifestTrees, siteDir, config )
 
 		write404Page( mainResult.nav, config, themeDir, siteDir, urls.basePath, versions, rootVersionLabel, locales, defaultLocaleCode, functions, docsDir, plugins, imageManifest, custom404Page.len() ? custom404Page[ 1 ] : {}, data )
 		progress( "Writing site metadata and search output" )
@@ -809,7 +857,7 @@ class {
 		if ( searchNeedsLocalIndex( arguments.config ) ) {
 			writeSearchIndex( pages, arguments.outputDir, arguments.plugins, arguments.config )
 		}
-		writeMcpIndex( pages, arguments.outputDir, arguments.config )
+		writeMcpIndex( pages, arguments.outputDir, arguments.config, nav )
 
 		return { pages : pages, nav : nav }
 	}
@@ -1766,16 +1814,43 @@ class {
 	 * configured, since bxSites Cloud's MCP server has no use for the local
 	 * search index and needs its own full-text, untruncated copy either way.
 	 *
+	 * Also writes `mcp-nav.json` alongside it, this same tree's own nav
+	 * (whatever renderDocTree() already built/rendered the theme with -
+	 * the same shape writeTagsPage()/the theme templates already consume:
+	 * `{ title, url, order, icon, children }`), so bxSites Cloud's MCP
+	 * server can offer a `get_nav` tool without inventing a second nav
+	 * shape of its own.
+	 *
 	 * @pages Array of page structs with `contentHtml` already set
 	 * @siteDir Absolute path to the build output directory (must already exist)
 	 * @config The site's bxsites.json config
+	 * @nav This tree's own nav (NavBuilder.build()'s own output, plugin/blog-entry-adjusted) - defaults to empty for a call site with no nav of its own
 	 */
-	private void function writeMcpIndex( required array pages, required string siteDir, required struct config ) {
+	private void function writeMcpIndex( required array pages, required string siteDir, required struct config, array nav = [] ) {
 		if ( !arguments.config.mcp ) {
 			return
 		}
 		var mcpIndex = variables.mcpIndexer.build( arguments.pages )
 		fileWrite( arguments.siteDir & "/mcp-index.json", jsonSerialize( mcpIndex ) )
+		fileWrite( arguments.siteDir & "/mcp-nav.json", jsonSerialize( arguments.nav ) )
+	}
+
+	/**
+	 * Writes the site-wide `mcp-manifest.json` once per build() call, when
+	 * `config.mcp` is on - the index bxSites Cloud reads to discover every
+	 * tree that got its own `mcp-index.json`/`mcp-nav.json` (the main tree,
+	 * `/next/`, each `/versions/<name>/`, each locale sub-tree) without
+	 * having to guess bx-sites' own directory conventions.
+	 *
+	 * @trees Every tree's own manifest entry, gathered by build() as it renders each tree - see its own mcpManifestTrees docblock for the entry shape
+	 * @siteDir Absolute path to the build output directory (must already exist)
+	 * @config The site's bxsites.json config
+	 */
+	private void function writeMcpManifest( required array trees, required string siteDir, required struct config ) {
+		if ( !arguments.config.mcp ) {
+			return
+		}
+		fileWrite( arguments.siteDir & "/mcp-manifest.json", jsonSerialize( arguments.trees ) )
 	}
 
 	/**
