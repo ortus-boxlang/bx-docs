@@ -1,7 +1,9 @@
 package ortus.boxlang.bxsites.core;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -71,12 +73,37 @@ public final class BxSitesInvoker {
         int exitCode;
         try {
             Process process = pb.start();
-            output = new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            // Reading process.getInputStream() blocks until EOF, which only
+            // happens when the process exits - calling it before waitFor()
+            // (as this used to) meant the 30-minute timeout below could
+            // never actually fire: a hung process would block here forever,
+            // never reaching the bounded wait at all (confirmed by measuring
+            // readAllBytes() block until process exit, independent of any
+            // timeout argument). Draining on a separate thread lets the two
+            // waits run concurrently, so the timeout genuinely bounds total
+            // wall time.
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            Thread drain = new Thread(() -> {
+                try {
+                    process.getInputStream().transferTo(buffer);
+                } catch (IOException ignored) {
+                    // Stream closed out from under us (e.g. destroyForcibly()
+                    // below) - whatever was captured before that is fine.
+                }
+            }, "bxsites-output-drain");
+            drain.setDaemon(true);
+            drain.start();
+
             if (!process.waitFor(30, TimeUnit.MINUTES)) {
                 process.destroyForcibly();
+                drain.join(TimeUnit.SECONDS.toMillis(30));
                 throw new IllegalStateException("bxSites " + verb.verbId() + " timed out after 30 minutes");
             }
             exitCode = process.exitValue();
+            // The process has exited, so its stdout will reach EOF shortly -
+            // give the drain thread a bounded window to finish copying it.
+            drain.join(TimeUnit.SECONDS.toMillis(30));
+            output = buffer.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to launch bxSites " + verb.verbId() + " subprocess", e);
         } catch (InterruptedException e) {
