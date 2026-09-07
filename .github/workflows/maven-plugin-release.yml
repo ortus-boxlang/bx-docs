@@ -57,6 +57,18 @@ jobs:
         working-directory: maven-plugin
         run: mvn --batch-mode verify
 
+      # Strips the "maven-plugin-v" tag prefix down to a real version (e.g.
+      # "maven-plugin-v0.1.0" -> "0.1.0"). Not strictly required the way it
+      # is for the Gradle Plugin Portal (Maven Central does allow
+      # "-SNAPSHOT", via a separate snapshot repository) - but this project
+      # deliberately never publishes snapshots to Maven Central at all
+      # (matching the boxlang runtime repo's own convention, which gates
+      # its Central Portal publish step behind the same non-snapshot check),
+      # so every tagged release still needs a real version set here.
+      - name: Set the release version from the tag
+        working-directory: maven-plugin
+        run: mvn --batch-mode versions:set -DnewVersion="${GITHUB_REF_NAME#maven-plugin-v}" -DgenerateBackupPoms=false
+
       - name: Publish to Maven Central
         working-directory: maven-plugin
         run: mvn --batch-mode -Pcentral-release -DskipTests deploy -Dgpg.passphrase="${GPG_PASSWORD}"

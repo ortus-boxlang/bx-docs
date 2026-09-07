@@ -8,7 +8,14 @@ plugins {
 // though the Gradle Plugin Portal itself doesn't require domain
 // verification the way Maven Central does.
 group = "io.boxlang"
-version = "0.1.0-SNAPSHOT"
+// The Gradle Plugin Portal hard-rejects any version ending in "-SNAPSHOT" -
+// confirmed directly against its own publishing docs: every publish there
+// is permanent and immutable, so it doesn't support a mutable snapshot
+// channel at all (unlike Maven Central). The release workflow overrides
+// this via -PreleaseVersion=<real version>, derived from the git tag, right
+// before running publishPlugins; local dev/CI-test builds keep this
+// -SNAPSHOT placeholder.
+version = (findProperty("releaseVersion") as String?) ?: "0.1.0-SNAPSHOT"
 
 java {
     toolchain {
