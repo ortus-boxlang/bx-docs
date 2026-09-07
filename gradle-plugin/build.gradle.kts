@@ -27,8 +27,24 @@ repositories {
     mavenCentral()
 }
 
+// bxsites-core is never published anywhere on its own (see core/README.md) -
+// its classes must be physically bundled into this plugin's own jar instead.
+// Deliberately NOT declared on `implementation`/`api`: those configurations
+// back the `runtimeElements`/`apiElements` variants that `java-gradle-plugin`
+// publishes core's coordinates through (an unresolvable, unversioned
+// dependency - confirmed: publish validation fails outright without this).
+// `bundled` is resolvable but never consumed/published, so it's invisible to
+// the published POM by construction; it's added directly to the main source
+// set's own compile/runtime classpaths below so the code still compiles and
+// runs normally, and merged into the `jar` task's output so the shipped
+// artifact is genuinely self-contained.
+val bundled: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
 dependencies {
-    implementation("io.boxlang:bxsites-core")
+    bundled("io.boxlang:bxsites-core")
 
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -36,6 +52,25 @@ dependencies {
     // For ProjectBuilder-based unit tests of plugin/task wiring - fast, no
     // network, distinct from the TestKit-based functionalTest suite below.
     testImplementation(gradleTestKit())
+}
+
+// Extend the resolvable classpath configurations directly (rather than
+// reassigning the source sets' own compileClasspath/runtimeClasspath
+// FileCollection properties) - java-gradle-plugin's PluginUnderTestMetadata
+// task captures a reference to sourceSets.main.runtimeClasspath at plugin
+// apply() time, before this script body runs, so re-assigning that property
+// later wouldn't be reflected in what TestKit gives the plugin-under-test
+// (confirmed: the functionalTest suite failed with a decoration error since
+// bxsites-core's classes were missing from that classpath). extendsFrom is
+// a live relationship resolved lazily at first use, so it doesn't have this
+// ordering pitfall.
+configurations.named("compileClasspath") { extendsFrom(bundled) }
+configurations.named("runtimeClasspath") { extendsFrom(bundled) }
+configurations.named("testCompileClasspath") { extendsFrom(bundled) }
+configurations.named("testRuntimeClasspath") { extendsFrom(bundled) }
+
+tasks.named<Jar>("jar") {
+    from({ bundled.map { if (it.isDirectory) it else zipTree(it) } })
 }
 
 gradlePlugin {
@@ -68,6 +103,9 @@ configurations["functionalTestRuntimeOnly"].extendsFrom(configurations["testRunt
 dependencies {
     "functionalTestImplementation"(gradleTestKit())
 }
+
+configurations.named("functionalTestCompileClasspath") { extendsFrom(bundled) }
+configurations.named("functionalTestRuntimeClasspath") { extendsFrom(bundled) }
 
 val functionalTestTask = tasks.register<Test>("functionalTest") {
     description = "Runs the functional test suite (Gradle TestKit)."
