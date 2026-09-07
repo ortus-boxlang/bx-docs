@@ -36,6 +36,16 @@ public abstract class AbstractBxSitesVerbTask extends DefaultTask {
     @Input
     public abstract Property<String> getBoxlangMiniserverVersion();
 
+    // Tracked so a pinned-version bump correctly invalidates this task's
+    // up-to-date state - without it, e.g. bxSitesBuild stayed UP-TO-DATE even
+    // though bxSitesProvision re-provisioned a different bx-sites version
+    // into boxlangHomeDir underneath it (boxlangHomeDir's own contents are
+    // deliberately @Internal, since BoxLang's own runtime writes logs/caches
+    // into that same directory at verb-execution time - see the plan for why
+    // that directory can't be a clean, fully input-tracked one yet).
+    @Input
+    public abstract Property<String> getBxSitesVersion();
+
     @Input
     public abstract ListProperty<String> getExtraArgs();
 

@@ -5,6 +5,7 @@ import org.gradle.api.Project;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.tasks.Delete;
 
+import ortus.boxlang.bxsites.core.ConfigFileResolver;
 import ortus.boxlang.bxsites.core.ContentDirResolver;
 import ortus.boxlang.bxsites.core.SiteDirResolver;
 import ortus.boxlang.bxsites.gradle.tasks.AbstractBxSitesVerbTask;
@@ -45,6 +46,15 @@ public class BxSitesPlugin implements Plugin<Project> {
             task.getContentDir().set(project.getLayout().dir(
                     project.provider(() -> ContentDirResolver.resolve(
                             extension.getProjectRoot().get().getAsFile().toPath()).toFile())));
+            // Only contributed when it actually exists - see BxSitesBuildTask's
+            // own javadoc on why this is a file collection, not @InputFile.
+            task.getConfigFile().from(project.provider(() -> {
+                java.nio.file.Path root = extension.getProjectRoot().get().getAsFile().toPath();
+                java.nio.file.Path resolved = ConfigFileResolver.resolve(root);
+                return java.nio.file.Files.isRegularFile(resolved)
+                        ? java.util.List.of(resolved.toFile())
+                        : java.util.List.<java.io.File>of();
+            }));
             // Fixed, not independently configurable - bx-sites itself always writes to
             // <projectRoot>/site (confirmed in BuildPipeline.bx), so this is derived from
             // projectRoot rather than exposed as its own settable extension property.
@@ -78,6 +88,7 @@ public class BxSitesPlugin implements Plugin<Project> {
         task.getProjectRoot().set(extension.getProjectRoot());
         task.getBoxlangHomeDir().set(extension.getBoxlangHomeDir());
         task.getBoxlangMiniserverVersion().set(extension.getBoxlangMiniserverVersion());
+        task.getBxSitesVersion().set(extension.getBxSitesVersion());
         task.getExtraArgs().convention(java.util.List.of());
     }
 }

@@ -1,5 +1,8 @@
 package ortus.boxlang.bxsites.gradle;
 
+import static org.gradle.testkit.runner.TaskOutcome.SUCCESS;
+import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -8,10 +11,12 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Iterator;
 
 import org.gradle.testkit.runner.BuildResult;
@@ -61,8 +66,37 @@ class BxSitesPluginFunctionalTest {
 
         BuildResult second = runner("bxSitesBuild").build();
 
-        assertTrue(second.getOutput().contains("UP-TO-DATE") || second.task(":bxSitesBuild").getOutcome().name().equals("UP_TO_DATE"),
-                "second run with no changes should be up-to-date, not re-invoke the subprocess");
+        // Asserting the task's real outcome directly, not scanning the
+        // console log for "UP-TO-DATE" - that string also appears on the
+        // unrelated ":bxSitesProvision UP-TO-DATE" line on every run
+        // regardless of whether :bxSitesBuild itself re-executed, which
+        // previously let this assertion pass even when the invalidation
+        // logic it's meant to guard was broken.
+        assertEquals(UP_TO_DATE, second.task(":bxSitesBuild").getOutcome());
+    }
+
+    @Test
+    void bxSitesBuild_reRunsWhenAContentFileChanges() throws IOException {
+        runner("bxSitesBuild").build();
+
+        appendTo(projectDir.resolve("docs").resolve("index.md"), "\nSome more content.\n");
+        BuildResult second = runner("bxSitesBuild").build();
+
+        assertEquals(SUCCESS, second.task(":bxSitesBuild").getOutcome());
+    }
+
+    @Test
+    void bxSitesBuild_reRunsWhenTheSiteConfigFileChanges() throws IOException {
+        runner("bxSitesBuild").build();
+
+        Files.writeString(projectDir.resolve("bxsites.yaml"), "name: \"Renamed Site\"\n");
+        BuildResult second = runner("bxSitesBuild").build();
+
+        assertEquals(SUCCESS, second.task(":bxSitesBuild").getOutcome());
+    }
+
+    private static void appendTo(Path file, String text) throws IOException {
+        Files.writeString(file, text, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
     }
 
     private GradleRunner runner(String... args) {

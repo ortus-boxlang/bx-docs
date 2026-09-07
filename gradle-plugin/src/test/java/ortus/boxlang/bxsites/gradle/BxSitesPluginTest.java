@@ -75,6 +75,36 @@ class BxSitesPluginTest {
     }
 
     @Test
+    void bxSitesBuild_configFileIsEmptyWhenNoConfigFileExists(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        BxSitesBuildTask build = (BxSitesBuildTask) project.getTasks().getByName("bxSitesBuild");
+
+        assertTrue(build.getConfigFile().getFiles().isEmpty(),
+                "no bxsites.yaml/.toml/.json exists yet - the input collection should be empty, not point at a nonexistent file");
+    }
+
+    @Test
+    void bxSitesBuild_configFileIsContributedWhenBxsitesYamlExists(@TempDir Path projectDir) throws IOException {
+        Files.writeString(projectDir.resolve("bxsites.yaml"), "name: \"Test\"\n");
+        Project project = newProject(projectDir);
+
+        BxSitesBuildTask build = (BxSitesBuildTask) project.getTasks().getByName("bxSitesBuild");
+
+        assertEquals(java.util.Set.of(projectDir.resolve("bxsites.yaml").toFile()), build.getConfigFile().getFiles());
+    }
+
+    @Test
+    void bxSitesBuild_bxSitesVersionIsWiredFromTheExtension(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        BxSitesBuildTask build = (BxSitesBuildTask) project.getTasks().getByName("bxSitesBuild");
+        BxSitesExtension extension = project.getExtensions().getByType(BxSitesExtension.class);
+
+        assertEquals(extension.getBxSitesVersion().get(), build.getBxSitesVersion().get());
+    }
+
+    @Test
     void extension_hookIntoAssembleDefaultsToFalse(@TempDir Path projectDir) {
         Project project = newProject(projectDir);
 

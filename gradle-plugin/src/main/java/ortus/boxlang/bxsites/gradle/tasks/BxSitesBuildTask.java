@@ -2,9 +2,12 @@ package ortus.boxlang.bxsites.gradle.tasks;
 
 import java.io.File;
 
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.InputDirectory;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
@@ -13,8 +16,8 @@ import ortus.boxlang.bxsites.core.BxSitesVerb;
 
 /**
  * Wraps bx-sites' {@code build} verb. Real up-to-date checking: re-runs only
- * when the content directory or version properties change; skipped
- * ("UP-TO-DATE") otherwise.
+ * when the content directory, the site config file, or version properties
+ * change; skipped ("UP-TO-DATE") otherwise.
  */
 @CacheableTask
 public abstract class BxSitesBuildTask extends AbstractBxSitesVerbTask {
@@ -22,6 +25,16 @@ public abstract class BxSitesBuildTask extends AbstractBxSitesVerbTask {
     @InputDirectory
     @PathSensitive(PathSensitivity.RELATIVE)
     public abstract DirectoryProperty getContentDir();
+
+    // Zero-or-one file, modeled as a collection (not @InputFile) so a
+    // freshly-scaffolded project with no bxsites.yaml/.toml/.json yet doesn't
+    // fail Gradle's own "specifies a file which doesn't exist" validation -
+    // see BxSitesPlugin's wiring, which only contributes the resolved path
+    // when it actually exists on disk.
+    @InputFiles
+    @Optional
+    @PathSensitive(PathSensitivity.NONE)
+    public abstract ConfigurableFileCollection getConfigFile();
 
     @OutputDirectory
     public abstract DirectoryProperty getSiteDir();
