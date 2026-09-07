@@ -73,10 +73,10 @@ public class BxSitesPlugin implements Plugin<Project> {
         });
     }
 
-    private static void wireCommonProperties(AbstractBxSitesVerbTask task, BxSitesExtension extension, BxSitesProvisionTask provision) {
-        task.dependsOn(provision);
-        task.getProjectRoot().set(extension.getProjectRoot());
-        task.getBoxlangHomeDir().set(extension.getBoxlangHomeDir());
-        task.getBoxlangMiniserverVersion().set(extension.getBoxlangMiniserverVersion());
-    }
+private static void wireCommonProperties(AbstractBxSitesVerbTask task, BxSitesExtension extension, BxSitesProvisionTask provision) {
+    task.dependsOn(provision);
+    task.getProjectRoot().set(extension.getProjectRoot());
+    task.getBoxlangHomeDir().set(extension.getBoxlangHomeDir());
+    task.getBoxlangMiniserverVersion().set(extension.getBoxlangMiniserverVersion());
+    task.getExtraArgs().convention(java.util.List.of());
 }
