@@ -18,8 +18,8 @@
 	<link rel="canonical" href="https&#x3a;&#x2f;&#x2f;bxsites.io&#x2f;theme&#x2f;slate&#x2f;guides&#x2f;mcp&#x2f;index.html">
 
 
-	<meta name="description" content="Turn on mcp to write a full-text, untruncated site&#x2f;mcp-index.json on every build, so bxSites Cloud can expose your published site through a public, read-only MCP server for AI agents - independent of search&#x2f;searchProvider.">
-	<meta property="og:description" content="Turn on mcp to write a full-text, untruncated site&#x2f;mcp-index.json on every build, so bxSites Cloud can expose your published site through a public, read-only MCP server for AI agents - independent of search&#x2f;searchProvider.">
+	<meta name="description" content="Turn on mcp to write a full-text, untruncated site&#x2f;mcp-index.json &#x28;plus site&#x2f;mcp-manifest.json and a per-tree mcp-nav.json&#x29; on every build, so bxSites Cloud can expose your published site through a public, read-only MCP server for AI agents - independent of search&#x2f;searchProvider.">
+	<meta property="og:description" content="Turn on mcp to write a full-text, untruncated site&#x2f;mcp-index.json &#x28;plus site&#x2f;mcp-manifest.json and a per-tree mcp-nav.json&#x29; on every build, so bxSites Cloud can expose your published site through a public, read-only MCP server for AI agents - independent of search&#x2f;searchProvider.">
 
 
 	<meta property="og:image" content="/theme/slate/assets/og/guides-mcp.png">
@@ -132,7 +132,7 @@
 
 MCP Server</h1>
 
-	<p class="page-summary">Turn on mcp to write a full-text, untruncated site&#x2f;mcp-index.json on every build, so bxSites Cloud can expose your published site through a public, read-only MCP server for AI agents - independent of search&#x2f;searchProvider.</p>
+	<p class="page-summary">Turn on mcp to write a full-text, untruncated site&#x2f;mcp-index.json &#x28;plus site&#x2f;mcp-manifest.json and a per-tree mcp-nav.json&#x29; on every build, so bxSites Cloud can expose your published site through a public, read-only MCP server for AI agents - independent of search&#x2f;searchProvider.</p>
 
 
 	<div class="page-tags"><a class="page-tag" href="/theme/slate/tags/index.html#tag-guides">guides</a><a class="page-tag" href="/theme/slate/tags/index.html#tag-mcp">mcp</a><a class="page-tag" href="/theme/slate/tags/index.html#tag-ai">ai</a></div>
@@ -140,7 +140,7 @@ MCP Server</h1>
 
 
 
-	<details class="bxsites-toc-mobile slate-toc--mobile"><summary class="slate-toc--mobile__summary">On this page</summary><ul><li class="slate-toc__item slate-toc__item--2"><a href="#turning-it-on">Turning it on</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#independent-of-search">Independent of search</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#the-mcp-indexjson-format">The mcp-index.json format</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#multi-version-and-multi-locale-sites">Multi-version and multi-locale sites</a></li></ul></details>
+	<details class="bxsites-toc-mobile slate-toc--mobile"><summary class="slate-toc--mobile__summary">On this page</summary><ul><li class="slate-toc__item slate-toc__item--2"><a href="#turning-it-on">Turning it on</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#independent-of-search">Independent of search</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#the-mcp-indexjson-format">The mcp-index.json format</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#the-mcp-manifestjson-format">The mcp-manifest.json format</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#the-mcp-navjson-format">The mcp-nav.json format</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#multi-version-and-multi-locale-sites">Multi-version and multi-locale sites</a></li></ul></details>
 
 				<div class="slate-content-body">
 				<svg xmlns="http://www.w3.org/2000/svg" class="adm-hidden">
@@ -154,19 +154,25 @@ MCP Server</h1>
 </symbol>
 </svg>
 <h1 id="mcp-server"><a href="#mcp-server" id="mcp-server" name="mcp-server" class="anchor"></a>MCP Server</h1>
-<p>Turn <code>mcp: true</code> on in <code>bxsites.yaml</code> and every <code>build</code> writes
-<code>site/mcp-index.json</code> alongside your rendered pages - a full-text,
-machine-readable copy of your site's content that
+<p>Turn <code>mcp: true</code> on in <code>bxsites.yaml</code> and every <code>build</code> writes three files
+alongside your rendered pages - a full-text, machine-readable copy of your
+site's content, nav, and tree layout that
 <a href="https://bxsites.io/cloud">bxSites Cloud</a> reads to expose a public,
 read-only <a href="https://modelcontextprotocol.io/">MCP</a> server for your
 published site, the same idea as
 <a href="https://gitbook.com/docs/ai-for-your-readers/mcp-servers-for-published-docs">GitBook's &quot;MCP servers for published docs&quot;</a>.
 Once published, AI agents and assistants (Claude, ChatGPT, and any other
-MCP-aware client) can search and retrieve your site's content directly,
-instead of scraping rendered HTML.</p>
-<p>BxSites itself only ever produces the <code>mcp-index.json</code> file described on
-this page - actually serving it as an MCP server over the network is
-bxSites Cloud's job, not something this module does on its own.</p>
+MCP-aware client) can search, browse, and retrieve your site's content
+directly, instead of scraping rendered HTML:</p>
+<ul>
+<li><code>site/mcp-index.json</code> - one full-text entry per page, per tree</li>
+<li><code>site/mcp-nav.json</code> - that tree's own nav structure, per tree</li>
+<li><code>site/mcp-manifest.json</code> - one site-wide index of every tree (main site,
+versions, locales) and where to find each one's own files above</li>
+</ul>
+<p>BxSites itself only ever produces the files described on this page -
+actually serving them as an MCP server over the network is bxSites
+Cloud's job, not something this module does on its own.</p>
 <div class="adm-block adm-note">
 <div class="adm-heading">
 <svg class="adm-icon"><use xlink:href="#adm-note" /></svg><span>Requires a paid bxSites Cloud plan</span>
@@ -185,8 +191,9 @@ paid plans only - it isn't included on the free plan. See
 </div><div class="bxsites-tab-panel" data-bxsites-tab="2"><pre><code class="language-json">{ &quot;mcp&quot;: true }
 </code></pre>
 </div></div></div>
-<p><code>false</code> (the default) skips the whole step - no <code>mcp-index.json</code> is
-written, and <code>build</code> pays no extra cost beyond checking the flag.</p>
+<p><code>false</code> (the default) skips the whole step - none of <code>mcp-index.json</code>,
+<code>mcp-nav.json</code>, or <code>mcp-manifest.json</code> are written, and <code>build</code> pays no
+extra cost beyond checking the flag.</p>
 <h2 id="independent-of-search"><a href="#independent-of-search" id="independent-of-search" name="independent-of-search" class="anchor"></a>Independent of <code>search</code></h2>
 <p><code>mcp</code> has nothing to do with <a href="/theme/slate/guides/search/index.html"><code>search</code>/<code>searchProvider</code></a> - the
 two are unrelated switches:</p>
@@ -208,14 +215,28 @@ bxSites Cloud, not shipped to visitors, and a truncated body risks an AI
 agent giving an incomplete or wrong answer.</p>
 <h2 id="the-mcp-indexjson-format"><a href="#the-mcp-indexjson-format" id="the-mcp-indexjson-format" name="the-mcp-indexjson-format" class="anchor"></a>The <code>mcp-index.json</code> format</h2>
 <p>One entry per non-hidden page (the same &quot;hidden pages are excluded&quot;
-convention <code>search-index.json</code>/the nav both use):</p>
+convention <code>search-index.json</code>/the nav both use), covering both regular
+docs pages and <a href="/theme/slate/guides/blog/index.html">blog</a> posts:</p>
 <pre data-bxsites-title="site&#x2f;mcp-index.json"><code class="language-json">[
   {
     &quot;title&quot;: &quot;Getting Started&quot;,
     &quot;url&quot;: &quot;getting-started/index.html&quot;,
     &quot;tags&quot;: [&quot;guides&quot;],
     &quot;headings&quot;: [&quot;Getting Started&quot;, &quot;Installation&quot;, &quot;Next steps&quot;],
-    &quot;body&quot;: &quot;Getting Started Installation Run bxSites new to scaffold a project... Next steps ...&quot;
+    &quot;body&quot;: &quot;Getting Started Installation Run bxSites new to scaffold a project... Next steps ...&quot;,
+    &quot;type&quot;: &quot;page&quot;,
+    &quot;categories&quot;: [],
+    &quot;updatedAt&quot;: &quot;2026-08-18T10:15:00.000Z&quot;
+  },
+  {
+    &quot;title&quot;: &quot;Announcing bxSites 2.0&quot;,
+    &quot;url&quot;: &quot;blog/announcing-bxsites-2/index.html&quot;,
+    &quot;tags&quot;: [&quot;release&quot;],
+    &quot;headings&quot;: [&quot;Announcing bxSites 2.0&quot;],
+    &quot;body&quot;: &quot;Announcing bxSites 2.0 Today we're shipping...&quot;,
+    &quot;type&quot;: &quot;post&quot;,
+    &quot;categories&quot;: [&quot;Releases&quot;],
+    &quot;updatedAt&quot;: &quot;2026-08-15&quot;
   }
 ]
 </code></pre>
@@ -229,21 +250,76 @@ convention <code>search-index.json</code>/the nav both use):</p>
 <tr><td><code>tags</code></td><td>The page's frontmatter <code>tags</code> array</td></tr>
 <tr><td><code>headings</code></td><td>The plain text of every <code>h1</code>-<code>h6</code> on the page, in document order</td></tr>
 <tr><td><code>body</code></td><td>The <strong>complete</strong> plain-text page content, HTML tags stripped - never truncated</td></tr>
+<tr><td><code>type</code></td><td><code>&quot;page&quot;</code> for a regular docs page, <code>&quot;post&quot;</code> for a <a href="/theme/slate/guides/blog/index.html">blog</a> post</td></tr>
+<tr><td><code>categories</code></td><td>A post's own frontmatter <code>categories</code> array; always <code>[]</code> for a docs page (docs pages don't have categories)</td></tr>
+<tr><td><code>updatedAt</code></td><td>A post's own frontmatter <code>date</code>; a docs page's own frontmatter <code>date</code> when it sets one, else its source file's last-modified time as an ISO-8601 instant. <code>&quot;&quot;</code> when neither is available.</td></tr>
 </tbody>
 </table></div>
-<p>The only difference from <code>search-index.json</code>'s own entry shape is <code>body</code>:
-there, it's cut to 400 characters with a trailing ellipsis; here, it's the
-full page.</p>
+<p>Aside from <code>type</code>/<code>categories</code>/<code>updatedAt</code>, this is the same entry shape
+<code>search-index.json</code> uses, with one difference: there, <code>body</code> is cut to 400
+characters with a trailing ellipsis; here, it's the full page.</p>
+<h2 id="the-mcp-manifestjson-format"><a href="#the-mcp-manifestjson-format" id="the-mcp-manifestjson-format" name="the-mcp-manifestjson-format" class="anchor"></a>The <code>mcp-manifest.json</code> format</h2>
+<p>Written once per site build (not once per tree), <code>site/mcp-manifest.json</code>
+lists every tree that got its own <code>mcp-index.json</code>/<code>mcp-nav.json</code>, so
+bxSites Cloud's MCP server can offer version-and-locale-aware tools
+without guessing bx-sites' own directory conventions:</p>
+<pre data-bxsites-title="site&#x2f;mcp-manifest.json"><code class="language-json">[
+  { &quot;path&quot;: &quot;&quot;, &quot;label&quot;: &quot;1.0.x&quot;, &quot;version&quot;: &quot;1.0.x&quot;, &quot;locale&quot;: &quot;en&quot;, &quot;default&quot;: true },
+  { &quot;path&quot;: &quot;next&quot;, &quot;label&quot;: &quot;Next&quot;, &quot;version&quot;: null, &quot;locale&quot;: &quot;en&quot;, &quot;default&quot;: false },
+  { &quot;path&quot;: &quot;versions/0.9&quot;, &quot;label&quot;: &quot;0.9&quot;, &quot;version&quot;: &quot;0.9&quot;, &quot;locale&quot;: &quot;en&quot;, &quot;default&quot;: false },
+  { &quot;path&quot;: &quot;es&quot;, &quot;label&quot;: &quot;Español&quot;, &quot;version&quot;: &quot;1.0.x&quot;, &quot;locale&quot;: &quot;es&quot;, &quot;default&quot;: false }
+]
+</code></pre>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>path</code></td><td>This tree's own root-relative path - <code>&quot;&quot;</code> for the main tree at the site root, <code>&quot;next&quot;</code>/<code>&quot;versions/&lt;name&gt;&quot;</code>/<code>&quot;&lt;localeCode&gt;&quot;</code>/<code>&quot;versions/&lt;name&gt;/&lt;localeCode&gt;&quot;</code> otherwise. Join with <code>/mcp-index.json</code> (or <code>/mcp-nav.json</code>) to get that tree's own file, e.g. <code>&quot;versions/0.9/mcp-index.json&quot;</code> - and just <code>&quot;mcp-index.json&quot;</code> for the root's own (<code>path</code> is <code>&quot;&quot;</code> there).</td></tr>
+<tr><td><code>label</code></td><td>A human-readable label for this tree - the version switcher's own label (<code>versions.default</code>'s name, a plain version's own name, or <code>&quot;Latest&quot;</code>/<code>&quot;Next&quot;</code>), combined with the locale's own label for a locale sub-tree</td></tr>
+<tr><td><code>version</code></td><td>The <code>docs/versions/&lt;name&gt;/</code> name this tree renders, or <code>null</code> when it isn't a named version (the unversioned main tree, or <code>/next/</code>)</td></tr>
+<tr><td><code>locale</code></td><td>This tree's own locale code - <code>i18n.defaultLocale.code</code> for a tree with no locale suffix, otherwise that locale's own code</td></tr>
+<tr><td><code>default</code></td><td><code>true</code> for the one tree that renders at the site root - the one a visitor/AI agent lands on with no version or locale specified</td></tr>
+</tbody>
+</table></div>
+<h2 id="the-mcp-navjson-format"><a href="#the-mcp-navjson-format" id="the-mcp-navjson-format" name="the-mcp-navjson-format" class="anchor"></a>The <code>mcp-nav.json</code> format</h2>
+<p>Written alongside every tree's own <code>mcp-index.json</code> (site root, <code>/next/</code>,
+each <code>/versions/&lt;name&gt;/</code> tree, each locale sub-tree), <code>mcp-nav.json</code> is
+that tree's own nav - the exact same nested <code>{ title, url, order, icon, children }</code> structure the theme itself renders the sidebar from - so
+bxSites Cloud's MCP server can offer a <code>get_nav</code>/table-of-contents tool
+without inventing a second nav shape of its own:</p>
+<pre data-bxsites-title="site&#x2f;mcp-nav.json"><code class="language-json">[
+  {
+    &quot;title&quot;: &quot;Getting Started&quot;,
+    &quot;url&quot;: &quot;getting-started/index.html&quot;,
+    &quot;order&quot;: 1,
+    &quot;icon&quot;: &quot;phosphor-duotone:rocket-launch&quot;,
+    &quot;children&quot;: []
+  },
+  {
+    &quot;title&quot;: &quot;Guides&quot;,
+    &quot;url&quot;: &quot;&quot;,
+    &quot;order&quot;: 2,
+    &quot;icon&quot;: &quot;&quot;,
+    &quot;children&quot;: [
+      { &quot;title&quot;: &quot;Search&quot;, &quot;url&quot;: &quot;guides/search/index.html&quot;, &quot;order&quot;: 1, &quot;icon&quot;: &quot;&quot;, &quot;children&quot;: [] }
+    ]
+  }
+]
+</code></pre>
+<p>A folder-group node with no <code>index.md</code> of its own (like <code>&quot;Guides&quot;</code> above)
+has an empty <code>url</code> - it's not a page, just a heading for its <code>children</code>.</p>
 <h2 id="multi-version-and-multi-locale-sites"><a href="#multi-version-and-multi-locale-sites" id="multi-version-and-multi-locale-sites" name="multi-version-and-multi-locale-sites" class="anchor"></a>Multi-version and multi-locale sites</h2>
-<p>Just like <code>search-index.json</code>, <code>mcp-index.json</code> is written once per
-rendered tree - the main site, <code>/next/</code> (when <code>versions.default</code> is set),
-each <code>/versions/&lt;name&gt;/</code> tree, and each locale sub-tree - so every
-published tree gets its own <code>mcp-index.json</code> covering just that tree's
-own pages.</p>
+<p>Just like <code>search-index.json</code>, <code>mcp-index.json</code>/<code>mcp-nav.json</code> are written
+once per rendered tree - the main site, <code>/next/</code> (when <code>versions.default</code>
+is set), each <code>/versions/&lt;name&gt;/</code> tree, and each locale sub-tree - so
+every published tree gets its own pair of files covering just that tree's
+own pages and nav. <code>mcp-manifest.json</code>, on the other hand, is written
+once per build, at the site root only, listing every one of those trees.</p>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/mcp.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/theme/slate/guides/mcp.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 7, 2026, 9&#x3a;48&#x3a;43 PM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/mcp.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/theme/slate/guides/mcp.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 7, 2026, 11&#x3a;57&#x3a;02 PM</span></div>
 
 			</article>
 
@@ -265,7 +341,7 @@ own pages.</p>
 		</main>
 
 		<aside class="slate-toc-sidebar">
-			<nav class="slate-toc" aria-label="On this page"><div class="slate-toc__title">On this page</div><ul><li class="slate-toc__item slate-toc__item--2"><a href="#turning-it-on">Turning it on</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#independent-of-search">Independent of search</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#the-mcp-indexjson-format">The mcp-index.json format</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#multi-version-and-multi-locale-sites">Multi-version and multi-locale sites</a></li></ul></nav>
+			<nav class="slate-toc" aria-label="On this page"><div class="slate-toc__title">On this page</div><ul><li class="slate-toc__item slate-toc__item--2"><a href="#turning-it-on">Turning it on</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#independent-of-search">Independent of search</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#the-mcp-indexjson-format">The mcp-index.json format</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#the-mcp-manifestjson-format">The mcp-manifest.json format</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#the-mcp-navjson-format">The mcp-nav.json format</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#multi-version-and-multi-locale-sites">Multi-version and multi-locale sites</a></li></ul></nav>
 		</aside>
 
 	</div>

@@ -18,8 +18,8 @@
 	<link rel="canonical" href="https&#x3a;&#x2f;&#x2f;bxsites.io&#x2f;theme&#x2f;docsy&#x2f;es&#x2f;guides&#x2f;mcp&#x2f;index.html">
 
 
-	<meta name="description" content="Activa mcp para escribir un site&#x2f;mcp-index.json completo y sin truncar en cada build, para que bxSites Cloud pueda exponer tu sitio publicado a trav&eacute;s de un servidor MCP p&uacute;blico de solo lectura para agentes de IA - independiente de search&#x2f;searchProvider.">
-	<meta property="og:description" content="Activa mcp para escribir un site&#x2f;mcp-index.json completo y sin truncar en cada build, para que bxSites Cloud pueda exponer tu sitio publicado a trav&eacute;s de un servidor MCP p&uacute;blico de solo lectura para agentes de IA - independiente de search&#x2f;searchProvider.">
+	<meta name="description" content="Activa mcp para escribir un site&#x2f;mcp-index.json completo y sin truncar en cada build &#x28;adem&aacute;s de site&#x2f;mcp-manifest.json y un mcp-nav.json por &aacute;rbol&#x29;, para que bxSites Cloud pueda exponer tu sitio publicado a trav&eacute;s de un servidor MCP p&uacute;blico de solo lectura para agentes de IA - independiente de search&#x2f;searchProvider.">
+	<meta property="og:description" content="Activa mcp para escribir un site&#x2f;mcp-index.json completo y sin truncar en cada build &#x28;adem&aacute;s de site&#x2f;mcp-manifest.json y un mcp-nav.json por &aacute;rbol&#x29;, para que bxSites Cloud pueda exponer tu sitio publicado a trav&eacute;s de un servidor MCP p&uacute;blico de solo lectura para agentes de IA - independiente de search&#x2f;searchProvider.">
 
 
 	<meta property="og:image" content="/theme/docsy/es/assets/og/guides-mcp.png">
@@ -130,7 +130,7 @@
 
 Servidor MCP</h1>
 
-	<p class="page-summary">Activa mcp para escribir un site&#x2f;mcp-index.json completo y sin truncar en cada build, para que bxSites Cloud pueda exponer tu sitio publicado a trav&eacute;s de un servidor MCP p&uacute;blico de solo lectura para agentes de IA - independiente de search&#x2f;searchProvider.</p>
+	<p class="page-summary">Activa mcp para escribir un site&#x2f;mcp-index.json completo y sin truncar en cada build &#x28;adem&aacute;s de site&#x2f;mcp-manifest.json y un mcp-nav.json por &aacute;rbol&#x29;, para que bxSites Cloud pueda exponer tu sitio publicado a trav&eacute;s de un servidor MCP p&uacute;blico de solo lectura para agentes de IA - independiente de search&#x2f;searchProvider.</p>
 
 
 	<div class="page-tags"><a class="page-tag" href="/theme/docsy/es/tags/index.html#tag-guías">gu&iacute;as</a><a class="page-tag" href="/theme/docsy/es/tags/index.html#tag-mcp">mcp</a><a class="page-tag" href="/theme/docsy/es/tags/index.html#tag-ai">ai</a></div>
@@ -138,7 +138,7 @@ Servidor MCP</h1>
 
 
 
-	<details class="bxsites-toc-mobile docsy-toc--mobile"><summary class="docsy-toc--mobile__summary">En esta p&aacute;gina</summary><ul><li class="docsy-toc__item docsy-toc__item--2"><a href="#activarlo">Activarlo</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#independiente-de-search">Independiente de search</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#el-formato-de-mcp-indexjson">El formato de mcp-index.json</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#sitios-con-múltiples-versiones-e-idiomas">Sitios con m&uacute;ltiples versiones e idiomas</a></li></ul></details>
+	<details class="bxsites-toc-mobile docsy-toc--mobile"><summary class="docsy-toc--mobile__summary">En esta p&aacute;gina</summary><ul><li class="docsy-toc__item docsy-toc__item--2"><a href="#activarlo">Activarlo</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#independiente-de-search">Independiente de search</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#el-formato-de-mcp-indexjson">El formato de mcp-index.json</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#el-formato-de-mcp-manifestjson">El formato de mcp-manifest.json</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#el-formato-de-mcp-navjson">El formato de mcp-nav.json</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#sitios-con-múltiples-versiones-e-idiomas">Sitios con m&uacute;ltiples versiones e idiomas</a></li></ul></details>
 
 				<div class="docsy-content-body">
 				<svg xmlns="http://www.w3.org/2000/svg" class="adm-hidden">
@@ -152,20 +152,29 @@ Servidor MCP</h1>
 </symbol>
 </svg>
 <h1 id="servidor-mcp"><a href="#servidor-mcp" id="servidor-mcp" name="servidor-mcp" class="anchor"></a>Servidor MCP</h1>
-<p>Activa <code>mcp: true</code> en <code>bxsites.yaml</code> y cada <code>build</code> escribirá
-<code>site/mcp-index.json</code> junto a tus páginas renderizadas - una copia
-completa y legible por máquinas del contenido de tu sitio que
-<a href="https://bxsites.io/cloud">bxSites Cloud</a> lee para exponer un servidor
-<a href="https://modelcontextprotocol.io/">MCP</a> público y de solo lectura para
-tu sitio publicado, la misma idea que
+<p>Activa <code>mcp: true</code> en <code>bxsites.yaml</code> y cada <code>build</code> escribirá tres
+archivos junto a tus páginas renderizadas - una copia completa y legible
+por máquinas del contenido, la navegación y la estructura de árbol de tu
+sitio que <a href="https://bxsites.io/cloud">bxSites Cloud</a> lee para exponer un
+servidor <a href="https://modelcontextprotocol.io/">MCP</a> público y de solo
+lectura para tu sitio publicado, la misma idea que
 <a href="https://gitbook.com/docs/ai-for-your-readers/mcp-servers-for-published-docs">&quot;MCP servers for published docs&quot; de GitBook</a>.
 Una vez publicado, los agentes y asistentes de IA (Claude, ChatGPT y
-cualquier otro cliente compatible con MCP) pueden buscar y recuperar el
-contenido de tu sitio directamente, en lugar de raspar el HTML
-renderizado.</p>
-<p>BxSites en sí solo produce el archivo <code>mcp-index.json</code> descrito en esta
-página - servirlo realmente como un servidor MCP en red es tarea de
-bxSites Cloud, no algo que este módulo haga por sí solo.</p>
+cualquier otro cliente compatible con MCP) pueden buscar, explorar y
+recuperar el contenido de tu sitio directamente, en lugar de raspar el
+HTML renderizado:</p>
+<ul>
+<li><code>site/mcp-index.json</code> - una entrada de texto completo por página, por
+árbol</li>
+<li><code>site/mcp-nav.json</code> - la propia estructura de navegación de ese árbol,
+por árbol</li>
+<li><code>site/mcp-manifest.json</code> - un índice de todo el sitio con cada árbol
+(sitio principal, versiones, idiomas) y dónde encontrar los archivos
+propios de cada uno indicados arriba</li>
+</ul>
+<p>BxSites en sí solo produce los archivos descritos en esta página -
+servirlos realmente como un servidor MCP en red es tarea de bxSites
+Cloud, no algo que este módulo haga por sí solo.</p>
 <div class="adm-block adm-note">
 <div class="adm-heading">
 <svg class="adm-icon"><use xlink:href="#adm-note" /></svg><span>Requiere un plan de pago de bxSites Cloud</span>
@@ -186,9 +195,9 @@ actuales de los planes.</p>
 </div><div class="bxsites-tab-panel" data-bxsites-tab="2"><pre><code class="language-json">{ &quot;mcp&quot;: true }
 </code></pre>
 </div></div></div>
-<p><code>false</code> (predeterminado) omite todo el paso - no se escribe ningún
-<code>mcp-index.json</code>, y <code>build</code> no incurre en ningún costo adicional más
-allá de comprobar el indicador.</p>
+<p><code>false</code> (predeterminado) omite todo el paso - no se escribe ninguno de
+<code>mcp-index.json</code>, <code>mcp-nav.json</code> ni <code>mcp-manifest.json</code>, y <code>build</code> no
+incurre en ningún costo adicional más allá de comprobar el indicador.</p>
 <h2 id="independiente-de-search"><a href="#independiente-de-search" id="independiente-de-search" name="independiente-de-search" class="anchor"></a>Independiente de <code>search</code></h2>
 <p><code>mcp</code> no tiene nada que ver con <a href="/theme/docsy/es/guides/search/index.html"><code>search</code>/<code>searchProvider</code></a> -
 son dos interruptores independientes:</p>
@@ -213,14 +222,29 @@ cuerpo truncado arriesga que un agente de IA dé una respuesta
 incompleta o incorrecta.</p>
 <h2 id="el-formato-de-mcp-indexjson"><a href="#el-formato-de-mcp-indexjson" id="el-formato-de-mcp-indexjson" name="el-formato-de-mcp-indexjson" class="anchor"></a>El formato de <code>mcp-index.json</code></h2>
 <p>Una entrada por cada página no oculta (la misma convención &quot;las páginas
-ocultas se excluyen&quot; que usan <code>search-index.json</code> y la navegación):</p>
+ocultas se excluyen&quot; que usan <code>search-index.json</code> y la navegación),
+cubriendo tanto las páginas de documentación normales como las entradas
+del <a href="/theme/docsy/es/guides/blog/index.html">blog</a>:</p>
 <pre data-bxsites-title="site&#x2f;mcp-index.json"><code class="language-json">[
   {
     &quot;title&quot;: &quot;Getting Started&quot;,
     &quot;url&quot;: &quot;getting-started/index.html&quot;,
     &quot;tags&quot;: [&quot;guides&quot;],
     &quot;headings&quot;: [&quot;Getting Started&quot;, &quot;Installation&quot;, &quot;Next steps&quot;],
-    &quot;body&quot;: &quot;Getting Started Installation Run bxSites new to scaffold a project... Next steps ...&quot;
+    &quot;body&quot;: &quot;Getting Started Installation Run bxSites new to scaffold a project... Next steps ...&quot;,
+    &quot;type&quot;: &quot;page&quot;,
+    &quot;categories&quot;: [],
+    &quot;updatedAt&quot;: &quot;2026-08-18T10:15:00.000Z&quot;
+  },
+  {
+    &quot;title&quot;: &quot;Announcing bxSites 2.0&quot;,
+    &quot;url&quot;: &quot;blog/announcing-bxsites-2/index.html&quot;,
+    &quot;tags&quot;: [&quot;release&quot;],
+    &quot;headings&quot;: [&quot;Announcing bxSites 2.0&quot;],
+    &quot;body&quot;: &quot;Announcing bxSites 2.0 Today we're shipping...&quot;,
+    &quot;type&quot;: &quot;post&quot;,
+    &quot;categories&quot;: [&quot;Releases&quot;],
+    &quot;updatedAt&quot;: &quot;2026-08-15&quot;
   }
 ]
 </code></pre>
@@ -234,21 +258,83 @@ ocultas se excluyen&quot; que usan <code>search-index.json</code> y la navegaci�
 <tr><td><code>tags</code></td><td>El array <code>tags</code> del frontmatter de la página</td></tr>
 <tr><td><code>headings</code></td><td>El texto plano de cada encabezado <code>h1</code>-<code>h6</code> de la página, en el orden del documento</td></tr>
 <tr><td><code>body</code></td><td>El contenido de texto plano <strong>completo</strong> de la página, sin etiquetas HTML - nunca truncado</td></tr>
+<tr><td><code>type</code></td><td><code>&quot;page&quot;</code> para una página de documentación normal, <code>&quot;post&quot;</code> para una entrada de <a href="/theme/docsy/es/guides/blog/index.html">blog</a></td></tr>
+<tr><td><code>categories</code></td><td>El propio array <code>categories</code> del frontmatter de una entrada; siempre <code>[]</code> para una página de documentación (las páginas de documentación no tienen categorías)</td></tr>
+<tr><td><code>updatedAt</code></td><td>El propio <code>date</code> del frontmatter de una entrada; el propio <code>date</code> del frontmatter de una página de documentación cuando lo define, o si no, la fecha de última modificación de su archivo fuente como instante ISO-8601. <code>&quot;&quot;</code> cuando ninguno de los dos está disponible.</td></tr>
 </tbody>
 </table></div>
-<p>La única diferencia respecto a la forma de las entradas de
-<code>search-index.json</code> es <code>body</code>: allí se recorta a 400 caracteres con
-puntos suspensivos al final; aquí es la página completa.</p>
+<p>Aparte de <code>type</code>/<code>categories</code>/<code>updatedAt</code>, esta es la misma forma de
+entrada que usa <code>search-index.json</code>, con una diferencia: allí, <code>body</code> se
+recorta a 400 caracteres con puntos suspensivos al final; aquí, es la
+página completa.</p>
+<h2 id="el-formato-de-mcp-manifestjson"><a href="#el-formato-de-mcp-manifestjson" id="el-formato-de-mcp-manifestjson" name="el-formato-de-mcp-manifestjson" class="anchor"></a>El formato de <code>mcp-manifest.json</code></h2>
+<p>Escrito una vez por build del sitio (no una vez por árbol),
+<code>site/mcp-manifest.json</code> enumera cada árbol que obtuvo su propio
+<code>mcp-index.json</code>/<code>mcp-nav.json</code>, para que el servidor MCP de bxSites
+Cloud pueda ofrecer herramientas conscientes de versión e idioma sin
+tener que adivinar las propias convenciones de directorios de bx-sites:</p>
+<pre data-bxsites-title="site&#x2f;mcp-manifest.json"><code class="language-json">[
+  { &quot;path&quot;: &quot;&quot;, &quot;label&quot;: &quot;1.0.x&quot;, &quot;version&quot;: &quot;1.0.x&quot;, &quot;locale&quot;: &quot;en&quot;, &quot;default&quot;: true },
+  { &quot;path&quot;: &quot;next&quot;, &quot;label&quot;: &quot;Next&quot;, &quot;version&quot;: null, &quot;locale&quot;: &quot;en&quot;, &quot;default&quot;: false },
+  { &quot;path&quot;: &quot;versions/0.9&quot;, &quot;label&quot;: &quot;0.9&quot;, &quot;version&quot;: &quot;0.9&quot;, &quot;locale&quot;: &quot;en&quot;, &quot;default&quot;: false },
+  { &quot;path&quot;: &quot;es&quot;, &quot;label&quot;: &quot;Español&quot;, &quot;version&quot;: &quot;1.0.x&quot;, &quot;locale&quot;: &quot;es&quot;, &quot;default&quot;: false }
+]
+</code></pre>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Campo</th><th>Descripción</th></tr>
+</thead>
+<tbody>
+<tr><td><code>path</code></td><td>La ruta propia de este árbol, relativa a la raíz - <code>&quot;&quot;</code> para el árbol principal en la raíz del sitio, <code>&quot;next&quot;</code>/<code>&quot;versions/&lt;name&gt;&quot;</code>/<code>&quot;&lt;localeCode&gt;&quot;</code>/<code>&quot;versions/&lt;name&gt;/&lt;localeCode&gt;&quot;</code> en cualquier otro caso. Únela con <code>/mcp-index.json</code> (o <code>/mcp-nav.json</code>) para obtener el archivo propio de ese árbol, p. ej. <code>&quot;versions/0.9/mcp-index.json&quot;</code> - y solo <code>&quot;mcp-index.json&quot;</code> para el de la raíz (<code>path</code> es <code>&quot;&quot;</code> ahí).</td></tr>
+<tr><td><code>label</code></td><td>Una etiqueta legible para este árbol - la propia etiqueta del selector de versiones (el nombre de <code>versions.default</code>, el nombre propio de una versión normal, o <code>&quot;Latest&quot;</code>/<code>&quot;Next&quot;</code>), combinada con la etiqueta propia del idioma para un sub-árbol de idioma</td></tr>
+<tr><td><code>version</code></td><td>El nombre de <code>docs/versions/&lt;name&gt;/</code> que renderiza este árbol, o <code>null</code> cuando no es una versión con nombre (el árbol principal sin versionar, o <code>/next/</code>)</td></tr>
+<tr><td><code>locale</code></td><td>El código de idioma propio de este árbol - <code>i18n.defaultLocale.code</code> para un árbol sin sufijo de idioma, o el código propio de ese idioma en caso contrario</td></tr>
+<tr><td><code>default</code></td><td><code>true</code> para el único árbol que se renderiza en la raíz del sitio - aquel al que llega un visitante/agente de IA sin especificar versión ni idioma</td></tr>
+</tbody>
+</table></div>
+<h2 id="el-formato-de-mcp-navjson"><a href="#el-formato-de-mcp-navjson" id="el-formato-de-mcp-navjson" name="el-formato-de-mcp-navjson" class="anchor"></a>El formato de <code>mcp-nav.json</code></h2>
+<p>Escrito junto al propio <code>mcp-index.json</code> de cada árbol (raíz del sitio,
+<code>/next/</code>, cada árbol <code>/versions/&lt;name&gt;/</code>, cada sub-árbol de idioma),
+<code>mcp-nav.json</code> es la navegación propia de ese árbol - exactamente la
+misma estructura anidada <code>{ title, url, order, icon, children }</code> con la
+que el propio tema renderiza la barra lateral - para que el servidor MCP
+de bxSites Cloud pueda ofrecer una herramienta <code>get_nav</code>/tabla de
+contenidos sin inventar una segunda forma de navegación propia:</p>
+<pre data-bxsites-title="site&#x2f;mcp-nav.json"><code class="language-json">[
+  {
+    &quot;title&quot;: &quot;Getting Started&quot;,
+    &quot;url&quot;: &quot;getting-started/index.html&quot;,
+    &quot;order&quot;: 1,
+    &quot;icon&quot;: &quot;phosphor-duotone:rocket-launch&quot;,
+    &quot;children&quot;: []
+  },
+  {
+    &quot;title&quot;: &quot;Guides&quot;,
+    &quot;url&quot;: &quot;&quot;,
+    &quot;order&quot;: 2,
+    &quot;icon&quot;: &quot;&quot;,
+    &quot;children&quot;: [
+      { &quot;title&quot;: &quot;Search&quot;, &quot;url&quot;: &quot;guides/search/index.html&quot;, &quot;order&quot;: 1, &quot;icon&quot;: &quot;&quot;, &quot;children&quot;: [] }
+    ]
+  }
+]
+</code></pre>
+<p>Un nodo de grupo/carpeta sin <code>index.md</code> propio (como <code>&quot;Guides&quot;</code> arriba)
+tiene un <code>url</code> vacío - no es una página, solo un encabezado para sus
+<code>children</code>.</p>
 <h2 id="sitios-con-múltiples-versiones-e-idiomas"><a href="#sitios-con-múltiples-versiones-e-idiomas" id="sitios-con-múltiples-versiones-e-idiomas" name="sitios-con-múltiples-versiones-e-idiomas" class="anchor"></a>Sitios con múltiples versiones e idiomas</h2>
-<p>Igual que <code>search-index.json</code>, <code>mcp-index.json</code> se escribe una vez por
-cada árbol renderizado - el sitio principal, <code>/next/</code> (cuando
-<code>versions.default</code> está definido), cada árbol <code>/versions/&lt;name&gt;/</code> y
-cada sub-árbol de idioma -, de modo que cada árbol publicado obtiene su
-propio <code>mcp-index.json</code> que cubre solo las páginas de ese árbol.</p>
+<p>Igual que <code>search-index.json</code>, <code>mcp-index.json</code>/<code>mcp-nav.json</code> se
+escriben una vez por cada árbol renderizado - el sitio principal,
+<code>/next/</code> (cuando <code>versions.default</code> está definido), cada árbol
+<code>/versions/&lt;name&gt;/</code> y cada sub-árbol de idioma -, de modo que cada árbol
+publicado obtiene su propio par de archivos que cubre solo las páginas y
+la navegación de ese árbol. <code>mcp-manifest.json</code>, en cambio, se escribe
+una vez por build, solo en la raíz del sitio, enumerando cada uno de
+esos árboles.</p>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/es/guides/mcp.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Editar esta p&aacute;gina</a><a href="/theme/docsy/es/guides/mcp.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Descargar Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> &Uacute;ltima actualizaci&oacute;n Sep 7, 2026, 9&#x3a;48&#x3a;43 PM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/es/guides/mcp.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Editar esta p&aacute;gina</a><a href="/theme/docsy/es/guides/mcp.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Descargar Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> &Uacute;ltima actualizaci&oacute;n Sep 7, 2026, 11&#x3a;57&#x3a;02 PM</span></div>
 
 			</article>
 
@@ -270,7 +356,7 @@ propio <code>mcp-index.json</code> que cubre solo las páginas de ese árbol.</p
 		</main>
 
 		<aside class="docsy-toc-sidebar">
-			<nav class="docsy-toc" aria-label="En esta p&aacute;gina"><div class="docsy-toc__title">En esta p&aacute;gina</div><ul><li class="docsy-toc__item docsy-toc__item--2"><a href="#activarlo">Activarlo</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#independiente-de-search">Independiente de search</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#el-formato-de-mcp-indexjson">El formato de mcp-index.json</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#sitios-con-múltiples-versiones-e-idiomas">Sitios con m&uacute;ltiples versiones e idiomas</a></li></ul></nav>
+			<nav class="docsy-toc" aria-label="En esta p&aacute;gina"><div class="docsy-toc__title">En esta p&aacute;gina</div><ul><li class="docsy-toc__item docsy-toc__item--2"><a href="#activarlo">Activarlo</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#independiente-de-search">Independiente de search</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#el-formato-de-mcp-indexjson">El formato de mcp-index.json</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#el-formato-de-mcp-manifestjson">El formato de mcp-manifest.json</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#el-formato-de-mcp-navjson">El formato de mcp-nav.json</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#sitios-con-múltiples-versiones-e-idiomas">Sitios con m&uacute;ltiples versiones e idiomas</a></li></ul></nav>
 		</aside>
 
 	</div>

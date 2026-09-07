@@ -18,8 +18,8 @@
 	<link rel="canonical" href="https&#x3a;&#x2f;&#x2f;bxsites.io&#x2f;theme&#x2f;justthedocs&#x2f;de&#x2f;guides&#x2f;mcp&#x2f;index.html">
 
 
-	<meta name="description" content="Aktiviere mcp, um bei jedem Build eine vollst&auml;ndige, unabgeschnittene site&#x2f;mcp-index.json zu schreiben, damit bxSites Cloud deine ver&ouml;ffentlichte Website &uuml;ber einen &ouml;ffentlichen, schreibgesch&uuml;tzten MCP-Server f&uuml;r KI-Agenten bereitstellen kann - unabh&auml;ngig von search&#x2f;searchProvider.">
-	<meta property="og:description" content="Aktiviere mcp, um bei jedem Build eine vollst&auml;ndige, unabgeschnittene site&#x2f;mcp-index.json zu schreiben, damit bxSites Cloud deine ver&ouml;ffentlichte Website &uuml;ber einen &ouml;ffentlichen, schreibgesch&uuml;tzten MCP-Server f&uuml;r KI-Agenten bereitstellen kann - unabh&auml;ngig von search&#x2f;searchProvider.">
+	<meta name="description" content="Aktiviere mcp, um bei jedem Build eine vollst&auml;ndige, unabgeschnittene site&#x2f;mcp-index.json &#x28;sowie site&#x2f;mcp-manifest.json und eine mcp-nav.json pro Baum&#x29; zu schreiben, damit bxSites Cloud deine ver&ouml;ffentlichte Website &uuml;ber einen &ouml;ffentlichen, schreibgesch&uuml;tzten MCP-Server f&uuml;r KI-Agenten bereitstellen kann - unabh&auml;ngig von search&#x2f;searchProvider.">
+	<meta property="og:description" content="Aktiviere mcp, um bei jedem Build eine vollst&auml;ndige, unabgeschnittene site&#x2f;mcp-index.json &#x28;sowie site&#x2f;mcp-manifest.json und eine mcp-nav.json pro Baum&#x29; zu schreiben, damit bxSites Cloud deine ver&ouml;ffentlichte Website &uuml;ber einen &ouml;ffentlichen, schreibgesch&uuml;tzten MCP-Server f&uuml;r KI-Agenten bereitstellen kann - unabh&auml;ngig von search&#x2f;searchProvider.">
 
 
 	<meta property="og:image" content="/theme/justthedocs/de/assets/og/guides-mcp.png">
@@ -130,7 +130,7 @@
 
 MCP-Server</h1>
 
-	<p class="page-summary">Aktiviere mcp, um bei jedem Build eine vollst&auml;ndige, unabgeschnittene site&#x2f;mcp-index.json zu schreiben, damit bxSites Cloud deine ver&ouml;ffentlichte Website &uuml;ber einen &ouml;ffentlichen, schreibgesch&uuml;tzten MCP-Server f&uuml;r KI-Agenten bereitstellen kann - unabh&auml;ngig von search&#x2f;searchProvider.</p>
+	<p class="page-summary">Aktiviere mcp, um bei jedem Build eine vollst&auml;ndige, unabgeschnittene site&#x2f;mcp-index.json &#x28;sowie site&#x2f;mcp-manifest.json und eine mcp-nav.json pro Baum&#x29; zu schreiben, damit bxSites Cloud deine ver&ouml;ffentlichte Website &uuml;ber einen &ouml;ffentlichen, schreibgesch&uuml;tzten MCP-Server f&uuml;r KI-Agenten bereitstellen kann - unabh&auml;ngig von search&#x2f;searchProvider.</p>
 
 
 	<div class="page-tags"><a class="page-tag" href="/theme/justthedocs/de/tags/index.html#tag-anleitungen">anleitungen</a><a class="page-tag" href="/theme/justthedocs/de/tags/index.html#tag-mcp">mcp</a><a class="page-tag" href="/theme/justthedocs/de/tags/index.html#tag-ai">ai</a></div>
@@ -138,7 +138,7 @@ MCP-Server</h1>
 
 
 
-	<details class="bxsites-toc-mobile jtd-toc--mobile"><summary class="jtd-toc--mobile__summary">Auf dieser Seite</summary><ul><li class="jtd-toc__item jtd-toc__item--2"><a href="#aktivieren">Aktivieren</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#unabhängig-von-search">Unabh&auml;ngig von search</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#das-format-von-mcp-indexjson">Das Format von mcp-index.json</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#websites-mit-mehreren-versionen-und-sprachen">Websites mit mehreren Versionen und Sprachen</a></li></ul></details>
+	<details class="bxsites-toc-mobile jtd-toc--mobile"><summary class="jtd-toc--mobile__summary">Auf dieser Seite</summary><ul><li class="jtd-toc__item jtd-toc__item--2"><a href="#aktivieren">Aktivieren</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#unabhängig-von-search">Unabh&auml;ngig von search</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#das-format-von-mcp-indexjson">Das Format von mcp-index.json</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#das-format-von-mcp-manifestjson">Das Format von mcp-manifest.json</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#das-format-von-mcp-navjson">Das Format von mcp-nav.json</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#websites-mit-mehreren-versionen-und-sprachen">Websites mit mehreren Versionen und Sprachen</a></li></ul></details>
 
 				<div class="jtd-content-body">
 				<svg xmlns="http://www.w3.org/2000/svg" class="adm-hidden">
@@ -152,27 +152,36 @@ MCP-Server</h1>
 </symbol>
 </svg>
 <h1 id="mcp-server"><a href="#mcp-server" id="mcp-server" name="mcp-server" class="anchor"></a>MCP-Server</h1>
-<p>Schalte <code>mcp: true</code> in <code>bxsites.yaml</code> ein, und jeder <code>build</code> schreibt
-<code>site/mcp-index.json</code> neben deinen gerenderten Seiten - eine
-vollständige, maschinenlesbare Kopie des Inhalts deiner Website, die
-<a href="https://bxsites.io/cloud">bxSites Cloud</a> liest, um einen öffentlichen,
-schreibgeschützten <a href="https://modelcontextprotocol.io/">MCP</a>-Server für
-deine veröffentlichte Website bereitzustellen - dieselbe Idee wie
+<p>Schalte <code>mcp: true</code> in <code>bxsites.yaml</code> ein, und jeder <code>build</code> schreibt drei
+Dateien neben deinen gerenderten Seiten - eine vollständige,
+maschinenlesbare Kopie des Inhalts, der Navigation und der Baumstruktur
+deiner Website, die <a href="https://bxsites.io/cloud">bxSites Cloud</a> liest, um
+einen öffentlichen, schreibgeschützten
+<a href="https://modelcontextprotocol.io/">MCP</a>-Server für deine veröffentlichte
+Website bereitzustellen - dieselbe Idee wie
 <a href="https://gitbook.com/docs/ai-for-your-readers/mcp-servers-for-published-docs">GitBooks „MCP servers for published docs&quot;</a>.
 Nach der Veröffentlichung können KI-Agenten und -Assistenten (Claude,
 ChatGPT und jeder andere MCP-fähige Client) den Inhalt deiner Website
-direkt durchsuchen und abrufen, statt gerendertes HTML zu scrapen.</p>
-<p>BxSites selbst erzeugt ausschließlich die auf dieser Seite beschriebene
-Datei <code>mcp-index.json</code> - sie tatsächlich als MCP-Server über das
-Netzwerk auszuliefern, ist Aufgabe von bxSites Cloud, nicht etwas, das
-dieses Modul selbst übernimmt.</p>
+direkt durchsuchen, browsen und abrufen, statt gerendertes HTML zu
+scrapen:</p>
+<ul>
+<li><code>site/mcp-index.json</code> - ein vollständiger Eintrag pro Seite, pro Baum</li>
+<li><code>site/mcp-nav.json</code> - die eigene Navigationsstruktur dieses Baums, pro Baum</li>
+<li><code>site/mcp-manifest.json</code> - ein websiteweiter Index aller Bäume
+(Hauptseite, Versionen, Sprachen) und wo die eigenen Dateien jedes
+Baums von oben zu finden sind</li>
+</ul>
+<p>BxSites selbst erzeugt ausschließlich die auf dieser Seite beschriebenen
+Dateien - sie tatsächlich als MCP-Server über das Netzwerk auszuliefern,
+ist Aufgabe von bxSites Cloud, nicht etwas, das dieses Modul selbst
+übernimmt.</p>
 <div class="adm-block adm-note">
 <div class="adm-heading">
 <svg class="adm-icon"><use xlink:href="#adm-note" /></svg><span>Erfordert einen kostenpflichtigen bxSites-Cloud-Plan</span>
 </div>
 <div class="adm-body">
 <p>Das Erzeugen von <code>mcp-index.json</code> selbst ist kostenlos und funktioniert
-allein mit <code>bxSites build</code>, ganz ohne Cloud-Konto. Sie tatsächlich als
+allein mit <code>bxSites build</code>, ganz ohne Cloud-Konto. Es tatsächlich als
 laufenden MCP-Server für eine veröffentlichte Website bereitzustellen,
 ist eine Funktion von bxSites Cloud, die nur in den kostenpflichtigen
 Plänen enthalten ist - nicht im kostenlosen Plan. Aktuelle Details zu
@@ -186,9 +195,10 @@ den Plänen findest du unter
 </div><div class="bxsites-tab-panel" data-bxsites-tab="2"><pre><code class="language-json">{ &quot;mcp&quot;: true }
 </code></pre>
 </div></div></div>
-<p><code>false</code> (Standard) überspringt den gesamten Schritt - es wird keine
-<code>mcp-index.json</code> geschrieben, und <code>build</code> verursacht über die reine
-Prüfung des Flags hinaus keine zusätzlichen Kosten.</p>
+<p><code>false</code> (Standard) überspringt den gesamten Schritt - es werden weder
+<code>mcp-index.json</code>, <code>mcp-nav.json</code> noch <code>mcp-manifest.json</code> geschrieben,
+und <code>build</code> verursacht über die reine Prüfung des Flags hinaus keine
+zusätzlichen Kosten.</p>
 <h2 id="unabhängig-von-search"><a href="#unabhängig-von-search" id="unabhängig-von-search" name="unabhängig-von-search" class="anchor"></a>Unabhängig von <code>search</code></h2>
 <p><code>mcp</code> hat nichts mit <a href="/theme/justthedocs/de/guides/search/index.html"><code>search</code>/<code>searchProvider</code></a> zu tun - die
 beiden sind voneinander unabhängige Schalter:</p>
@@ -214,14 +224,28 @@ oder falsche Antwort gibt.</p>
 <h2 id="das-format-von-mcp-indexjson"><a href="#das-format-von-mcp-indexjson" id="das-format-von-mcp-indexjson" name="das-format-von-mcp-indexjson" class="anchor"></a>Das Format von <code>mcp-index.json</code></h2>
 <p>Ein Eintrag pro nicht versteckter Seite (dieselbe Konvention „versteckte
 Seiten werden ausgeschlossen&quot;, die auch <code>search-index.json</code>/die
-Navigation verwenden):</p>
+Navigation verwenden), sowohl für reguläre Doku-Seiten als auch für
+<a href="/theme/justthedocs/de/guides/blog/index.html">Blog</a>-Beiträge:</p>
 <pre data-bxsites-title="site&#x2f;mcp-index.json"><code class="language-json">[
   {
     &quot;title&quot;: &quot;Getting Started&quot;,
     &quot;url&quot;: &quot;getting-started/index.html&quot;,
     &quot;tags&quot;: [&quot;guides&quot;],
     &quot;headings&quot;: [&quot;Getting Started&quot;, &quot;Installation&quot;, &quot;Next steps&quot;],
-    &quot;body&quot;: &quot;Getting Started Installation Run bxSites new to scaffold a project... Next steps ...&quot;
+    &quot;body&quot;: &quot;Getting Started Installation Run bxSites new to scaffold a project... Next steps ...&quot;,
+    &quot;type&quot;: &quot;page&quot;,
+    &quot;categories&quot;: [],
+    &quot;updatedAt&quot;: &quot;2026-08-18T10:15:00.000Z&quot;
+  },
+  {
+    &quot;title&quot;: &quot;Announcing bxSites 2.0&quot;,
+    &quot;url&quot;: &quot;blog/announcing-bxsites-2/index.html&quot;,
+    &quot;tags&quot;: [&quot;release&quot;],
+    &quot;headings&quot;: [&quot;Announcing bxSites 2.0&quot;],
+    &quot;body&quot;: &quot;Announcing bxSites 2.0 Today we're shipping...&quot;,
+    &quot;type&quot;: &quot;post&quot;,
+    &quot;categories&quot;: [&quot;Releases&quot;],
+    &quot;updatedAt&quot;: &quot;2026-08-15&quot;
   }
 ]
 </code></pre>
@@ -235,22 +259,82 @@ Navigation verwenden):</p>
 <tr><td><code>tags</code></td><td>Das Frontmatter-Array <code>tags</code> der Seite</td></tr>
 <tr><td><code>headings</code></td><td>Der reine Text jeder Überschrift <code>h1</code>-<code>h6</code> auf der Seite, in Dokumentreihenfolge</td></tr>
 <tr><td><code>body</code></td><td>Der <strong>vollständige</strong> reine Textinhalt der Seite, HTML-Tags entfernt - nie abgeschnitten</td></tr>
+<tr><td><code>type</code></td><td><code>&quot;page&quot;</code> für eine reguläre Doku-Seite, <code>&quot;post&quot;</code> für einen <a href="/theme/justthedocs/de/guides/blog/index.html">Blog</a>-Beitrag</td></tr>
+<tr><td><code>categories</code></td><td>Das eigene Frontmatter-Array <code>categories</code> eines Beitrags; bei einer Doku-Seite immer <code>[]</code> (Doku-Seiten haben keine Kategorien)</td></tr>
+<tr><td><code>updatedAt</code></td><td>Das eigene Frontmatter-<code>date</code> eines Beitrags; bei einer Doku-Seite deren eigenes Frontmatter-<code>date</code>, sofern gesetzt, sonst der Zeitpunkt der letzten Änderung ihrer Quelldatei als ISO-8601-Zeitpunkt. <code>&quot;&quot;</code>, wenn keines von beidem verfügbar ist.</td></tr>
 </tbody>
 </table></div>
-<p>Der einzige Unterschied zur Eintragsform von <code>search-index.json</code> ist
-<code>body</code>: dort wird sie auf 400 Zeichen mit abschließender Ellipse
-gekürzt; hier ist es die vollständige Seite.</p>
+<p>Abgesehen von <code>type</code>/<code>categories</code>/<code>updatedAt</code> ist dies dieselbe
+Eintragsform wie bei <code>search-index.json</code>, mit einem Unterschied: dort
+wird <code>body</code> auf 400 Zeichen mit abschließender Ellipse gekürzt; hier ist
+es die vollständige Seite.</p>
+<h2 id="das-format-von-mcp-manifestjson"><a href="#das-format-von-mcp-manifestjson" id="das-format-von-mcp-manifestjson" name="das-format-von-mcp-manifestjson" class="anchor"></a>Das Format von <code>mcp-manifest.json</code></h2>
+<p>Einmal pro Website-Build geschrieben (nicht einmal pro Baum), listet
+<code>site/mcp-manifest.json</code> jeden Baum auf, der eine eigene
+<code>mcp-index.json</code>/<code>mcp-nav.json</code> erhalten hat, damit der MCP-Server von
+bxSites Cloud versions- und sprachbewusste Tools anbieten kann, ohne die
+eigenen Verzeichniskonventionen von bx-sites erraten zu müssen:</p>
+<pre data-bxsites-title="site&#x2f;mcp-manifest.json"><code class="language-json">[
+  { &quot;path&quot;: &quot;&quot;, &quot;label&quot;: &quot;1.0.x&quot;, &quot;version&quot;: &quot;1.0.x&quot;, &quot;locale&quot;: &quot;en&quot;, &quot;default&quot;: true },
+  { &quot;path&quot;: &quot;next&quot;, &quot;label&quot;: &quot;Next&quot;, &quot;version&quot;: null, &quot;locale&quot;: &quot;en&quot;, &quot;default&quot;: false },
+  { &quot;path&quot;: &quot;versions/0.9&quot;, &quot;label&quot;: &quot;0.9&quot;, &quot;version&quot;: &quot;0.9&quot;, &quot;locale&quot;: &quot;en&quot;, &quot;default&quot;: false },
+  { &quot;path&quot;: &quot;es&quot;, &quot;label&quot;: &quot;Español&quot;, &quot;version&quot;: &quot;1.0.x&quot;, &quot;locale&quot;: &quot;es&quot;, &quot;default&quot;: false }
+]
+</code></pre>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Feld</th><th>Beschreibung</th></tr>
+</thead>
+<tbody>
+<tr><td><code>path</code></td><td>Der eigene, wurzelrelative Pfad dieses Baums - <code>&quot;&quot;</code> für den Hauptbaum an der Website-Wurzel, sonst <code>&quot;next&quot;</code>/<code>&quot;versions/&lt;name&gt;&quot;</code>/<code>&quot;&lt;localeCode&gt;&quot;</code>/<code>&quot;versions/&lt;name&gt;/&lt;localeCode&gt;&quot;</code>. Verbinde ihn mit <code>/mcp-index.json</code> (oder <code>/mcp-nav.json</code>), um die eigene Datei dieses Baums zu erhalten, z. B. <code>&quot;versions/0.9/mcp-index.json&quot;</code> - und für die Wurzel selbst einfach <code>&quot;mcp-index.json&quot;</code> (dort ist <code>path</code> gleich <code>&quot;&quot;</code>).</td></tr>
+<tr><td><code>label</code></td><td>Eine menschenlesbare Bezeichnung für diesen Baum - die eigene Bezeichnung des Versionsschalters (der Name von <code>versions.default</code>, der eigene Name einer einfachen Version oder <code>&quot;Latest&quot;</code>/<code>&quot;Next&quot;</code>), kombiniert mit der eigenen Bezeichnung der Sprache für einen Sprach-Unterbaum</td></tr>
+<tr><td><code>version</code></td><td>Der Name aus <code>docs/versions/&lt;name&gt;/</code>, den dieser Baum rendert, oder <code>null</code>, wenn es sich um keine benannte Version handelt (der unversionierte Hauptbaum oder <code>/next/</code>)</td></tr>
+<tr><td><code>locale</code></td><td>Der eigene Sprachcode dieses Baums - <code>i18n.defaultLocale.code</code> für einen Baum ohne Sprach-Suffix, sonst der eigene Code dieser Sprache</td></tr>
+<tr><td><code>default</code></td><td><code>true</code> für den einen Baum, der an der Website-Wurzel gerendert wird - denjenigen, auf dem ein Besucher/KI-Agent ohne Angabe von Version oder Sprache landet</td></tr>
+</tbody>
+</table></div>
+<h2 id="das-format-von-mcp-navjson"><a href="#das-format-von-mcp-navjson" id="das-format-von-mcp-navjson" name="das-format-von-mcp-navjson" class="anchor"></a>Das Format von <code>mcp-nav.json</code></h2>
+<p>Neben der eigenen <code>mcp-index.json</code> jedes Baums geschrieben (Website-
+Wurzel, <code>/next/</code>, jeder <code>/versions/&lt;name&gt;/</code>-Baum, jeder Sprach-Unterbaum)
+ist <code>mcp-nav.json</code> die eigene Navigation dieses Baums - genau dieselbe
+verschachtelte <code>{ title, url, order, icon, children }</code>-Struktur, aus der
+das Theme selbst die Seitenleiste rendert -, damit der MCP-Server von
+bxSites Cloud ein <code>get_nav</code>/Inhaltsverzeichnis-Tool anbieten kann, ohne
+eine zweite, eigene Navigationsform zu erfinden:</p>
+<pre data-bxsites-title="site&#x2f;mcp-nav.json"><code class="language-json">[
+  {
+    &quot;title&quot;: &quot;Getting Started&quot;,
+    &quot;url&quot;: &quot;getting-started/index.html&quot;,
+    &quot;order&quot;: 1,
+    &quot;icon&quot;: &quot;phosphor-duotone:rocket-launch&quot;,
+    &quot;children&quot;: []
+  },
+  {
+    &quot;title&quot;: &quot;Guides&quot;,
+    &quot;url&quot;: &quot;&quot;,
+    &quot;order&quot;: 2,
+    &quot;icon&quot;: &quot;&quot;,
+    &quot;children&quot;: [
+      { &quot;title&quot;: &quot;Search&quot;, &quot;url&quot;: &quot;guides/search/index.html&quot;, &quot;order&quot;: 1, &quot;icon&quot;: &quot;&quot;, &quot;children&quot;: [] }
+    ]
+  }
+]
+</code></pre>
+<p>Ein Ordner-Gruppenknoten ohne eigene <code>index.md</code> (wie <code>&quot;Guides&quot;</code> oben)
+hat eine leere <code>url</code> - er ist keine Seite, sondern nur eine Überschrift
+für seine <code>children</code>.</p>
 <h2 id="websites-mit-mehreren-versionen-und-sprachen"><a href="#websites-mit-mehreren-versionen-und-sprachen" id="websites-mit-mehreren-versionen-und-sprachen" name="websites-mit-mehreren-versionen-und-sprachen" class="anchor"></a>Websites mit mehreren Versionen und Sprachen</h2>
-<p>Genau wie <code>search-index.json</code> wird <code>mcp-index.json</code> einmal pro
-gerendertem Baum geschrieben - die Hauptseite, <code>/next/</code> (wenn
+<p>Genau wie <code>search-index.json</code> werden <code>mcp-index.json</code>/<code>mcp-nav.json</code>
+einmal pro gerendertem Baum geschrieben - die Hauptseite, <code>/next/</code> (wenn
 <code>versions.default</code> gesetzt ist), jeder <code>/versions/&lt;name&gt;/</code>-Baum und
-jeder Sprach-Unterbaum -, sodass jeder veröffentlichte Baum seine
-eigene <code>mcp-index.json</code> erhält, die nur die eigenen Seiten dieses
-Baums abdeckt.</p>
+jeder Sprach-Unterbaum -, sodass jeder veröffentlichte Baum sein eigenes
+Dateipaar erhält, das nur die eigenen Seiten und die eigene Navigation
+dieses Baums abdeckt. <code>mcp-manifest.json</code> hingegen wird einmal pro Build
+geschrieben, nur an der Website-Wurzel, und listet jeden dieser Bäume auf.</p>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/de/guides/mcp.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Diese Seite bearbeiten</a><a href="/theme/justthedocs/de/guides/mcp.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Markdown herunterladen</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Zuletzt aktualisiert Sep 7, 2026, 9&#x3a;48&#x3a;43 PM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/de/guides/mcp.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Diese Seite bearbeiten</a><a href="/theme/justthedocs/de/guides/mcp.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Markdown herunterladen</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Zuletzt aktualisiert Sep 7, 2026, 11&#x3a;57&#x3a;02 PM</span></div>
 
 			</article>
 
@@ -272,7 +356,7 @@ Baums abdeckt.</p>
 		</main>
 
 		<aside class="jtd-toc-sidebar">
-			<nav class="jtd-toc" aria-label="Auf dieser Seite"><div class="jtd-toc__title">Auf dieser Seite</div><ul><li class="jtd-toc__item jtd-toc__item--2"><a href="#aktivieren">Aktivieren</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#unabhängig-von-search">Unabh&auml;ngig von search</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#das-format-von-mcp-indexjson">Das Format von mcp-index.json</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#websites-mit-mehreren-versionen-und-sprachen">Websites mit mehreren Versionen und Sprachen</a></li></ul></nav>
+			<nav class="jtd-toc" aria-label="Auf dieser Seite"><div class="jtd-toc__title">Auf dieser Seite</div><ul><li class="jtd-toc__item jtd-toc__item--2"><a href="#aktivieren">Aktivieren</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#unabhängig-von-search">Unabh&auml;ngig von search</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#das-format-von-mcp-indexjson">Das Format von mcp-index.json</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#das-format-von-mcp-manifestjson">Das Format von mcp-manifest.json</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#das-format-von-mcp-navjson">Das Format von mcp-nav.json</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#websites-mit-mehreren-versionen-und-sprachen">Websites mit mehreren Versionen und Sprachen</a></li></ul></nav>
 		</aside>
 
 	</div>

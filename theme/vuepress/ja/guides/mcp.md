@@ -2,25 +2,32 @@
 title: MCPサーバー
 order: 6.4
 icon: phosphor-duotone:plugs-connected
-summary: mcp を有効にすると、build のたびに完全で切り詰められていない site/mcp-index.json を書き出し、bxSites Cloud が公開・読み取り専用の MCP サーバーを通じて AI エージェントにサイトを公開できるようになります - search/searchProvider とは独立しています。
+summary: mcp を有効にすると、build のたびに完全で切り詰められていない site/mcp-index.json(および site/mcp-manifest.json とツリーごとの mcp-nav.json)を書き出し、bxSites Cloud が公開・読み取り専用の MCP サーバーを通じて AI エージェントにサイトを公開できるようになります - search/searchProvider とは独立しています。
 tags: [ガイド, mcp, ai]
 ---
 
 # MCPサーバー
 
 `bxsites.yaml` で `mcp: true` を有効にすると、`build` のたびにレンダリング
-されたページと並んで `site/mcp-index.json` が書き出されます - これは、
+されたページと並んで3つのファイルが書き出されます - サイトのコンテンツ、
+ナビゲーション、ツリー構造の完全かつ機械可読なコピーであり、
 [bxSites Cloud](https://bxsites.io/cloud) が公開したサイト向けに公開・
 読み取り専用の [MCP](https://modelcontextprotocol.io/) サーバーを提供する
-ために読み込む、サイトのコンテンツの完全かつ機械可読なコピーです。これは
+ために読み込みます。これは
 [GitBook の「公開ドキュメント向け MCP サーバー」](https://gitbook.com/docs/ai-for-your-readers/mcp-servers-for-published-docs)
 と同じ発想です。公開後は、AI エージェントやアシスタント(Claude、
 ChatGPT、その他 MCP 対応のクライアント)が、レンダリングされた HTML を
-スクレイピングする代わりに、サイトのコンテンツを直接検索・取得できるよう
-になります。
+スクレイピングする代わりに、サイトのコンテンツを直接検索・閲覧・取得
+できるようになります。
 
-bxSites 自体は、このページで説明する `mcp-index.json` ファイルを生成する
-だけです - それをネットワーク越しに実際に MCP サーバーとして提供するのは
+- `site/mcp-index.json` - ツリーごとに、ページ単位の全文エントリを1つ
+- `site/mcp-nav.json` - ツリーごとに、そのツリー自身のナビゲーション構造
+- `site/mcp-manifest.json` - すべてのツリー(メインサイト、バージョン、
+  ロケール)と、それぞれの上記ファイルの所在を示す、サイト全体の
+  インデックス1つ
+
+bxSites 自体は、このページで説明するファイルを生成するだけです -
+それをネットワーク越しに実際に MCP サーバーとして提供するのは
 bxSites Cloud の仕事であり、このモジュール自体が行うものではありません。
 
 !!! note "bxSites Cloud の有料プランが必要です"
@@ -43,8 +50,9 @@ bxSites Cloud の仕事であり、このモジュール自体が行うもので
     { "mcp": true }
     ```
 
-`false`(デフォルト)はこのステップ全体をスキップします - `mcp-index.json`
-は書き出されず、`build` はフラグの確認以上の追加コストを負いません。
+`false`(デフォルト)はこのステップ全体をスキップします - `mcp-index.json`、
+`mcp-nav.json`、`mcp-manifest.json` のいずれも書き出されず、`build` は
+フラグの確認以上の追加コストを負いません。
 
 ## `search` からは独立
 
@@ -74,6 +82,7 @@ bxSites Cloud によってサーバー側で取得されるものであり、訪
 
 非表示でない各ページにつき1エントリ(`search-index.json` やナビゲー
 ションが使う「非表示ページは除外する」という同じ規約に従います)。
+通常のドキュメントページと[ブログ](blog.md)記事の両方が対象です。
 
 ```json title="site/mcp-index.json"
 [
@@ -82,7 +91,20 @@ bxSites Cloud によってサーバー側で取得されるものであり、訪
     "url": "getting-started/index.html",
     "tags": ["guides"],
     "headings": ["Getting Started", "Installation", "Next steps"],
-    "body": "Getting Started Installation Run bxSites new to scaffold a project... Next steps ..."
+    "body": "Getting Started Installation Run bxSites new to scaffold a project... Next steps ...",
+    "type": "page",
+    "categories": [],
+    "updatedAt": "2026-08-18T10:15:00.000Z"
+  },
+  {
+    "title": "Announcing bxSites 2.0",
+    "url": "blog/announcing-bxsites-2/index.html",
+    "tags": ["release"],
+    "headings": ["Announcing bxSites 2.0"],
+    "body": "Announcing bxSites 2.0 Today we're shipping...",
+    "type": "post",
+    "categories": ["Releases"],
+    "updatedAt": "2026-08-15"
   }
 ]
 ```
@@ -94,15 +116,82 @@ bxSites Cloud によってサーバー側で取得されるものであり、訪
 | `tags` | ページのフロントマター `tags` 配列 |
 | `headings` | ページ内のすべての `h1`-`h6` のプレーンテキスト(文書内の出現順) |
 | `body` | HTML タグを除去した、ページの**完全な**プレーンテキストコンテンツ - 決して切り詰められません |
+| `type` | 通常のドキュメントページには `"page"`、[ブログ](blog.md)記事には `"post"` |
+| `categories` | 記事自身のフロントマター `categories` 配列。ドキュメントページには常に `[]`(ドキュメントページにはカテゴリーがないため) |
+| `updatedAt` | 記事自身のフロントマター `date`。ドキュメントページの場合は、設定されていればそのページ自身のフロントマター `date`、設定されていなければソースファイルの最終更新日時を ISO-8601 形式の日時として使用。どちらも取得できない場合は `""` |
 
-`search-index.json` 自身のエントリ形式との唯一の違いは `body` です。
-`search-index.json` では 400 文字で末尾に省略記号を付けて切り詰められ
-ますが、ここではページ全体になります。
+`type`/`categories`/`updatedAt` を除けば、これは `search-index.json` と
+同じエントリ形式です。唯一の違いは `body` で、`search-index.json` では
+400 文字で末尾に省略記号を付けて切り詰められますが、ここではページ
+全体になります。
+
+## `mcp-manifest.json` のフォーマット
+
+サイトのビルドごとに一度だけ(ツリーごとではなく)書き出される
+`site/mcp-manifest.json` は、独自の `mcp-index.json`/`mcp-nav.json` を
+持つすべてのツリーを一覧化します。これにより、bxSites Cloud の MCP
+サーバーは bx-sites 自身のディレクトリ規約を推測することなく、
+バージョンとロケールを意識したツールを提供できます。
+
+```json title="site/mcp-manifest.json"
+[
+  { "path": "", "label": "1.0.x", "version": "1.0.x", "locale": "en", "default": true },
+  { "path": "next", "label": "Next", "version": null, "locale": "en", "default": false },
+  { "path": "versions/0.9", "label": "0.9", "version": "0.9", "locale": "en", "default": false },
+  { "path": "es", "label": "Español", "version": "1.0.x", "locale": "es", "default": false }
+]
+```
+
+| フィールド | 説明 |
+|---|---|
+| `path` | このツリー自身のルート相対パス - サイトルートのメインツリーは `""`、それ以外は `"next"`/`"versions/<name>"`/`"<localeCode>"`/`"versions/<name>/<localeCode>"`。`/mcp-index.json`(または `/mcp-nav.json`)と結合するとそのツリー自身のファイルが得られます。例: `"versions/0.9/mcp-index.json"` - ルート自身の場合は単に `"mcp-index.json"`(`path` はそこでは `""`) |
+| `label` | このツリーの人間可読なラベル - バージョン切替の自身のラベル(`versions.default` の名前、通常のバージョン自身の名前、または `"Latest"`/`"Next"`)に、ロケールサブツリーの場合はそのロケール自身のラベルを組み合わせたもの |
+| `version` | このツリーがレンダリングする `docs/versions/<name>/` の名前。名前付きバージョンでない場合(バージョン管理されていないメインツリー、または `/next/`)は `null` |
+| `locale` | このツリー自身のロケールコード - ロケール接尾辞のないツリーでは `i18n.defaultLocale.code`、それ以外はそのロケール自身のコード |
+| `default` | サイトルートでレンダリングされる1つのツリーにのみ `true` - バージョンやロケールを指定しなかった訪問者/AI エージェントが行き着くツリー |
+
+## `mcp-nav.json` のフォーマット
+
+各ツリー自身の `mcp-index.json`(サイトルート、`/next/`、各
+`/versions/<name>/` ツリー、各ロケールサブツリー)と並んで書き出される
+`mcp-nav.json` は、そのツリー自身のナビゲーションです - テーマ自身が
+サイドバーをレンダリングするために使うのと全く同じ、ネストされた
+`{ title, url, order, icon, children }` 構造です。これにより、bxSites
+Cloud の MCP サーバーは独自の第二のナビゲーション形式を発明することなく
+`get_nav`/目次ツールを提供できます。
+
+```json title="site/mcp-nav.json"
+[
+  {
+    "title": "Getting Started",
+    "url": "getting-started/index.html",
+    "order": 1,
+    "icon": "phosphor-duotone:rocket-launch",
+    "children": []
+  },
+  {
+    "title": "Guides",
+    "url": "",
+    "order": 2,
+    "icon": "",
+    "children": [
+      { "title": "Search", "url": "guides/search/index.html", "order": 1, "icon": "", "children": [] }
+    ]
+  }
+]
+```
+
+`"Guides"` のように自身の `index.md` を持たないフォルダーグループ
+ノードは `url` が空です - これはページではなく、単に `children` の
+見出しです。
 
 ## マルチバージョン・多言語サイト
 
-`search-index.json` と同様に、`mcp-index.json` もレンダリングされる
-ツリーごとに一度書き出されます - メインサイト、(`versions.default` が
-設定されている場合の)`/next/`、各 `/versions/<name>/` ツリー、各言語
-サブツリーです。したがって、公開される各ツリーはそのツリー自身のページ
-のみをカバーする独自の `mcp-index.json` を持ちます。
+`search-index.json` と同様に、`mcp-index.json`/`mcp-nav.json` もレンダ
+リングされるツリーごとに一度書き出されます - メインサイト、
+(`versions.default` が設定されている場合の)`/next/`、各
+`/versions/<name>/` ツリー、各ロケールサブツリーです。したがって、
+公開される各ツリーはそのツリー自身のページとナビゲーションのみを
+カバーする、独自のファイルのペアを持ちます。一方 `mcp-manifest.json`
+は、ビルドごとに一度だけ、サイトルートにのみ書き出され、これら
+すべてのツリーを一覧化します。
