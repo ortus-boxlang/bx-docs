@@ -1,8 +1,6 @@
 package ortus.boxlang.bxsites.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -16,16 +14,14 @@ class BxSitesVerbTest {
         assertEquals("build", BxSitesVerb.BUILD.verbId());
         assertEquals("serve", BxSitesVerb.SERVE.verbId());
         assertEquals("clean", BxSitesVerb.CLEAN.verbId());
+        assertEquals("search-index", BxSitesVerb.SEARCH_INDEX.verbId());
+        assertEquals("lint", BxSitesVerb.LINT.verbId());
+        assertEquals("deploy", BxSitesVerb.DEPLOY.verbId());
+        assertEquals("publish", BxSitesVerb.PUBLISH.verbId());
+        assertEquals("package", BxSitesVerb.PACKAGE.verbId());
+        assertEquals("stats", BxSitesVerb.STATS.verbId());
+        assertEquals("doctor", BxSitesVerb.DOCTOR.verbId());
         assertEquals("post:new", BxSitesVerb.POST_NEW.verbId());
         assertEquals("i18n:status", BxSitesVerb.I18N_STATUS.verbId());
-    }
-
-    @Test
-    void hasOutput_reflectsWhetherAFixedOutputArtifactExistsToVerify() {
-        assertTrue(BxSitesVerb.BUILD.hasOutput());
-        assertTrue(BxSitesVerb.SEARCH_INDEX.hasOutput());
-        assertFalse(BxSitesVerb.NEW.hasOutput());
-        assertFalse(BxSitesVerb.SERVE.hasOutput());
-        assertFalse(BxSitesVerb.CLEAN.hasOutput());
     }
 }

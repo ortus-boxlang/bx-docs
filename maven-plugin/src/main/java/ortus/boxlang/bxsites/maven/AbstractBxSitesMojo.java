@@ -31,20 +31,16 @@ import ortus.boxlang.bxsites.core.provisioning.Provisioner;
  */
 public abstract class AbstractBxSitesMojo extends AbstractMojo {
 
-    /** Pinned default - see the plan's "Provisioning subsystem" for why this must stay a snapshot for now. */
-    static final String DEFAULT_MINISERVER_VERSION = "1.18.0-snapshot";
-    static final String DEFAULT_BXSITES_VERSION = "1.0.0-snapshot";
-
     @Parameter(property = "bxsites.projectRoot", defaultValue = "${project.basedir}", required = true)
     protected File projectRoot;
 
     @Parameter(property = "bxsites.boxlangHomeDir", defaultValue = "${project.build.directory}/bxsites/boxlang-home", required = true)
     protected File boxlangHomeDir;
 
-    @Parameter(property = "bxsites.boxlangMiniserverVersion", defaultValue = DEFAULT_MINISERVER_VERSION, required = true)
+    @Parameter(property = "bxsites.boxlangMiniserverVersion", defaultValue = BxSitesConfig.DEFAULT_MINISERVER_VERSION, required = true)
     protected String boxlangMiniserverVersion;
 
-    @Parameter(property = "bxsites.bxSitesVersion", defaultValue = DEFAULT_BXSITES_VERSION, required = true)
+    @Parameter(property = "bxsites.bxSitesVersion", defaultValue = BxSitesConfig.DEFAULT_BXSITES_VERSION, required = true)
     protected String bxSitesVersion;
 
     @Parameter(property = "bxsites.extraArgs")

@@ -6,6 +6,8 @@ import org.gradle.api.Project;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.Property;
 
+import ortus.boxlang.bxsites.core.BxSitesConfig;
+
 /**
  * The {@code bxSites { }} DSL block. Deliberately thin - it covers only
  * plugin/task wiring (versions, directories), never bx-sites' own
@@ -14,15 +16,11 @@ import org.gradle.api.provider.Property;
  */
 public abstract class BxSitesExtension {
 
-    /** Pinned default - see the plan's "Provisioning subsystem" for why this must stay a snapshot for now. */
-    public static final String DEFAULT_MINISERVER_VERSION = "1.18.0-snapshot";
-    public static final String DEFAULT_BXSITES_VERSION = "1.0.0-snapshot";
-
     @Inject
     public BxSitesExtension(Project project) {
         getProjectRoot().convention(project.getLayout().getProjectDirectory());
-        getBoxlangMiniserverVersion().convention(DEFAULT_MINISERVER_VERSION);
-        getBxSitesVersion().convention(DEFAULT_BXSITES_VERSION);
+        getBoxlangMiniserverVersion().convention(BxSitesConfig.DEFAULT_MINISERVER_VERSION);
+        getBxSitesVersion().convention(BxSitesConfig.DEFAULT_BXSITES_VERSION);
         getBoxlangHomeDir().convention(project.getLayout().getBuildDirectory().dir("bxsites/boxlang-home"));
         getHookIntoAssemble().convention(false);
         getHookIntoCheck().convention(true);

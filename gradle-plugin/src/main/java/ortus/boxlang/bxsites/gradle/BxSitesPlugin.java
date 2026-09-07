@@ -1,7 +1,9 @@
 package ortus.boxlang.bxsites.gradle;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -12,11 +14,19 @@ import org.gradle.api.tasks.Delete;
 import ortus.boxlang.bxsites.core.ConfigFileResolver;
 import ortus.boxlang.bxsites.core.ContentDirResolver;
 import ortus.boxlang.bxsites.core.SiteDirResolver;
+import ortus.boxlang.bxsites.core.provisioning.ArtifactCoordinates;
 import ortus.boxlang.bxsites.gradle.tasks.AbstractBxSitesVerbTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesBuildTask;
+import ortus.boxlang.bxsites.gradle.tasks.BxSitesDeployTask;
+import ortus.boxlang.bxsites.gradle.tasks.BxSitesDoctorTask;
+import ortus.boxlang.bxsites.gradle.tasks.BxSitesLintTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesNewTask;
+import ortus.boxlang.bxsites.gradle.tasks.BxSitesPackageTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesProvisionTask;
+import ortus.boxlang.bxsites.gradle.tasks.BxSitesPublishTask;
+import ortus.boxlang.bxsites.gradle.tasks.BxSitesSearchIndexTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesServeTask;
+import ortus.boxlang.bxsites.gradle.tasks.BxSitesStatsTask;
 
 public class BxSitesPlugin implements Plugin<Project> {
 
@@ -35,6 +45,9 @@ public class BxSitesPlugin implements Plugin<Project> {
             task.getBoxlangMiniserverVersion().set(extension.getBoxlangMiniserverVersion());
             task.getBxSitesVersion().set(extension.getBxSitesVersion());
             task.getBoxlangHomeDir().set(extension.getBoxlangHomeDir());
+            task.getProvisionedModuleDir().set(project.getLayout().dir(
+                    project.provider(() -> extension.getBoxlangHomeDir().get().getAsFile().toPath()
+                            .resolve("modules").resolve(ArtifactCoordinates.BXSITES_MODULE_MAPPING_NAME).toFile())));
         });
 
         project.getTasks().register("bxSitesNew", BxSitesNewTask.class, task -> {
@@ -52,13 +65,8 @@ public class BxSitesPlugin implements Plugin<Project> {
                             extension.getProjectRoot().get().getAsFile().toPath()).toFile())));
             // Only contributed when it actually exists - see BxSitesBuildTask's
             // own javadoc on why this is a file collection, not @InputFile.
-            task.getConfigFile().from(project.provider(() -> {
-                java.nio.file.Path root = extension.getProjectRoot().get().getAsFile().toPath();
-                java.nio.file.Path resolved = ConfigFileResolver.resolve(root);
-                return java.nio.file.Files.isRegularFile(resolved)
-                        ? java.util.List.of(resolved.toFile())
-                        : java.util.List.<java.io.File>of();
-            }));
+            task.getConfigFile().from(project.provider(() -> resolveConfigFileIfPresent(
+                    extension.getProjectRoot().get().getAsFile().toPath())));
             // Fixed, not independently configurable - bx-sites itself always writes to
             // <projectRoot>/site (confirmed in BuildPipeline.bx), so this is derived from
             // projectRoot rather than exposed as its own settable extension property.
@@ -80,9 +88,63 @@ public class BxSitesPlugin implements Plugin<Project> {
                     extension.getProjectRoot().get().getAsFile().toPath()).toFile()));
         });
 
+        // Fast-follow verb tasks - same thin AbstractBxSitesVerbTask wrapper
+        // pattern as the core four above, one per remaining bx-sites verb
+        // that's a natural fit for a build-tool task (the CMS-content verbs -
+        // post:new, page:new, theme:*, i18n:*, blog:*, etc. - are more
+        // interactive CLI conveniences than build-pipeline steps, so they're
+        // deliberately not wrapped here).
+        project.getTasks().register("bxSitesSearchIndex", BxSitesSearchIndexTask.class, task -> {
+            task.setGroup("bx-sites");
+            task.setDescription("Rebuilds site/search-index.json without a full site build.");
+            wireCommonProperties(task, extension, provision.get());
+        });
+
+        var lint = project.getTasks().register("bxSitesLint", BxSitesLintTask.class, task -> {
+            task.setGroup("bx-sites");
+            task.setDescription("Lints the docs/ Markdown source.");
+            wireCommonProperties(task, extension, provision.get());
+        });
+
+        project.getTasks().register("bxSitesDeploy", BxSitesDeployTask.class, task -> {
+            task.setGroup("bx-sites");
+            task.setDescription("Builds the site and deploys it to the configured target.");
+            wireCommonProperties(task, extension, provision.get());
+        });
+
+        project.getTasks().register("bxSitesPublish", BxSitesPublishTask.class, task -> {
+            task.setGroup("bx-sites");
+            task.setDescription("Builds the site and publishes it to bxSites Cloud.");
+            wireCommonProperties(task, extension, provision.get());
+        });
+
+        project.getTasks().register("bxSitesPackage", BxSitesPackageTask.class, task -> {
+            task.setGroup("bx-sites");
+            task.setDescription("Builds the site and zips it to site.zip.");
+            wireCommonProperties(task, extension, provision.get());
+        });
+
+        project.getTasks().register("bxSitesStats", BxSitesStatsTask.class, task -> {
+            task.setGroup("bx-sites");
+            task.setDescription("Reports page/word counts and other stats for the built site.");
+            wireCommonProperties(task, extension, provision.get());
+        });
+
+        project.getTasks().register("bxSitesDoctor", BxSitesDoctorTask.class, task -> {
+            task.setGroup("bx-sites");
+            task.setDescription("Runs bx-sites' own project health diagnostics.");
+            wireCommonProperties(task, extension, provision.get());
+        });
+
         project.getTasks().named("assemble", task -> {
             if (extension.getHookIntoAssemble().get()) {
                 task.dependsOn(project.getTasks().named("bxSitesBuild"));
+            }
+        });
+
+        project.getTasks().named("check", task -> {
+            if (extension.getHookIntoCheck().get()) {
+                task.dependsOn(lint);
             }
         });
     }
@@ -102,12 +164,17 @@ public class BxSitesPlugin implements Plugin<Project> {
         return skipSrcFallback ? docs : ContentDirResolver.resolve(projectRoot);
     }
 
+    private static List<File> resolveConfigFileIfPresent(Path projectRoot) {
+        Path resolved = ConfigFileResolver.resolve(projectRoot);
+        return Files.isRegularFile(resolved) ? List.of(resolved.toFile()) : List.of();
+    }
+
     private static void wireCommonProperties(AbstractBxSitesVerbTask task, BxSitesExtension extension, BxSitesProvisionTask provision) {
         task.dependsOn(provision);
         task.getProjectRoot().set(extension.getProjectRoot());
         task.getBoxlangHomeDir().set(extension.getBoxlangHomeDir());
         task.getBoxlangMiniserverVersion().set(extension.getBoxlangMiniserverVersion());
         task.getBxSitesVersion().set(extension.getBxSitesVersion());
-        task.getExtraArgs().convention(java.util.List.of());
+        task.getExtraArgs().convention(List.of());
     }
 }

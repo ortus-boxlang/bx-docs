@@ -7,6 +7,7 @@ import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
@@ -28,8 +29,28 @@ public abstract class BxSitesProvisionTask extends DefaultTask {
     @Input
     public abstract Property<String> getBxSitesVersion();
 
-    @OutputDirectory
+    /**
+     * Where this project's {@code BOXLANG_HOME} lives. Deliberately
+     * {@code @Internal}, not {@code @OutputDirectory}: BoxLang's own runtime
+     * writes logs/caches/{@code version.properties} directly under this
+     * directory (siblings of {@code modules/}) every time a verb subprocess
+     * runs, so tracking the whole tree as this task's output made Gradle
+     * disable caching for it outright ("output caching requires exclusive
+     * access to output paths") the moment any verb task had ever run - see
+     * {@link #getProvisionedModuleDir()} for the part that's actually this
+     * task's own, exclusively-owned output.
+     */
+    @Internal
     public abstract DirectoryProperty getBoxlangHomeDir();
+
+    /**
+     * The bx-sites module tree this task actually owns and writes
+     * exclusively - {@code <boxlangHomeDir>/modules/bxsites}. This, not the
+     * whole {@code boxlangHomeDir}, is what Gradle should track for
+     * up-to-date/build-cache purposes.
+     */
+    @OutputDirectory
+    public abstract DirectoryProperty getProvisionedModuleDir();
 
     @TaskAction
     public void provision() {

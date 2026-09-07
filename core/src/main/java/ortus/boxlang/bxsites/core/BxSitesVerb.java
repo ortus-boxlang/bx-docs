@@ -8,48 +8,48 @@ package ortus.boxlang.bxsites.core;
  * coverage. Each entry mirrors exactly one {@code models/cli/*.bx} dispatcher
  * class in the bx-sites module itself.
  *
- * <p>{@code hasOutput} distinguishes a verb whose success can be verified by
- * checking for a real artifact on disk (used by {@link BxSitesInvoker} since
- * the bx-sites CLI's own exit code is not reliable on failure) from one that
- * has no such fixed output to check (e.g. {@code serve}, which runs in the
- * foreground until interrupted).
+ * <p>Whether (and where) a given verb writes a real output artifact varies -
+ * some write one unconditionally ({@code build}), some only when a config
+ * option enables the feature they'd write into ({@code search-index}, which
+ * is a legitimate no-op when search is disabled), and some never do
+ * ({@code lint}/{@code stats}/{@code doctor}, stdout-report-only). Each
+ * plugin's own task/Mojo decides whether and what to pass as an expected
+ * output file to verify against - see {@link BxSitesInvoker#invoke}.
  */
 public enum BxSitesVerb {
 
-    NEW("new", false),
-    BUILD("build", true),
-    SERVE("serve", false),
-    SEARCH_INDEX("search-index", true),
-    CLEAN("clean", false),
-    MIGRATE("migrate", true),
-    STATS("stats", false),
-    DOCTOR("doctor", false),
-    LINT("lint", false),
-    DEPLOY("deploy", false),
-    PUBLISH("publish", false),
-    PACKAGE("package", true),
-    POST_NEW("post:new", true),
-    VERSION_NEW("version:new", true),
-    I18N_STATUS("i18n:status", false),
-    I18N_NEW("i18n:new", true),
-    PAGE_NEW("page:new", true),
-    PLUGIN_NEW("plugin:new", true),
-    INSTALL_PLUGIN("install:plugin", true),
-    THEME_NEW("theme:new", true),
-    INSTALL_THEME("install:theme", true),
-    SKILLS_INSTALL("skills:install", false),
-    THEME_IMPORT("theme:import", true),
-    PAGE_RENAME("page:rename", true),
-    BLOG_DRAFTS("blog:drafts", false),
-    BLOG_FIND("blog:find", false),
-    SEARCH_QUERY("search:query", false);
+    NEW("new"),
+    BUILD("build"),
+    SERVE("serve"),
+    SEARCH_INDEX("search-index"),
+    CLEAN("clean"),
+    MIGRATE("migrate"),
+    STATS("stats"),
+    DOCTOR("doctor"),
+    LINT("lint"),
+    DEPLOY("deploy"),
+    PUBLISH("publish"),
+    PACKAGE("package"),
+    POST_NEW("post:new"),
+    VERSION_NEW("version:new"),
+    I18N_STATUS("i18n:status"),
+    I18N_NEW("i18n:new"),
+    PAGE_NEW("page:new"),
+    PLUGIN_NEW("plugin:new"),
+    INSTALL_PLUGIN("install:plugin"),
+    THEME_NEW("theme:new"),
+    INSTALL_THEME("install:theme"),
+    SKILLS_INSTALL("skills:install"),
+    THEME_IMPORT("theme:import"),
+    PAGE_RENAME("page:rename"),
+    BLOG_DRAFTS("blog:drafts"),
+    BLOG_FIND("blog:find"),
+    SEARCH_QUERY("search:query");
 
     private final String verbId;
-    private final boolean hasOutput;
 
-    BxSitesVerb(String verbId, boolean hasOutput) {
+    BxSitesVerb(String verbId) {
         this.verbId = verbId;
-        this.hasOutput = hasOutput;
     }
 
     /**
@@ -58,14 +58,5 @@ public enum BxSitesVerb {
      */
     public String verbId() {
         return verbId;
-    }
-
-    /**
-     * Whether this verb's success can be verified by checking for a real
-     * output artifact on disk, in addition to scanning captured output for
-     * an {@code Error:} line.
-     */
-    public boolean hasOutput() {
-        return hasOutput;
     }
 }

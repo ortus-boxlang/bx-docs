@@ -129,6 +129,40 @@ class BxSitesPluginTest {
     }
 
     @Test
+    void apply_registersAllFastFollowVerbTasks(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        assertNotNull(project.getTasks().findByName("bxSitesSearchIndex"));
+        assertNotNull(project.getTasks().findByName("bxSitesLint"));
+        assertNotNull(project.getTasks().findByName("bxSitesDeploy"));
+        assertNotNull(project.getTasks().findByName("bxSitesPublish"));
+        assertNotNull(project.getTasks().findByName("bxSitesPackage"));
+        assertNotNull(project.getTasks().findByName("bxSitesStats"));
+        assertNotNull(project.getTasks().findByName("bxSitesDoctor"));
+    }
+
+    @Test
+    void extension_hookIntoCheckDefaultsToTrue_wiresBxSitesLintIntoCheck(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        Task check = project.getTasks().getByName("check");
+
+        assertTrue(project.getExtensions().getByType(BxSitesExtension.class).getHookIntoCheck().get());
+        assertTrue(dependsOnTransitively(check, "bxSitesLint"), "check should depend on bxSitesLint by default");
+    }
+
+    @Test
+    void extension_hookIntoCheckFalse_doesNotWireBxSitesLintIntoCheck(@TempDir Path projectDir) {
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
+        project.getPluginManager().apply(BxSitesPlugin.class);
+        project.getExtensions().getByType(BxSitesExtension.class).getHookIntoCheck().set(false);
+
+        Task check = project.getTasks().getByName("check");
+
+        assertFalse(dependsOnTransitively(check, "bxSitesLint"));
+    }
+
+    @Test
     void extension_hookIntoAssembleDefaultsToFalse(@TempDir Path projectDir) {
         Project project = newProject(projectDir);
 

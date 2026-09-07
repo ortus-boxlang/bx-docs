@@ -1,5 +1,6 @@
 package ortus.boxlang.bxsites.gradle;
 
+import static org.gradle.testkit.runner.TaskOutcome.FROM_CACHE;
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS;
 import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -93,6 +94,43 @@ class BxSitesPluginFunctionalTest {
         BuildResult second = runner("bxSitesBuild").build();
 
         assertEquals(SUCCESS, second.task(":bxSitesBuild").getOutcome());
+    }
+
+    @Test
+    void bxSitesProvision_isGenuinelyCacheable() {
+        // bxSitesProvision used to have its whole boxlangHomeDir declared as
+        // its @OutputDirectory, but BoxLang's own runtime writes logs/caches
+        // directly into that same directory at verb-execution time - Gradle
+        // disabled build caching for the task outright the moment any verb
+        // task had ever run ("Task output caching requires exclusive access
+        // to output paths"). Narrowing the declared output to just
+        // modules/bxsites fixed that - proven here by deleting all local
+        // build state and confirming a second, otherwise-identical build
+        // pulls bxSitesProvision straight from the shared build cache.
+        runner("bxSitesBuild", "--build-cache").build();
+
+        deleteRecursively(projectDir.resolve("build"));
+
+        BuildResult second = runner("bxSitesBuild", "--build-cache").build();
+
+        assertEquals(FROM_CACHE, second.task(":bxSitesProvision").getOutcome());
+    }
+
+    private static void deleteRecursively(Path root) {
+        if (!Files.exists(root)) {
+            return;
+        }
+        try (var walk = Files.walk(root)) {
+            walk.sorted(java.util.Comparator.reverseOrder()).forEach(path -> {
+                try {
+                    Files.delete(path);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static void appendTo(Path file, String text) throws IOException {
