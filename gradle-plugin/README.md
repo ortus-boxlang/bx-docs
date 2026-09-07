@@ -59,9 +59,11 @@ bxSites {
 ```
 
 Every property has a sensible default — a fresh project needs to set none
-of these. The content directory (`docs/`, falling back to `src/`) and the
-output directory (always `<projectRoot>/site/` — bx-sites itself hardcodes
-this, it isn't configurable) are derived automatically, not settable here.
+of these. The content directory (`docs/`, falling back to `src/` — except
+in a project with the Java plugin applied, where `src/` is your actual Java
+source root and is never used as bx-sites content) and the output directory
+(always `<projectRoot>/site/` — bx-sites itself hardcodes this, it isn't
+configurable) are derived automatically, not settable here.
 
 ## Not yet implemented
 

@@ -38,7 +38,10 @@ plugins {
 
 Una configuración por defecto no necesita nada más - el plugin detecta
 automáticamente el directorio de contenido (`docs/`, o `src/` si no
-existe) y el directorio de salida (siempre `<projectRoot>/site/`). El
+existe - salvo en un proyecto con el plugin de Java aplicado, donde
+`src/` es tu propio directorio de fuentes Java y nunca se usa como
+contenido de bx-sites) y el directorio de salida (siempre
+`<projectRoot>/site/`). El
 aspecto, tema, navegación y cualquier otro ajuste de tu sitio se controla
 por completo mediante `bxsites.yaml`/`.toml`/`.json` en la raíz del
 proyecto, exactamente como se documenta en

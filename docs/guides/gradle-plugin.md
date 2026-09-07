@@ -35,8 +35,10 @@ plugins {
 ```
 
 A default setup needs nothing else configured - the plugin infers the
-content directory (`docs/`, falling back to `src/`) and the output
-directory (always `<projectRoot>/site/`) automatically. Your site's own
+content directory (`docs/`, falling back to `src/` - except in a project
+with the Java plugin applied, where `src/` is your actual Java source root
+and is never used as bx-sites content) and the output directory (always
+`<projectRoot>/site/`) automatically. Your site's own
 look, theme, nav, and every other setting is controlled entirely by
 `bxsites.yaml`/`.toml`/`.json` at the project root, exactly as documented
 in [Configuration](../configuration.md) - the plugin never duplicates that

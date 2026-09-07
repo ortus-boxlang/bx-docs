@@ -37,8 +37,10 @@ plugins {
 ```
 
 Una configurazione predefinita non richiede altro - il plugin rileva
-automaticamente la directory dei contenuti (`docs/`, altrimenti `src/`) e
-la directory di output (sempre `<projectRoot>/site/`). L'aspetto, il
+automaticamente la directory dei contenuti (`docs/`, altrimenti `src/` -
+tranne in un progetto con il plugin Java applicato, dove `src/` è la
+propria directory dei sorgenti Java e non viene mai usata come contenuto
+di bx-sites) e la directory di output (sempre `<projectRoot>/site/`). L'aspetto, il
 tema, la nav e qualsiasi altra impostazione del proprio sito sono
 controllati interamente da `bxsites.yaml`/`.toml`/`.json` nella root del
 progetto, esattamente come documentato in

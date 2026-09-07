@@ -38,7 +38,9 @@ plugins {
 ```
 
 Ein Standard-Setup benötigt keine weitere Konfiguration - das Plugin
-erkennt das Content-Verzeichnis (`docs/`, sonst `src/`) und das
+erkennt das Content-Verzeichnis (`docs/`, sonst `src/` - außer in einem
+Projekt mit angewendetem Java-Plugin, wo `src/` das eigene Java-Quellverzeichnis
+ist und niemals als bx-sites-Content verwendet wird) und das
 Ausgabeverzeichnis (immer `<projectRoot>/site/`) automatisch. Aussehen,
 Theme, Navigation und jede andere Einstellung der eigenen Website werden
 komplett über `bxsites.yaml`/`.toml`/`.json` im Projektroot gesteuert,
