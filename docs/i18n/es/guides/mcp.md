@@ -24,6 +24,15 @@ BxSites en sí solo produce el archivo `mcp-index.json` descrito en esta
 página - servirlo realmente como un servidor MCP en red es tarea de
 bxSites Cloud, no algo que este módulo haga por sí solo.
 
+!!! note "Requiere un plan de pago de bxSites Cloud"
+    Generar `mcp-index.json` en sí es gratis y funciona solo con
+    `bxSites build`, sin necesidad de una cuenta de Cloud. Exponerlo
+    realmente como un servidor MCP activo para un sitio publicado es una
+    función de bxSites Cloud disponible solo en sus planes de pago - no
+    está incluida en el plan gratuito. Consulta
+    [bxsites.io/cloud](https://bxsites.io/cloud) para ver los detalles
+    actuales de los planes.
+
 ## Activarlo
 
 === "YAML"

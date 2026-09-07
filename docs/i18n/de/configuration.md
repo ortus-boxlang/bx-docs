@@ -439,8 +439,10 @@ unabgeschnittenen Inhaltsindex für den öffentlichen, schreibgeschützten
 MCP-Server von [bxSites Cloud](https://bxsites.io/cloud) für deine
 veröffentlichte Website. Vollständig unabhängig von `search`/
 `searchProvider` oben - er wird unabhängig davon erzeugt, welcher
-Such-Provider (oder keiner) konfiguriert ist. Siehe
-[MCP-Server](guides/mcp.md).
+Such-Provider (oder keiner) konfiguriert ist. Das Erzeugen der Datei
+selbst ist kostenlos; bxSites Cloud liefert sie nur in den
+kostenpflichtigen Plänen tatsächlich als laufenden MCP-Server aus, nicht
+im kostenlosen Plan. Siehe [MCP-Server](guides/mcp.md).
 
 ## `nav`
 

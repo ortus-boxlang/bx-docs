@@ -520,7 +520,9 @@ on every `build` - a full-text, untruncated content index for
 [bxSites Cloud](https://bxsites.io/cloud)'s public, read-only MCP server
 for your published site. Entirely independent of `search`/`searchProvider`
 above - it's produced no matter which search provider (or none) is
-configured. See [MCP Server](guides/mcp.md).
+configured. Building the file itself is free; bxSites Cloud only actually
+serves it as a live MCP server on its paid plans, not the free plan. See
+[MCP Server](guides/mcp.md).
 
 ## `nav`
 

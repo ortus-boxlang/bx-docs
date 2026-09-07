@@ -23,6 +23,14 @@ bxSites 自体は、このページで説明する `mcp-index.json` ファイル
 だけです - それをネットワーク越しに実際に MCP サーバーとして提供するのは
 bxSites Cloud の仕事であり、このモジュール自体が行うものではありません。
 
+!!! note "bxSites Cloud の有料プランが必要です"
+    `mcp-index.json` の生成自体は無料で、Cloud アカウントなしで `bxSites
+    build` だけで動作します。公開したサイト向けに実際に稼働する MCP
+    サーバーとして提供することは、bxSites Cloud の有料プランのみで
+    利用できる機能であり、無料プランには含まれていません。最新の
+    プラン詳細は [bxsites.io/cloud](https://bxsites.io/cloud) を
+    参照してください。
+
 ## 有効にする
 
 === "YAML"

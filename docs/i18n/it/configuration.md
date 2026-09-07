@@ -387,7 +387,9 @@ non troncato per il server MCP pubblico e di sola lettura di
 [bxSites Cloud](https://bxsites.io/cloud) per il tuo sito pubblicato.
 Del tutto indipendente da `search`/`searchProvider` sopra - viene
 prodotto indipendentemente dal provider di ricerca configurato (o
-dall'assenza di uno). Vedi [Server MCP](guides/mcp.md).
+dall'assenza di uno). Generare il file in sé è gratuito; bxSites Cloud lo
+espone realmente come server MCP attivo solo nei piani a pagamento, non
+nel piano gratuito. Vedi [Server MCP](guides/mcp.md).
 
 ## `nav`
 
