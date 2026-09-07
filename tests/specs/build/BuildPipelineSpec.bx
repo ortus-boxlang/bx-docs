@@ -997,6 +997,179 @@ class extends="testbox.system.BaseSpec" {
 				expect( titles ).toInclude( "About" );
 			} );
 
+			it( "marks a docs page as type page with no categories and a non-empty updatedAt in mcp-index.json", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"mcp":true}'
+				);
+				fileWrite( root & "/docs/index.md", "---" & char( 10 ) & "title: Home" & char( 10 ) & "---" & char( 10 ) & "Welcome home" );
+
+				pipeline.build( root );
+
+				var mcpIndex = jsonDeserialize( fileRead( root & "/site/mcp-index.json" ) );
+				expect( mcpIndex[ 1 ].type ).toBe( "page" );
+				expect( mcpIndex[ 1 ].categories ).toBeArray();
+				expect( mcpIndex[ 1 ].categories.len() ).toBe( 0 );
+				expect( len( mcpIndex[ 1 ].updatedAt ) ).toBeGT( 0 );
+			} );
+
+			it( "uses a docs page's own frontmatter date as its mcp-index.json updatedAt when it sets one", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"mcp":true}'
+				);
+				fileWrite(
+					root & "/docs/index.md",
+					"---" & char( 10 ) & "title: Home" & char( 10 ) & "date: 2026-04-01" & char( 10 ) & "---" & char( 10 ) & "Welcome home"
+				);
+
+				pipeline.build( root );
+
+				var mcpIndex = jsonDeserialize( fileRead( root & "/site/mcp-index.json" ) );
+				expect( mcpIndex[ 1 ].updatedAt ).toBe( "2026-04-01" );
+			} );
+
+			it( "marks a blog post as type post with its own categories and date as updatedAt in mcp-index.json", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"mcp":true}'
+				);
+				fileWrite( root & "/docs/index.md", "Welcome home" );
+				directoryCreate( root & "/docs/blog/posts", true, true );
+				fileWrite(
+					root & "/docs/blog/posts/release.md",
+					"---" & char( 10 ) & "date: 2026-02-01" & char( 10 ) & "categories: [Releases]" & char( 10 ) & "---" & char( 10 ) & "Release post body."
+				);
+
+				pipeline.build( root );
+
+				var mcpIndex = jsonDeserialize( fileRead( root & "/site/mcp-index.json" ) );
+				var postEntry = mcpIndex.filter( entry => entry.type == "post" );
+				expect( postEntry.len() ).toBe( 1 );
+				expect( postEntry[ 1 ].categories ).toBe( [ "Releases" ] );
+				expect( postEntry[ 1 ].updatedAt ).toBe( "2026-02-01" );
+
+				var pageEntry = mcpIndex.filter( entry => entry.type == "page" );
+				expect( pageEntry.len() ).toBe( 1 );
+			} );
+
+			it( "does not build mcp-nav.json or mcp-manifest.json when mcp is unset (default)", function() {
+				var root = newProject();
+				fileWrite( root & "/docs/index.md", "Welcome home" );
+
+				pipeline.build( root );
+
+				expect( fileExists( root & "/site/mcp-nav.json" ) ).toBeFalse();
+				expect( fileExists( root & "/site/mcp-manifest.json" ) ).toBeFalse();
+			} );
+
+			it( "writes mcp-nav.json mirroring this tree's own nav structure when mcp is true", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"mcp":true}'
+				);
+				fileWrite( root & "/docs/index.md", "---" & char( 10 ) & "title: Home" & char( 10 ) & "---" & char( 10 ) & "Welcome home" );
+				directoryCreate( root & "/docs/guides", true, true );
+				fileWrite( root & "/docs/guides/setup.md", "---" & char( 10 ) & "title: Setup" & char( 10 ) & "---" & char( 10 ) & "Setup body" );
+
+				pipeline.build( root );
+
+				expect( fileExists( root & "/site/mcp-nav.json" ) ).toBeTrue();
+				var nav = jsonDeserialize( fileRead( root & "/site/mcp-nav.json" ) );
+				expect( nav ).toBeArray();
+				var titles = nav.map( node => node.title );
+				expect( titles ).toInclude( "Home" );
+				expect( titles ).toInclude( "guides" );
+			} );
+
+			it( "writes mcp-manifest.json listing just the main tree, marked default, on a single-tree site", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"mcp":true}'
+				);
+				fileWrite( root & "/docs/index.md", "Welcome home" );
+
+				pipeline.build( root );
+
+				var manifest = jsonDeserialize( fileRead( root & "/site/mcp-manifest.json" ) );
+				expect( manifest.len() ).toBe( 1 );
+				expect( manifest[ 1 ].path ).toBe( "" );
+				expect( manifest[ 1 ].label ).toBe( "Latest" );
+				expect( isNull( manifest[ 1 ].version ) ).toBeTrue();
+				expect( manifest[ 1 ].locale ).toBe( "en" );
+				expect( manifest[ 1 ].default ).toBeTrue();
+			} );
+
+			it( "writes mcp-manifest.json and per-tree mcp-index.json/mcp-nav.json for every version tree, once versions.default is set", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"mcp":true,"versions":{"default":"1.0.x"}}'
+				);
+				fileWrite( root & "/docs/index.md", "Next home" );
+				directoryCreate( root & "/docs/versions/1.0.x", true, true );
+				fileWrite( root & "/docs/versions/1.0.x/index.md", "1.0.x home" );
+				directoryCreate( root & "/docs/versions/2.0", true, true );
+				fileWrite( root & "/docs/versions/2.0/index.md", "2.0 home" );
+
+				pipeline.build( root );
+
+				expect( fileExists( root & "/site/mcp-index.json" ) ).toBeTrue();
+				expect( fileExists( root & "/site/next/mcp-index.json" ) ).toBeTrue();
+				expect( fileExists( root & "/site/next/mcp-nav.json" ) ).toBeTrue();
+				expect( fileExists( root & "/site/versions/2.0/mcp-index.json" ) ).toBeTrue();
+				expect( fileExists( root & "/site/versions/2.0/mcp-nav.json" ) ).toBeTrue();
+
+				var manifest = jsonDeserialize( fileRead( root & "/site/mcp-manifest.json" ) );
+				var paths = manifest.map( tree => tree.path );
+				expect( paths ).toInclude( "" );
+				expect( paths ).toInclude( "next" );
+				expect( paths ).toInclude( "versions/2.0" );
+
+				var rootTree = manifest.filter( tree => tree.path == "" )[ 1 ];
+				expect( rootTree.version ).toBe( "1.0.x" );
+				expect( rootTree.default ).toBeTrue();
+
+				var nextTree = manifest.filter( tree => tree.path == "next" )[ 1 ];
+				expect( isNull( nextTree.version ) ).toBeTrue();
+				expect( nextTree.default ).toBeFalse();
+
+				var v2Tree = manifest.filter( tree => tree.path == "versions/2.0" )[ 1 ];
+				expect( v2Tree.version ).toBe( "2.0" );
+				expect( v2Tree.default ).toBeFalse();
+			} );
+
+			it( "writes mcp-manifest.json and per-tree mcp-index.json/mcp-nav.json for every locale tree", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"mcp":true,"i18n":{"locales":[{"code":"es","label":"Español"}]}}'
+				);
+				fileWrite( root & "/docs/index.md", "Welcome home" );
+				directoryCreate( root & "/docs/i18n/es", true, true );
+				fileWrite( root & "/docs/i18n/es/index.md", "Bienvenido" );
+
+				pipeline.build( root );
+
+				expect( fileExists( root & "/site/es/mcp-index.json" ) ).toBeTrue();
+				expect( fileExists( root & "/site/es/mcp-nav.json" ) ).toBeTrue();
+
+				var manifest = jsonDeserialize( fileRead( root & "/site/mcp-manifest.json" ) );
+				var paths = manifest.map( tree => tree.path );
+				expect( paths ).toInclude( "" );
+				expect( paths ).toInclude( "es" );
+
+				var esTree = manifest.filter( tree => tree.path == "es" )[ 1 ];
+				expect( esTree.label ).toBe( "Español" );
+				expect( esTree.locale ).toBe( "es" );
+				expect( esTree.default ).toBeFalse();
+			} );
+
 			it( "renders an in-page table of contents from the page's own headings", function() {
 				var root = newProject();
 				fileWrite( root & "/docs/index.md", '<h2 id="install">Install</h2>' & char( 10 ) & '<h3 id="prereqs">Prereqs</h3>' );
