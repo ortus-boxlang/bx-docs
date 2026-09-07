@@ -13,6 +13,7 @@ class {
 	variables.navBuilder       = new "models.build.NavBuilder@bxsites"()
 	variables.themeRenderer    = new "models.build.ThemeRenderer@bxsites"()
 	variables.searchIndexer    = new "models.build.SearchIndexer@bxsites"()
+	variables.mcpIndexer       = new "models.build.McpIndexer@bxsites"()
 	variables.searchProviderRegistry = new "models.build.SearchProviderRegistry@bxsites"()
 	variables.pagefindIndexer  = new "models.build.PagefindIndexer@bxsites"()
 	variables.tableOfContents  = new "models.build.TableOfContents@bxsites"()
@@ -488,6 +489,7 @@ class {
 			if ( searchNeedsLocalIndex( config ) ) {
 				writeSearchIndex( tagsPages, siteDir, plugins, config )
 			}
+			writeMcpIndex( tagsPages, siteDir, config )
 		}
 		profile( "blog", buildStartedAt )
 
@@ -807,6 +809,7 @@ class {
 		if ( searchNeedsLocalIndex( arguments.config ) ) {
 			writeSearchIndex( pages, arguments.outputDir, arguments.plugins, arguments.config )
 		}
+		writeMcpIndex( pages, arguments.outputDir, arguments.config )
 
 		return { pages : pages, nav : nav }
 	}
@@ -1148,6 +1151,7 @@ class {
 	void function clearDevCache() {
 		variables.pageCache.clear()
 		variables.searchIndexer.clearCache()
+		variables.mcpIndexer.clearCache()
 	}
 
 	/**
@@ -1751,6 +1755,27 @@ class {
 		var indexPath = arguments.siteDir & "/search-index.json"
 		fileWrite( indexPath, jsonSerialize( searchIndex ) )
 		return indexPath
+	}
+
+	/**
+	 * Builds the MCP content index from already-converted pages and writes
+	 * it to `siteDir`, when `config.mcp` is on - entirely independent of
+	 * `config.search`/`config.searchProvider` (see McpIndexer.bx's own
+	 * docblock and docs/guides/mcp.md): unlike writeSearchIndex() above,
+	 * this always runs regardless of which search provider (or none) is
+	 * configured, since bxSites Cloud's MCP server has no use for the local
+	 * search index and needs its own full-text, untruncated copy either way.
+	 *
+	 * @pages Array of page structs with `contentHtml` already set
+	 * @siteDir Absolute path to the build output directory (must already exist)
+	 * @config The site's bxsites.json config
+	 */
+	private void function writeMcpIndex( required array pages, required string siteDir, required struct config ) {
+		if ( !arguments.config.mcp ) {
+			return
+		}
+		var mcpIndex = variables.mcpIndexer.build( arguments.pages )
+		fileWrite( arguments.siteDir & "/mcp-index.json", jsonSerialize( mcpIndex ) )
 	}
 
 	/**

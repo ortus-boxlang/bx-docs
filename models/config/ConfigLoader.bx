@@ -58,6 +58,7 @@ class {
 		"baseURL"      : "/",
 		"theme"        : { "name" : "bootstrap", "options" : {}, "logo" : "", "favicon" : "" },
 		"search"       : true,
+		"mcp"          : false,
 		"searchProvider" : {
 			"provider" : "local",
 			"algolia"  : { "appId" : "", "apiKey" : "", "indexName" : "", "insights" : false },
@@ -308,6 +309,13 @@ class {
 		}
 
 		validateSearchProvider( arguments.config.searchProvider ?: "" )
+
+		if ( !isBoolean( arguments.config.mcp ?: "" ) ) {
+			throw(
+				type    = "BxSites.InvalidConfig",
+				message = "#variables.configFileName# [mcp] must be a boolean"
+			)
+		}
 
 		if ( !isBoolean( arguments.config.mermaid ?: "" ) ) {
 			throw(

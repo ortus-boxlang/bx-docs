@@ -1,0 +1,59 @@
+/**
+ * Shared rendered-HTML -> plain-text extraction, factored out of
+ * SearchIndexer.bx so McpIndexer.bx (module spec's MCP-index build step)
+ * can reuse the exact same heading/body extraction without duplicating the
+ * regex plumbing or its perf characteristics.
+ */
+class {
+
+	// java.util.regex directly, not BoxLang's own reReplace()/replace() BIFs
+	// - each of those re-scans the *entire* (already large, tag-heavy) page
+	// HTML from scratch per call, which turns quadratic in the number of
+	// matches; a content-rich page with a few thousand small inline tags
+	// could take several seconds this way where a single compiled-pattern
+	// pass takes milliseconds.
+	variables.tagPattern    = createObject( "java", "java.util.regex.Pattern" ).compile( "<[^>]+>" )
+	variables.wsPattern     = createObject( "java", "java.util.regex.Pattern" ).compile( "[ \t\r\n]+" )
+	variables.entityPattern = createObject( "java", "java.util.regex.Pattern" ).compile( "&nbsp;|&amp;|&lt;|&gt;|&quot;|&##39;" )
+	variables.entityMap     = {
+		"&nbsp;"  : " ",
+		"&amp;"   : "&",
+		"&lt;"    : "<",
+		"&gt;"    : ">",
+		"&quot;"  : '"',
+		"&##39;"  : "'"
+	}
+
+	/**
+	 * Pulls every `h1`-`h6` heading's plain text out of a page's rendered HTML.
+	 *
+	 * @html Rendered page HTML (already-converted markdown)
+	 *
+	 * @return Array of heading text strings, in document order
+	 */
+	array function extractHeadings( required string html ) {
+		return reMatch( "<h[1-6][^>]*>.*?</h[1-6]>", arguments.html )
+			.map( match => trim( stripTags( match ) ) )
+			.filter( text => len( text ) )
+	}
+
+	/**
+	 * Strips HTML tags and decodes the handful of entities bx-markdown's
+	 * output commonly contains, collapsing whitespace down to single spaces.
+	 *
+	 * @html Rendered HTML
+	 */
+	string function stripTags( required string html ) {
+		var text = variables.tagPattern.matcher( arguments.html ).replaceAll( " " )
+
+		var matcher = variables.entityPattern.matcher( text )
+		var buffer = createObject( "java", "java.lang.StringBuilder" ).init()
+		while ( matcher.find() ) {
+			matcher.appendReplacement( buffer, createObject( "java", "java.util.regex.Matcher" ).quoteReplacement( variables.entityMap[ matcher.group() ] ) )
+		}
+		matcher.appendTail( buffer )
+
+		return trim( variables.wsPattern.matcher( buffer.toString() ).replaceAll( " " ) )
+	}
+
+}

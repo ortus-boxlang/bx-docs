@@ -29,6 +29,7 @@ un progetto ne ha in qualche modo più di uno, vince `bxsites.yaml`, poi
       logo: ""
       favicon: ""
     search: true
+    mcp: false
     searchProvider:
       provider: local
       algolia: { appId: "", apiKey: "", indexName: "", insights: false }
@@ -70,6 +71,7 @@ un progetto ne ha in qualche modo più di uno, vince `bxsites.yaml`, poi
     		"favicon": ""
     	},
     	"search": true,
+    	"mcp": false,
     	"searchProvider": {
     		"provider": "local",
     		"algolia": { "appId": "", "apiKey": "", "indexName": "", "insights": false }
@@ -121,6 +123,7 @@ un progetto ne ha in qualche modo più di uno, vince `bxsites.yaml`, poi
     description = ""
     baseURL = "/"
     search = true
+    mcp = false
     nav = []
     social = []
     footer = false
@@ -375,6 +378,18 @@ Quale UI di ricerca `search: true` attiva:
       	}
       }
       ```
+
+## `mcp`
+
+`false` (predefinito) lo salta del tutto. `true` scrive
+`site/mcp-index.json` a ogni `build` - un indice dei contenuti completo e
+non troncato per il server MCP pubblico e di sola lettura di
+[bxSites Cloud](https://bxsites.io/cloud) per il tuo sito pubblicato.
+Del tutto indipendente da `search`/`searchProvider` sopra - viene
+prodotto indipendentemente dal provider di ricerca configurato (o
+dall'assenza di uno). Generare il file in sé è gratuito; bxSites Cloud lo
+espone realmente come server MCP attivo solo nei piani a pagamento, non
+nel piano gratuito. Vedi [Server MCP](guides/mcp.md).
 
 ## `nav`
 

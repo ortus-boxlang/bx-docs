@@ -1,0 +1,81 @@
+/**
+ * Builds the MCP content index (`site/mcp-index.json`) - the read-only,
+ * full-text page index bxSites Cloud's own MCP server reads to let AI
+ * agents/assistants search and retrieve a published site's content
+ * server-side. BuildPipeline decides whether to call it at all
+ * (bxsites.json's `mcp` flag) and where to write the result - entirely
+ * independent of `search`/`searchProvider` (see docs/guides/mcp.md): a
+ * site can have `search: false`, or any `searchProvider.provider`, and
+ * still get an `mcp-index.json` when `mcp: true`.
+ *
+ * Same per-page entry shape as SearchIndexer.bx's own `search-index.json`
+ * (title/url/headings/tags/body), reusing its shared PageTextExtractor.bx
+ * for the heading/body extraction. The one difference: `body` here is the
+ * complete plain-text page content, never truncated - this file is fetched
+ * server-side by bxSites Cloud's edge worker, not shipped to every page
+ * visitor's browser, so there's no download-size reason to truncate it,
+ * and a truncated body risks an AI agent giving incomplete or wrong answers.
+ */
+class {
+
+	variables.entryCache = new "models.build.BuildCache@bxsites"()
+
+	/**
+	 * Rendered-HTML -> plain-text extraction (heading/body stripping),
+	 * shared with SearchIndexer.bx - see PageTextExtractor.bx's own docblock.
+	 */
+	variables.textExtractor = new "models.build.PageTextExtractor@bxsites"()
+
+	/**
+	 * Hidden pages are excluded, matching SearchIndexer.bx's own treatment
+	 * of them - a page that isn't linked from the nav shouldn't be exposed
+	 * to the MCP server either.
+	 *
+	 * @pages Array of page structs with an added `contentHtml` key (BuildPipeline sets this before calling)
+	 *
+	 * @return Array of { title, url, headings, body, tags } - body is the full, untruncated plain-text page content
+	 */
+	array function build( required array pages ) {
+		return arguments.pages
+			.filter( page => !page.hidden )
+			.map( page => buildEntry( page ) )
+	}
+
+	/**
+	 * Builds one page's own MCP-index entry, reusing a cached entry (keyed
+	 * by the page's own `sourcePath` + last-modified time) the same way
+	 * SearchIndexer.bx's own buildEntry() does - see its docblock.
+	 *
+	 * @page A page struct with `contentHtml`/`sourcePath` already set
+	 */
+	private struct function buildEntry( required struct page ) {
+		var sourcePath = arguments.page.sourcePath ?: ""
+		var mtime = len( sourcePath ) ? createObject( "java", "java.io.File" ).init( sourcePath ).lastModified() : 0
+		var cached = len( sourcePath ) ? variables.entryCache.get( sourcePath, mtime ) : {}
+		if ( !cached.isEmpty() ) {
+			return cached
+		}
+
+		var entry = {
+			title    : arguments.page.title,
+			url      : arguments.page.urlPath,
+			headings : variables.textExtractor.extractHeadings( arguments.page.contentHtml ),
+			body     : variables.textExtractor.stripTags( arguments.page.contentHtml ),
+			tags     : arguments.page.tags ?: []
+		}
+
+		if ( len( sourcePath ) ) {
+			variables.entryCache.set( sourcePath, mtime, entry )
+		}
+
+		return entry
+	}
+
+	/**
+	 * Discards every cached entry - see SearchIndexer.bx's own clearCache() docblock.
+	 */
+	void function clearCache() {
+		variables.entryCache.clear()
+	}
+
+}

@@ -1,0 +1,157 @@
+class extends="testbox.system.BaseSpec" {
+
+	function run() {
+		describe( "build.McpIndexer", function() {
+
+			beforeEach( function() {
+				variables.indexer = new "models.build.McpIndexer@bxsites"();
+				variables.tempDirs = [];
+			} );
+
+			afterEach( function() {
+				for ( var dir in tempDirs ) {
+					if ( directoryExists( dir ) ) {
+						directoryDelete( dir, true );
+					}
+				}
+			} );
+
+			private struct function page(
+				string title,
+				string urlPath,
+				string contentHtml,
+				boolean hidden = false
+			) {
+				return {
+					title       : arguments.title,
+					urlPath     : arguments.urlPath,
+					contentHtml : arguments.contentHtml,
+					hidden      : arguments.hidden
+				};
+			}
+
+			it( "returns an empty index for an empty page list", function() {
+				expect( indexer.build( [] ) ).toBeArray();
+				expect( indexer.build( [] ).len() ).toBe( 0 );
+			} );
+
+			it( "builds one entry per page with title, url, headings and stripped body text", function() {
+				var pages = [
+					page(
+						title       = "Getting Started",
+						urlPath     = "getting-started/index.html",
+						contentHtml = "<h1>Getting Started</h1><p>Hello <strong>World</strong>!</p><h2>Install</h2><p>Run the installer.</p>"
+					)
+				];
+
+				var index = indexer.build( pages );
+
+				expect( index.len() ).toBe( 1 );
+				expect( index[ 1 ].title ).toBe( "Getting Started" );
+				expect( index[ 1 ].url ).toBe( "getting-started/index.html" );
+				expect( index[ 1 ].headings ).toBe( [ "Getting Started", "Install" ] );
+				expect( index[ 1 ].body ).toInclude( "Hello World" );
+				expect( index[ 1 ].body ).toInclude( "Run the installer." );
+				expect( index[ 1 ].body ).notToInclude( "<" );
+			} );
+
+			it( "excludes hidden pages", function() {
+				var pages = [
+					page( title = "Visible", urlPath = "a/index.html", contentHtml = "<p>Visible</p>" ),
+					page( title = "Secret", urlPath = "b/index.html", contentHtml = "<p>Secret</p>", hidden = true )
+				];
+
+				var index = indexer.build( pages );
+
+				expect( index.len() ).toBe( 1 );
+				expect( index[ 1 ].title ).toBe( "Visible" );
+			} );
+
+			it( "returns an empty headings array for a page with no headings", function() {
+				var pages = [ page( title = "Plain", urlPath = "plain/index.html", contentHtml = "<p>Just a paragraph.</p>" ) ];
+
+				var index = indexer.build( pages );
+
+				expect( index[ 1 ].headings ).toBeArray();
+				expect( index[ 1 ].headings.len() ).toBe( 0 );
+			} );
+
+			it( "never truncates long body text, unlike SearchIndexer's search-index.json", function() {
+				var longText = "";
+				for ( var i = 1; i <= 200; i++ ) {
+					longText &= "word "
+				}
+				var pages = [ page( title = "Long", urlPath = "long/index.html", contentHtml = "<p>" & longText & "</p>" ) ];
+
+				var index = indexer.build( pages );
+
+				expect( index[ 1 ].body ).toBe( trim( longText ) );
+				expect( index[ 1 ].body ).notToEndWith( "…" );
+				expect( len( index[ 1 ].body ) ).toBeGT( 400 );
+			} );
+
+			it( "collapses whitespace and decodes common HTML entities in the body text", function() {
+				var pages = [
+					page(
+						title       = "Entities",
+						urlPath     = "entities/index.html",
+						contentHtml = "<p>Fish &amp; Chips" & char( 10 ) & char( 10 ) & "   &quot;great&quot;   deal</p>"
+					)
+				];
+
+				var index = indexer.build( pages );
+
+				expect( index[ 1 ].body ).toBe( 'Fish & Chips "great" deal' );
+			} );
+
+			it( "reuses a cached entry when a page's own sourcePath mtime hasn't changed, ignoring an in-memory-only content change", function() {
+				var dir = createTempDirectory( prefix = "bxsites-mcpindexer-" );
+				tempDirs.append( dir );
+				var sourcePath = dir & "/page.md";
+				fileWrite( sourcePath, "original" );
+
+				var pageStruct = page( title = "First", urlPath = "p/index.html", contentHtml = "<p>Original body</p>" );
+				pageStruct.sourcePath = sourcePath;
+
+				var first = indexer.build( [ pageStruct ] );
+				expect( first[ 1 ].body ).toInclude( "Original body" );
+
+				pageStruct.contentHtml = "<p>Changed body</p>";
+				var second = indexer.build( [ pageStruct ] );
+
+				expect( second[ 1 ].body ).toInclude( "Original body" );
+				expect( second[ 1 ].body ).notToInclude( "Changed body" );
+			} );
+
+			it( "clearCache() forces every page's own entry to recompute even when its sourcePath mtime is unchanged", function() {
+				var dir = createTempDirectory( prefix = "bxsites-mcpindexer-" );
+				tempDirs.append( dir );
+				var sourcePath = dir & "/page.md";
+				fileWrite( sourcePath, "original" );
+
+				var pageStruct = page( title = "First", urlPath = "p/index.html", contentHtml = "<p>Original body</p>" );
+				pageStruct.sourcePath = sourcePath;
+				indexer.build( [ pageStruct ] );
+
+				pageStruct.contentHtml = "<p>Changed body</p>";
+				indexer.clearCache();
+				var second = indexer.build( [ pageStruct ] );
+
+				expect( second[ 1 ].body ).toInclude( "Changed body" );
+			} );
+
+			it( "never caches a page with no sourcePath, always reflecting its current contentHtml", function() {
+				var pageStruct = page( title = "No Source", urlPath = "p/index.html", contentHtml = "<p>Original body</p>" );
+
+				indexer.build( [ pageStruct ] );
+
+				pageStruct.contentHtml = "<p>Changed body</p>";
+				var second = indexer.build( [ pageStruct ] );
+
+				expect( second[ 1 ].body ).toInclude( "Changed body" );
+			} );
+
+		} );
+	}
+
+}

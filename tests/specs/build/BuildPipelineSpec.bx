@@ -853,6 +853,150 @@ class extends="testbox.system.BaseSpec" {
 				expect( fileExists( root & "/site/search-index.json" ) ).toBeFalse();
 			} );
 
+			it( "does not build mcp-index.json when mcp is unset (default)", function() {
+				var root = newProject();
+				fileWrite( root & "/docs/index.md", "Welcome home" );
+
+				pipeline.build( root );
+
+				expect( fileExists( root & "/site/mcp-index.json" ) ).toBeFalse();
+			} );
+
+			it( "does not build mcp-index.json when mcp is explicitly false", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"mcp":false}'
+				);
+				fileWrite( root & "/docs/index.md", "Welcome home" );
+
+				pipeline.build( root );
+
+				expect( fileExists( root & "/site/mcp-index.json" ) ).toBeFalse();
+			} );
+
+			it( "builds mcp-index.json with the full untruncated body when mcp is true and search uses the local provider", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"mcp":true}'
+				);
+				var longText = "";
+				for ( var i = 1; i <= 200; i++ ) {
+					longText &= "word "
+				}
+				fileWrite(
+					root & "/docs/index.md",
+					"---" & char( 10 ) & "title: Home" & char( 10 ) & "tags: [intro]" & char( 10 ) & "---" & char( 10 ) &
+					'<h1>Home</h1>' & char( 10 ) & longText
+				);
+
+				pipeline.build( root );
+
+				expect( fileExists( root & "/site/search-index.json" ) ).toBeTrue();
+				expect( fileExists( root & "/site/mcp-index.json" ) ).toBeTrue();
+
+				var mcpIndex = jsonDeserialize( fileRead( root & "/site/mcp-index.json" ) );
+				expect( mcpIndex.len() ).toBe( 1 );
+				expect( mcpIndex[ 1 ].title ).toBe( "Home" );
+				expect( mcpIndex[ 1 ].url ).toBe( "index.html" );
+				expect( mcpIndex[ 1 ].tags ).toBe( [ "intro" ] );
+				expect( mcpIndex[ 1 ].headings ).toBe( [ "Home" ] );
+				expect( len( mcpIndex[ 1 ].body ) ).toBeGT( 400 );
+				expect( mcpIndex[ 1 ].body ).notToEndWith( "…" );
+				expect( mcpIndex[ 1 ].body ).notToInclude( "<" );
+			} );
+
+			it( "builds mcp-index.json even when search is disabled entirely", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"mcp":true,"search":false}'
+				);
+				fileWrite( root & "/docs/index.md", "---" & char( 10 ) & "title: Home" & char( 10 ) & "---" & char( 10 ) & "Welcome home" );
+
+				pipeline.build( root );
+
+				expect( fileExists( root & "/site/search-index.json" ) ).toBeFalse();
+				expect( fileExists( root & "/site/mcp-index.json" ) ).toBeTrue();
+
+				var mcpIndex = jsonDeserialize( fileRead( root & "/site/mcp-index.json" ) );
+				expect( mcpIndex.len() ).toBe( 1 );
+				expect( mcpIndex[ 1 ].title ).toBe( "Home" );
+			} );
+
+			it( "builds mcp-index.json when searchProvider.provider is algolia (which never gets search-index.json)", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"mcp":true,"search":true,"searchProvider":{"provider":"algolia","algolia":{"appId":"ABC123","apiKey":"secret","indexName":"my-docs"}}}'
+				);
+				fileWrite( root & "/docs/index.md", "---" & char( 10 ) & "title: Home" & char( 10 ) & "---" & char( 10 ) & "Welcome home" );
+
+				pipeline.build( root );
+
+				expect( fileExists( root & "/site/search-index.json" ) ).toBeFalse();
+				expect( fileExists( root & "/site/mcp-index.json" ) ).toBeTrue();
+
+				var mcpIndex = jsonDeserialize( fileRead( root & "/site/mcp-index.json" ) );
+				expect( mcpIndex.len() ).toBe( 1 );
+				expect( mcpIndex[ 1 ].title ).toBe( "Home" );
+			} );
+
+			it( "builds mcp-index.json when searchProvider.provider is pagefind (which never gets search-index.json)", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"mcp":true,"search":true,"searchProvider":{"provider":"pagefind"}}'
+				);
+				fileWrite( root & "/docs/index.md", "---" & char( 10 ) & "title: Home" & char( 10 ) & "---" & char( 10 ) & "Welcome home" );
+
+				pipeline.setPagefindIndexer( new "tests.support.FakePagefindIndexer@bxsites"() );
+
+				pipeline.build( root );
+
+				expect( fileExists( root & "/site/search-index.json" ) ).toBeFalse();
+				expect( fileExists( root & "/site/mcp-index.json" ) ).toBeTrue();
+
+				var mcpIndex = jsonDeserialize( fileRead( root & "/site/mcp-index.json" ) );
+				expect( mcpIndex.len() ).toBe( 1 );
+				expect( mcpIndex[ 1 ].title ).toBe( "Home" );
+			} );
+
+			it( "excludes hidden pages from mcp-index.json too", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"mcp":true}'
+				);
+				fileWrite( root & "/docs/index.md", "Home" );
+				fileWrite( root & "/docs/secret.md", "---" & char( 10 ) & "title: Secret" & char( 10 ) & "hidden: true" & char( 10 ) & "---" & char( 10 ) & "Shh" );
+
+				pipeline.build( root );
+
+				var mcpIndex = jsonDeserialize( fileRead( root & "/site/mcp-index.json" ) );
+				expect( mcpIndex.len() ).toBe( 1 );
+				expect( mcpIndex[ 1 ].title ).notToBe( "Secret" );
+			} );
+
+			it( "builds one mcp-index.json entry per page on a multi-page site", function() {
+				var root = newProject();
+				fileWrite(
+					root & "/bxsites.json",
+					'{"name":"Test Site","theme":{"name":"bootstrap"},"mcp":true}'
+				);
+				fileWrite( root & "/docs/index.md", "---" & char( 10 ) & "title: Home" & char( 10 ) & "---" & char( 10 ) & "Welcome home" );
+				fileWrite( root & "/docs/about.md", "---" & char( 10 ) & "title: About" & char( 10 ) & "---" & char( 10 ) & "About us" );
+
+				pipeline.build( root );
+
+				var mcpIndex = jsonDeserialize( fileRead( root & "/site/mcp-index.json" ) );
+				expect( mcpIndex.len() ).toBe( 2 );
+				var titles = mcpIndex.map( entry => entry.title );
+				expect( titles ).toInclude( "Home" );
+				expect( titles ).toInclude( "About" );
+			} );
+
 			it( "renders an in-page table of contents from the page's own headings", function() {
 				var root = newProject();
 				fileWrite( root & "/docs/index.md", '<h2 id="install">Install</h2>' & char( 10 ) & '<h3 id="prereqs">Prereqs</h3>' );
