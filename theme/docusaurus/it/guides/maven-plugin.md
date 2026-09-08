@@ -1,0 +1,133 @@
+---
+title: Plugin Maven
+order: 6.4
+icon: phosphor-duotone:puzzle-piece
+tags: [guide, java, maven, integration]
+---
+
+# Plugin Maven
+
+Gli sviluppatori Java e Spring Boot non hanno bisogno di CommandBox né di
+un'installazione di BoxLang a livello di sistema per aggiungere un sito
+bx-sites al proprio progetto - il plugin Maven
+`io.boxlang:bxsites-maven-plugin` scarica tutto ciò di cui ha bisogno (il
+runtime BoxLang e bx-sites stesso) in una cache locale la prima volta che
+viene eseguito. L'unico requisito è un JDK 21. È la controparte Maven del
+[Plugin Gradle](gradle-plugin.md) - entrambi racchiudono la stessa logica
+sottostante, quindi la copertura dei verbi e il comportamento restano
+identici tra i due build tool.
+
+> **Stato:** pre-1.0, non ancora pubblicato su Maven Central - vedi
+> [`maven-plugin/`](https://github.com/ortus-boxlang/bx-sites/tree/development/maven-plugin)
+> nel repository bx-sites per il codice sorgente e le istruzioni attuali
+> di build/test. Questa pagina documenta cosa farà una volta pubblicato;
+> i meccanismi descritti qui sotto sono già reali e verificati, solo non
+> ancora disponibili come coordinata Maven Central.
+
+## Avvio rapido
+
+```xml title="pom.xml"
+<build>
+  <plugins>
+    <plugin>
+      <groupId>io.boxlang</groupId>
+      <artifactId>bxsites-maven-plugin</artifactId>
+      <version>&lt;version&gt;</version>
+    </plugin>
+  </plugins>
+</build>
+```
+
+```bash
+mvn bxsites:new     # crea docs/ + bxsites.yaml
+mvn bxsites:build   # renderizza docs/**.md in site/
+mvn bxsites:serve   # compila + serve localmente con live reload
+```
+
+La forma breve `bxsites:<goal>` (confermata funzionante) richiede che il
+blocco `<plugin>` sopra sia dichiarato specificamente sotto
+`<build><plugins>`, non solo in `<pluginManagement>` - è questo che
+registra `io.boxlang` come prefisso di goal risolvibile per il progetto
+corrente. Senza quella dichiarazione, usa la forma completamente
+qualificata: `mvn io.boxlang:bxsites-maven-plugin:build`.
+
+Una configurazione predefinita non richiede altro - il plugin rileva
+automaticamente la directory dei contenuti (`docs/`, altrimenti `src/`) e
+la directory di output (sempre `<projectRoot>/site/`). L'aspetto, il
+tema, la nav e qualsiasi altra impostazione del proprio sito sono
+controllati interamente da `bxsites.yaml`/`.toml`/`.json` nella root del
+progetto, esattamente come documentato in
+[Configurazione](../configuration.md) - il plugin non duplica mai quello
+schema, si limita a gestire *come* e *quando* bx-sites viene eseguito dal
+tuo build.
+
+## Goal
+
+| Goal | Cosa fa |
+|---|---|
+| `bxsites:new` | Genera un nuovo progetto bx-sites (directory dei contenuti + file di configurazione). |
+| `bxsites:build` | Renderizza il sito in `<projectRoot>/site/`. Salta la riesecuzione del sottoprocesso quando nulla sotto la directory dei contenuti o nel file di configurazione è cambiato dall'ultimo build - vedi [Controllo di staleness del build](#controllo-di-staleness-del-build) più sotto. |
+| `bxsites:serve` | Compila e serve il sito localmente con live reload. Viene eseguito in foreground finché non lo interrompi (Ctrl+C). |
+| `bxsites:clean` | Rimuove `<projectRoot>/site/`. Semplice cancellazione di directory - nessun sottoprocesso. |
+| `bxsites:search-index` | Ricostruisce `site/search-index.json` senza un build completo del sito. |
+| `bxsites:lint` | Esegue il lint dei sorgenti Markdown in docs/. |
+| `bxsites:deploy` | Compila il sito e lo distribuisce alla destinazione configurata. |
+| `bxsites:publish` | Compila il sito e lo pubblica su bxSites Cloud. |
+| `bxsites:package` | Compila il sito e lo comprime in `site.zip`. |
+| `bxsites:stats` | Riporta il conteggio di pagine/parole e altre statistiche sul sito compilato. |
+| `bxsites:doctor` | Esegue la diagnostica di salute del progetto propria di bx-sites. |
+
+Ogni goal si autoprovvisiona (scarica/cache) ciò di cui ha bisogno, alla
+prima esecuzione - a differenza del plugin Gradle, non esiste un goal di
+"provisioning" separato da eseguire prima.
+
+Per default nessun goal è collegato a nessuna fase del lifecycle Maven -
+eseguili esplicitamente. Se vuoi che `bxsites:build` venga eseguito
+automaticamente, collegalo tu stesso in un blocco `<executions>`, ad
+esempio a `pre-site` (un abbinamento naturale con il lifecycle `site`
+integrato di Maven).
+
+## Configurazione
+
+```xml title="pom.xml"
+<plugin>
+  <groupId>io.boxlang</groupId>
+  <artifactId>bxsites-maven-plugin</artifactId>
+  <configuration>
+    <projectRoot>${project.basedir}</projectRoot>
+    <boxlangMiniserverVersion>1.18.0-snapshot</boxlangMiniserverVersion>
+    <bxSitesVersion>1.0.0-snapshot</bxSitesVersion>
+    <boxlangHomeDir>${project.build.directory}/bxsites/boxlang-home</boxlangHomeDir>
+  </configuration>
+</plugin>
+```
+
+Ogni parametro ha un default sensato - un progetto nuovo non deve
+impostarne nessuno. La directory di output non è affatto configurabile
+qui - bx-sites stesso la fissa a `<projectRoot>/site/`, quindi il plugin
+la deriva invece di esporre un'impostazione che comunque non verrebbe
+rispettata.
+
+## Controllo di staleness del build
+
+Maven non ha un motore di build incrementale integrato in stile Gradle,
+quindi `bxsites:build` implementa un proprio controllo leggero: confronta
+il timestamp (mtime) più recente sotto la directory dei contenuti (più il
+file di configurazione, se presente) con il timestamp più recente già
+presente in `<projectRoot>/site/`. Se nulla è più recente, il goal
+registra che sta saltando l'esecuzione e ritorna senza invocare affatto
+bx-sites. Forza comunque un rebuild con:
+
+```bash
+mvn bxsites:build -Dbxsites.build.forceRebuild=true
+```
+
+## Cosa non è ancora stato costruito
+
+- **Generazione di documentazione per Spring Boot** (OpenAPI, Javadoc, scansione dei controller) - pianificato.
+- **Lo streaming dell'output live di `bxsites:serve`** - attualmente bufferizza l'output con un timeout di 30 minuti, entrambi sbagliati per un goal pensato per l'esecuzione indefinita.
+
+Vedi la guida al [Plugin Gradle](gradle-plugin.md) per l'equivalente sul
+lato Gradle - entrambi i plugin racchiudono la stessa logica sottostante,
+quindi la copertura dei verbi e il comportamento restano identici tra i
+due build tool.

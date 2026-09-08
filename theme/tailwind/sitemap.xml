@@ -18,8 +18,13 @@
 	<url><loc>https://bxsites.io/theme/tailwind/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/guides/gradle-plugin/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/guides/maven-plugin/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/guides/theme-import/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/guides/java-openapi-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/guides/java-javadoc-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/guides/java-controller-scan-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/contribute/index.html</loc></url>
@@ -349,8 +354,13 @@
 	<url><loc>https://bxsites.io/theme/tailwind/es/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/es/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/es/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/es/guides/gradle-plugin/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/es/guides/maven-plugin/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/es/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/es/guides/theme-import/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/es/guides/java-openapi-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/es/guides/java-javadoc-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/es/guides/java-controller-scan-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/es/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/es/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/es/contribute/index.html</loc></url>
@@ -405,8 +415,13 @@
 	<url><loc>https://bxsites.io/theme/tailwind/it/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/it/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/it/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/it/guides/gradle-plugin/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/it/guides/maven-plugin/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/it/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/it/guides/theme-import/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/it/guides/java-openapi-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/it/guides/java-javadoc-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/it/guides/java-controller-scan-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/it/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/it/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/it/contribute/index.html</loc></url>
@@ -461,8 +476,13 @@
 	<url><loc>https://bxsites.io/theme/tailwind/de/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/de/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/de/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/de/guides/gradle-plugin/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/de/guides/maven-plugin/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/de/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/de/guides/theme-import/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/de/guides/java-openapi-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/de/guides/java-javadoc-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/de/guides/java-controller-scan-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/de/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/de/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/de/contribute/index.html</loc></url>
@@ -517,8 +537,13 @@
 	<url><loc>https://bxsites.io/theme/tailwind/ja/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/gradle-plugin/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/maven-plugin/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/theme-import/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/java-openapi-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/java-javadoc-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/java-controller-scan-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/ja/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/ja/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/tailwind/ja/contribute/index.html</loc></url>

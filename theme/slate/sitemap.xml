@@ -18,8 +18,13 @@
 	<url><loc>https://bxsites.io/theme/slate/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/guides/gradle-plugin/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/guides/maven-plugin/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/guides/theme-import/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/guides/java-openapi-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/guides/java-javadoc-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/guides/java-controller-scan-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/contribute/index.html</loc></url>
@@ -349,8 +354,13 @@
 	<url><loc>https://bxsites.io/theme/slate/es/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/es/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/es/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/es/guides/gradle-plugin/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/es/guides/maven-plugin/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/es/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/es/guides/theme-import/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/es/guides/java-openapi-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/es/guides/java-javadoc-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/es/guides/java-controller-scan-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/es/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/es/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/es/contribute/index.html</loc></url>
@@ -405,8 +415,13 @@
 	<url><loc>https://bxsites.io/theme/slate/it/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/it/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/it/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/it/guides/gradle-plugin/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/it/guides/maven-plugin/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/it/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/it/guides/theme-import/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/it/guides/java-openapi-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/it/guides/java-javadoc-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/it/guides/java-controller-scan-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/it/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/it/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/it/contribute/index.html</loc></url>
@@ -461,8 +476,13 @@
 	<url><loc>https://bxsites.io/theme/slate/de/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/de/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/de/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/de/guides/gradle-plugin/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/de/guides/maven-plugin/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/de/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/de/guides/theme-import/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/de/guides/java-openapi-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/de/guides/java-javadoc-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/de/guides/java-controller-scan-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/de/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/de/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/de/contribute/index.html</loc></url>
@@ -517,8 +537,13 @@
 	<url><loc>https://bxsites.io/theme/slate/ja/releases/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/ja/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/ja/guides/ai-agent-skills/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/ja/guides/gradle-plugin/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/ja/guides/maven-plugin/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/ja/guides/mcp/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/ja/guides/theme-import/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/ja/guides/java-openapi-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/ja/guides/java-javadoc-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/slate/ja/guides/java-controller-scan-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/ja/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/ja/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/slate/ja/contribute/index.html</loc></url>
