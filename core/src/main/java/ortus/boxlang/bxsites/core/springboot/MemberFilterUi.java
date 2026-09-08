@@ -18,9 +18,15 @@ import java.util.Map;
  * stylesheet (emitted once per page) looks right everywhere without
  * touching a single theme file.
  *
- * <p>Shared by {@link BxSitesJavadocDoclet} (kinds: constructor/method/field)
- * and {@link ControllerScanGenerator} (kinds: get/post/put/delete/patch) -
- * one small reusable piece rather than two near-duplicate ones.
+ * <p>Used by {@link BxSitesJavadocDoclet} for its constructor/method/field
+ * sections. There is deliberately no per-row equivalent for filtering
+ * individual {@code <tr>} elements: that does not survive this pipeline -
+ * bx-sites' own {@code TableWrapProcessor} injects its own {@code x-show}
+ * into every row of a table with ten or more of them, and a {@code <tr>}'s
+ * own attribute values get entity-escaped on the way through. A table
+ * therefore uses bx-sites' own built-in table filter instead (see
+ * {@link ControllerScanGenerator}); only the block-level wrappers below
+ * pass through untouched.
  */
 final class MemberFilterUi {
 
@@ -85,18 +91,6 @@ final class MemberFilterUi {
 
     static String itemClose() {
         return "\n</div>\n\n";
-    }
-
-    /**
-     * For raw markup contexts that can't be div-wrapped without breaking
-     * their own structure (e.g. a table row) - filters by both kind and
-     * search query on the one element itself, rather than relying on an
-     * enclosing section for kind. Embed directly inside the element's
-     * opening tag, e.g. {@code <tr " + rowAttributes(...) + ">"}.
-     */
-    static String rowAttributes(String kind, String searchableName) {
-        return "data-k=\"" + kind + "\" data-n=\"" + escapeAttr(searchableName)
-                + "\" x-show=\"(k==='all'||k===$el.dataset.k)&&(!q||$el.dataset.n.toLowerCase().includes(q.toLowerCase()))\"";
     }
 
     static String escapeAttr(String value) {

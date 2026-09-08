@@ -44,7 +44,9 @@ public enum BxSitesVerb {
     PAGE_RENAME("page:rename"),
     BLOG_DRAFTS("blog:drafts"),
     BLOG_FIND("blog:find"),
-    SEARCH_QUERY("search:query");
+    SEARCH_QUERY("search:query"),
+    DOCBOX("docbox"),
+    COLDBOX("coldbox");
 
     private final String verbId;
 

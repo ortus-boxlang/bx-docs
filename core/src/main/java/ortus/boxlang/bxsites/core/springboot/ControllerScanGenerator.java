@@ -6,7 +6,6 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,13 +18,10 @@ import java.util.Set;
  * off" (this class doesn't enforce that policy itself; each plugin's
  * wiring does).
  *
- * <p>Each page's endpoint table is wrapped in the same small,
- * self-contained filter toolbar {@link JavadocDocGenerator} uses
- * ({@link MemberFilterUi}) - a search box plus one chip per HTTP method
- * actually present - built from plain Alpine.js attributes and a
- * {@code var(--bxsites-*)}-driven inline stylesheet emitted directly into
- * the generated Markdown, so it works in every bx-sites theme with no
- * bx-sites core changes.
+ * <p>Each page's endpoint table is a plain Markdown pipe table, which
+ * bx-sites' own {@code TableWrapProcessor} then gives a live filter box -
+ * see {@code appendFilterableTable} for why a generator-authored raw table
+ * with its own per-row filtering cannot work in this pipeline.
  *
  * <p><b>Must run in a JVM whose classpath already includes both this
  * class and the target project's own compiled classes/dependencies</b>
@@ -264,41 +260,47 @@ public final class ControllerScanGenerator {
     /**
      * One row per (endpoint x path x method) - an endpoint mapped to
      * multiple HTTP methods gets one row per method rather than a combined
-     * "GET, POST" cell, so each row can be filtered by a single kind. Uses
-     * raw {@code <table>} markup (matching the exact structure/classes
-     * bx-sites' own Markdown-table conversion already produces, confirmed
-     * by inspecting a real build) rather than pipe-syntax Markdown, since
-     * pipe tables have no way to carry a per-row filter attribute.
+     * "GET, POST" cell, so each row reads as the single endpoint it is.
+     *
+     * <p>A plain Markdown pipe table, not raw {@code <table>} markup. An
+     * earlier version emitted raw rows carrying their own Alpine
+     * {@code x-show} attributes, plus a chip toolbar to drive them, but
+     * that never worked in a real build: bx-sites' own
+     * {@code TableWrapProcessor} injects its own {@code x-show} into every
+     * {@code <tr>} of a table with ten or more rows (so the generator's
+     * attribute lands second on the tag and is ignored), and the Markdown
+     * renderer entity-escapes a {@code <tr>}'s attribute values, breaking
+     * the expression regardless. Verified against built HTML, not assumed.
+     *
+     * <p>Nothing is lost by dropping it: that same processor gives a table
+     * this size a live filter box for free, and a pipe table stays readable
+     * in the raw Markdown, themed everywhere, and fully in the search
+     * index. The BoxLang-side ColdBox routes page renders the same way, for
+     * the same reason.
      */
     private static void appendFilterableTable(StringBuilder md, List<Endpoint> endpoints) {
-        Map<String, String> chips = new LinkedHashMap<>();
-        for (Endpoint endpoint : endpoints) {
-            for (String method : endpoint.methods()) {
-                chips.putIfAbsent(method.toLowerCase(java.util.Locale.ROOT), method);
-            }
-        }
+        md.append("| Method | Path | Handler |\n");
+        md.append("|---|---|---|\n");
 
-        md.append(MemberFilterUi.styles());
-        md.append(MemberFilterUi.toolbarOpen(chips));
-
-        md.append("<div class=\"bxsites-table-wrap\"><table class=\"table\">\n");
-        md.append("<thead><tr><th>Method</th><th>Path</th><th>Handler</th></tr></thead>\n");
-        md.append("<tbody>\n");
         for (Endpoint endpoint : endpoints) {
             for (String path : endpoint.paths()) {
                 for (String method : endpoint.methods()) {
-                    String kind = method.toLowerCase(java.util.Locale.ROOT);
-                    String searchable = path + " " + endpoint.signature();
-                    md.append("<tr ").append(MemberFilterUi.rowAttributes(kind, searchable)).append(">")
-                            .append("<td>").append(MemberFilterUi.escapeHtml(method)).append("</td>")
-                            .append("<td><code>").append(MemberFilterUi.escapeHtml(path)).append("</code></td>")
-                            .append("<td><code>").append(MemberFilterUi.escapeHtml(endpoint.signature())).append("</code></td>")
-                            .append("</tr>\n");
+                    md.append("| ").append(cell(method))
+                            .append(" | `").append(cell(path))
+                            .append("` | `").append(cell(endpoint.signature()))
+                            .append("` |\n");
                 }
             }
         }
-        md.append("</tbody>\n</table></div>\n\n");
 
-        md.append(MemberFilterUi.toolbarClose());
+        md.append('\n');
+    }
+
+    /**
+     * A table cell: single-lined, with pipes escaped so a path or signature
+     * containing one can't break the table it sits in.
+     */
+    private static String cell(String value) {
+        return value == null ? "" : value.replace("|", "\\|").replaceAll("\\s+", " ").trim();
     }
 }

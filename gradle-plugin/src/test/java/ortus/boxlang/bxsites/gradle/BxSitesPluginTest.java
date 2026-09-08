@@ -15,6 +15,7 @@ import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import ortus.boxlang.bxsites.gradle.tasks.AbstractBxSitesVerbTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesBuildTask;
 
 /**
@@ -223,6 +224,85 @@ class BxSitesPluginTest {
         assertEquals("api/javadoc", javadoc.getPagePathPrefix().get());
         assertEquals(java.util.List.of("api", "javadoc"), javadoc.getTags().get());
         assertTrue(javadoc.getSourceFiles().isEmpty());
+    }
+
+    @Test
+    void apply_registersTheBoxLangDocGeneratorTasks(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        assertNotNull(project.getTasks().findByName("bxSitesDocBoxDoc"));
+        assertNotNull(project.getTasks().findByName("bxSitesColdBoxDoc"));
+    }
+
+    @Test
+    void boxlangDocBoxExtension_hasSensibleDefaults(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        var docbox = project.getExtensions().getByType(BxSitesExtension.class).getBoxlang().getDocbox();
+
+        assertFalse(docbox.getEnabled().get());
+        assertTrue(docbox.getMappings().get().isEmpty());
+        assertTrue(docbox.toVerbArguments().isEmpty());
+    }
+
+    @Test
+    void boxlangDocBoxExtension_turnsItsOptionsIntoVerbFlags(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        var docbox = project.getExtensions().getByType(BxSitesExtension.class).getBoxlang().getDocbox();
+        docbox.getMappings().put("models", "models");
+        docbox.getProjectTitle().set("Bookshelf API");
+        docbox.getPagePathPrefix().set("api/classes");
+        docbox.getTags().set(java.util.List.of("api", "classes"));
+
+        var args = docbox.toVerbArguments();
+
+        assertTrue(args.contains("--mappings:models=models"));
+        assertTrue(args.contains("--projectTitle=Bookshelf API"));
+        assertTrue(args.contains("--pagePathPrefix=api/classes"));
+        assertTrue(args.contains("--tags=api,classes"));
+        // Never passed when unset, so the project's own config still decides.
+        assertFalse(args.stream().anyMatch(arg -> arg.startsWith("--excludes")));
+        assertFalse(args.stream().anyMatch(arg -> arg.startsWith("--jsonDir")));
+    }
+
+    @Test
+    void boxlangColdBoxExtension_hasSensibleDefaults(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        var coldbox = project.getExtensions().getByType(BxSitesExtension.class).getBoxlang().getColdbox();
+
+        assertFalse(coldbox.getEnabled().get());
+        assertTrue(coldbox.toVerbArguments().isEmpty());
+    }
+
+    @Test
+    void boxlangColdBoxExtension_turnsItsOptionsIntoVerbFlags(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        var coldbox = project.getExtensions().getByType(BxSitesExtension.class).getBoxlang().getColdbox();
+        coldbox.getAppRoot().set("app");
+        coldbox.getInclude().set(java.util.List.of("routes", "handlers"));
+
+        var args = coldbox.toVerbArguments();
+
+        assertTrue(args.contains("--appRoot=app"));
+        assertTrue(args.contains("--include=routes,handlers"));
+        assertFalse(args.stream().anyMatch(arg -> arg.startsWith("--pagePathPrefix")));
+    }
+
+    @Test
+    void boxlangTasks_carryTheirExtensionOptionsAsVerbArguments(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+        var boxlang = project.getExtensions().getByType(BxSitesExtension.class).getBoxlang();
+        boxlang.getDocbox().getProjectTitle().set("Bookshelf API");
+        boxlang.getColdbox().getAppRoot().set("app");
+
+        var docboxTask = (AbstractBxSitesVerbTask) project.getTasks().getByName("bxSitesDocBoxDoc");
+        var coldboxTask = (AbstractBxSitesVerbTask) project.getTasks().getByName("bxSitesColdBoxDoc");
+
+        assertTrue(docboxTask.getExtraArgs().get().contains("--projectTitle=Bookshelf API"));
+        assertTrue(coldboxTask.getExtraArgs().get().contains("--appRoot=app"));
     }
 
     @Test
