@@ -1,0 +1,206 @@
+/**
+ * Exercises ColdBoxDocGenerator against fixture structs - the shapes
+ * ColdBoxAppScanner and ColdBoxRouterParser produce - so page rendering
+ * is covered without touching a real application tree.
+ */
+class extends="testbox.system.BaseSpec" {
+
+	function run() {
+		describe( "build.ColdBoxDocGenerator", function() {
+
+			beforeEach( function() {
+				variables.generator = new "models.build.ColdBoxDocGenerator@bxsites"();
+				variables.tempDirs = [];
+			} );
+
+			afterEach( function() {
+				for ( var dir in tempDirs ) {
+					if ( directoryExists( dir ) ) {
+						directoryDelete( dir, true );
+					}
+				}
+			} );
+
+			private string function newTempDir() {
+				var dir = createTempDirectory( prefix = "bxsites-cbgen-" );
+				tempDirs.append( dir );
+				return dir;
+			}
+
+			private struct function fixtureApp() {
+				return {
+					"appRoot"      : "/app",
+					"isColdBoxApp" : true,
+					"configFile"   : "/app/config/ColdBox.bx",
+					"routerFile"   : "/app/config/Router.bx",
+					"wireBoxFile"  : "",
+					"schedulerFile" : "",
+					"handlers"     : [ { "name" : "Main", "file" : "/app/handlers/Main.bx", "module" : "" } ],
+					"models"       : [ { "name" : "UserService", "file" : "/app/models/UserService.bx" } ],
+					"interceptors" : [],
+					"modules"      : [ {
+						"name"       : "api",
+						"root"       : "/app/modules_app/api",
+						"configFile" : "/app/modules_app/api/ModuleConfig.bx",
+						"routerFile" : "/app/modules_app/api/config/Router.bx",
+						"handlers"   : [ { "name" : "Orders", "file" : "/app/modules_app/api/handlers/Orders.bx", "module" : "api" } ],
+						"models"     : []
+					} ]
+				};
+			}
+
+			private array function fixtureRoutes() {
+				return [
+					route( "/home", "", "main.index", "event", "home", "" ),
+					route( "/old/book", "", "/mybook", "redirect", "", "" ),
+					route( "/users/:id", "GET", "users.show", "event", "", "" ),
+					route( "/api/orders", "GET", "orders.index", "event", "", "api" ),
+					route( ":handler/:action?", "", "", "convention", "", "" )
+				];
+			}
+
+			private struct function route(
+				required string pattern,
+				required string verbs,
+				required string target,
+				required string targetType,
+				required string name,
+				required string module
+			) {
+				return {
+					"pattern"    : pattern,
+					"verbs"      : verbs,
+					"target"     : target,
+					"targetType" : targetType,
+					"name"       : name,
+					"module"     : module,
+					"purpose"    : ""
+				};
+			}
+
+			it( "writes a routes page and an app index", function() {
+				var contentDir = newTempDir();
+
+				var result = generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( result.warnings ).toBeEmpty();
+				expect( result.pageFiles.len() ).toBe( 2 );
+				expect( fileExists( contentDir & "/api/coldbox/routes.md" ) ).toBeTrue();
+				expect( fileExists( contentDir & "/api/coldbox/index.md" ) ).toBeTrue();
+			} );
+
+			it( "honors pagePathPrefix and tags", function() {
+				var contentDir = newTempDir();
+
+				generator.generate(
+					app            = fixtureApp(),
+					routes         = fixtureRoutes(),
+					contentDir     = contentDir,
+					pagePathPrefix = "reference/app",
+					tags           = [ "reference" ]
+				);
+
+				expect( fileRead( contentDir & "/reference/app/routes.md" ) ).toInclude( "tags: [reference]" );
+			} );
+
+			it( "renders one table row per route, in declaration order", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				var page = fileRead( contentDir & "/api/coldbox/routes.md" );
+
+				expect( page ).toInclude( "| ANY | `/home` | `main.index` | `home` | &mdash; |" );
+				expect( page ).toInclude( "| GET | `/users/:id` | `users.show` | &mdash; | &mdash; |" );
+				expect( page.find( "/home" ) ).toBeLT( page.find( "/users/:id" ) );
+			} );
+
+			it( "qualifies a target that isn't an ordinary event", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				var page = fileRead( contentDir & "/api/coldbox/routes.md" );
+
+				expect( page ).toInclude( "`/mybook` *redirect*" );
+				expect( page ).toInclude( "*by convention*" );
+			} );
+
+			it( "explains the by-convention rows it rendered", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/routes.md" ) ).toInclude( "resolves the handler and action from the URL pattern" );
+			} );
+
+			it( "leaves the legend off a routes page with no by-convention route", function() {
+				var contentDir = newTempDir();
+				var routes = fixtureRoutes().filter( ( route ) => route.targetType != "convention" );
+
+				generator.generate( app = fixtureApp(), routes = routes, contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/routes.md" ) ).notToInclude( "resolves the handler and action" );
+			} );
+
+			it( "names a route's module so a reader can tell where it came from", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/routes.md" ) ).toInclude( "| GET | `/api/orders` | `orders.index` | &mdash; | `api` |" );
+			} );
+
+			it( "counts handlers across the app and its modules on the index", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				var index = fileRead( contentDir & "/api/coldbox/index.md" );
+
+				expect( index ).toInclude( "| Routes | 5 |" );
+				expect( index ).toInclude( "| Handlers | 2 |" );
+				expect( index ).toInclude( "| Modules | 1 |" );
+				expect( index ).toInclude( "- `api` &mdash; 1 handler(s), 0 model(s)" );
+			} );
+
+			it( "links the pages it actually wrote from the index", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/index.md" ) ).toInclude( "- [Routes](routes.md)" );
+			} );
+
+			it( "warns, and still writes an index, when the app declares no readable routes", function() {
+				var contentDir = newTempDir();
+
+				var result = generator.generate( app = fixtureApp(), routes = [], contentDir = contentDir );
+
+				expect( result.warnings.len() ).toBe( 1 );
+				expect( result.warnings[ 1 ] ).toInclude( "No routes found" );
+				expect( fileExists( contentDir & "/api/coldbox/routes.md" ) ).toBeFalse();
+				expect( fileExists( contentDir & "/api/coldbox/index.md" ) ).toBeTrue();
+			} );
+
+			it( "skips a page set that include doesn't ask for", function() {
+				var contentDir = newTempDir();
+
+				generator.generate(
+					app        = fixtureApp(),
+					routes     = fixtureRoutes(),
+					contentDir = contentDir,
+					include    = []
+				);
+
+				expect( fileExists( contentDir & "/api/coldbox/routes.md" ) ).toBeFalse();
+				expect( fileExists( contentDir & "/api/coldbox/index.md" ) ).toBeTrue();
+			} );
+
+			it( "escapes a pipe in a pattern so it can't break the table", function() {
+				var contentDir = newTempDir();
+				var routes = [ route( "/:year-numeric{4}|:month", "GET", "blog.list", "event", "", "" ) ];
+
+				generator.generate( app = fixtureApp(), routes = routes, contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/routes.md" ) ).toInclude( "\|:month" );
+			} );
+
+		} );
+	}
+
+}

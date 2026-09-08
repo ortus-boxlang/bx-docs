@@ -98,6 +98,12 @@ class {
 			"excludes"       : "",
 			"pagePathPrefix" : "api/docbox",
 			"tags"           : [ "api", "docbox" ]
+		},
+		"coldbox"      : {
+			"appRoot"        : "",
+			"pagePathPrefix" : "api/coldbox",
+			"tags"           : [ "api", "coldbox" ],
+			"include"        : [ "routes" ]
 		}
 	}
 
@@ -493,8 +499,49 @@ class {
 		validateVersions( arguments.config.versions ?: "" )
 		validateCloud( arguments.config.cloud ?: "" )
 		validateDocBox( arguments.config.docbox ?: "" )
+		validateColdBox( arguments.config.coldbox ?: "" )
 
 		return arguments.config
+	}
+
+	/**
+	 * Validates the site config's `coldbox` block - where the ColdBox app
+	 * being documented lives, and which page sets the `coldbox` verb
+	 * generates from it. Whether `appRoot` actually holds a ColdBox app is
+	 * the verb's own check, since it has the better error to give.
+	 *
+	 * Typed `any` rather than `struct` for the same reason as
+	 * `validateDocBox()`.
+	 *
+	 * @coldbox The merged `coldbox` config block
+	 *
+	 * @throws BxSites.InvalidConfig
+	 */
+	private void function validateColdBox( required any coldbox ) {
+		if ( !isStruct( arguments.coldbox ) ) {
+			throw(
+				type    = "BxSites.InvalidConfig",
+				message = "#variables.configFileName# [coldbox], when present, must be an object"
+			)
+		}
+
+		for ( var stringKey in [ "appRoot", "pagePathPrefix" ] ) {
+			if ( !isSimpleValue( arguments.coldbox[ stringKey ] ?: "" ) ) {
+				throw(
+					type    = "BxSites.InvalidConfig",
+					message = "#variables.configFileName# [coldbox.#stringKey#], when present, must be a string"
+				)
+			}
+		}
+
+		for ( var arrayKey in [ "tags", "include" ] ) {
+			if ( !isArray( arguments.coldbox[ arrayKey ] ?: [] ) ) {
+				throw(
+					type    = "BxSites.InvalidConfig",
+					message = "#variables.configFileName# [coldbox.#arrayKey#], when present, must be an array of strings"
+				)
+			}
+		}
 	}
 
 	/**

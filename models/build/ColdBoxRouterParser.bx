@@ -1,0 +1,851 @@
+/**
+ * Reads a ColdBox `Router` (app or module) as text and returns the routes
+ * it declares, without executing a line of it.
+ *
+ * ## How it reads a router
+ *
+ * Comments are stripped, then the source is split into statements at
+ * parenthesis depth zero, and each statement that starts with a routing
+ * initiator (`route`, `get`, `post`, ..., `resources`, `apiResources`,
+ * `group`) becomes one or more route rows. Chained modifiers and
+ * terminators on the same statement (`.as()`, `.withVerbs()`, `.to()`,
+ * `.toHandler()`, ...) are read off that same statement, so a fluent
+ * multi-line declaration parses as the single route it is. `group()` is
+ * handled by recursing into its own closure body and prefixing whatever
+ * comes back, and `resources()`/`apiResources()` expand into exactly the
+ * seven (or five) rows ColdBox documents for them.
+ *
+ * ## What it deliberately can't see
+ *
+ * Static reading has a hard edge, and it's better to name it than to
+ * pretend otherwise. A pattern or target built from a variable, a loop
+ * that registers routes, a router that delegates to a helper function -
+ * all of it is invisible here, because none of it is a literal in the
+ * file. Such statements are skipped rather than guessed at, so a
+ * generated routes page under-reports rather than lies. Anything with a
+ * literal pattern parses correctly whether or not the rest of the file
+ * does.
+ */
+class {
+
+	/**
+	 * The HTTP-verb initiators, and the verb each one restricts its route
+	 * to. `route()` itself carries no restriction until `.withVerbs()`.
+	 */
+	static {
+		verbInitiators = {
+			"get"     : "GET",
+			"post"    : "POST",
+			"put"     : "PUT",
+			"patch"   : "PATCH",
+			"delete"  : "DELETE",
+			"options" : "OPTIONS"
+		}
+
+		/**
+		 * Every resourceful route ColdBox generates, in declaration order -
+		 * verb, URL suffix, action, and the purpose its own docs give it.
+		 * `apiResources()` is this same table minus the two HTML-form
+		 * actions (`new`, `edit`).
+		 */
+		resourceActions = [
+			{ "action" : "index",  "verb" : "GET",       "suffix" : "",             "purpose" : "Get all" },
+			{ "action" : "new",    "verb" : "GET",       "suffix" : "/new",         "purpose" : "Return the HTML form for creating one" },
+			{ "action" : "create", "verb" : "POST",      "suffix" : "",             "purpose" : "Create one" },
+			{ "action" : "show",   "verb" : "GET",       "suffix" : "/:id",         "purpose" : "Show one by id" },
+			{ "action" : "edit",   "verb" : "GET",       "suffix" : "/:id/edit",    "purpose" : "Return the HTML form for editing one" },
+			{ "action" : "update", "verb" : "PUT/PATCH", "suffix" : "/:id",         "purpose" : "Update one by id" },
+			{ "action" : "delete", "verb" : "DELETE",    "suffix" : "/:id",         "purpose" : "Delete one by id" }
+		]
+
+		apiExcludedActions = [ "new", "edit" ]
+
+		/**
+		 * Route terminators, in the order they're looked for, mapped to
+		 * the `targetType` each produces. Longest names first so `.to(`
+		 * can never shadow `.toHandler(`.
+		 */
+		terminators = [
+			{ "call" : "toNamespaceRouting", "type" : "namespace" },
+			{ "call" : "toModuleRouting",    "type" : "module" },
+			{ "call" : "toRedirect",         "type" : "redirect" },
+			{ "call" : "toResponse",         "type" : "response" },
+			{ "call" : "toHandler",          "type" : "handler" },
+			{ "call" : "toAction",           "type" : "action" },
+			{ "call" : "toView",             "type" : "view" },
+			{ "call" : "toSSE",              "type" : "sse" },
+			{ "call" : "toMCP",              "type" : "mcp" },
+			{ "call" : "toAi",               "type" : "ai" },
+			{ "call" : "to",                 "type" : "event" }
+		]
+	}
+
+	/**
+	 * Parses one router file.
+	 *
+	 * @routerFile Absolute path to a `Router.bx`/`Router.cfc`
+	 * @module The module these routes belong to, or "" for the app's own router
+	 * @prefix A URL prefix applied to every pattern - a module's entry point, typically
+	 *
+	 * @return Array of route structs; empty when the file doesn't exist
+	 */
+	array function parse( required string routerFile, string module = "", string prefix = "" ) {
+		if ( !fileExists( arguments.routerFile ) ) {
+			return []
+		}
+
+		return parseSource(
+			source = fileRead( arguments.routerFile ),
+			module = arguments.module,
+			prefix = arguments.prefix
+		)
+	}
+
+	/**
+	 * Parses router source directly - the entry point every spec uses,
+	 * and what `parse()` delegates to once it has read the file.
+	 *
+	 * @source The router's source code
+	 * @module The module these routes belong to
+	 * @prefix A URL prefix applied to every pattern
+	 *
+	 * @return Array of `{ pattern, verbs, target, targetType, name, module, purpose }` structs
+	 */
+	array function parseSource( required string source, string module = "", string prefix = "" ) {
+		var routes = []
+
+		for ( var statement in splitStatements( stripComments( arguments.source ) ) ) {
+			routes.append( parseStatement( statement, arguments.module, arguments.prefix ), true )
+		}
+
+		return routes
+	}
+
+	/**
+	 * Turns one statement into the routes it declares - none, one, or
+	 * (for a resource or a group) several.
+	 *
+	 * @statement A single router statement
+	 * @module The module context
+	 * @prefix The URL prefix context
+	 */
+	private array function parseStatement( required string statement, required string module, required string prefix ) {
+		// A module's ModuleConfig registers routes through an explicit
+		// `router.` reference; the app router calls the same methods bare.
+		var trimmed = trim( arguments.statement ).reReplace( "^router\s*\.\s*", "" )
+		var initiator = trimmed.reReplace( "^([a-zA-Z]+)\s*\(.*$", "\1" )
+
+		if ( initiator == trimmed || !len( initiator ) ) {
+			return []
+		}
+
+		var call = callArguments( trimmed )
+		if ( !call.closed ) {
+			return []
+		}
+		var args = call.content
+
+		switch ( lCase( initiator ) ) {
+			case "group":
+				return parseGroup( args, arguments.module, arguments.prefix )
+			case "resources":
+				return parseResources( args, arguments.module, arguments.prefix, false )
+			case "apiresources":
+				return parseResources( args, arguments.module, arguments.prefix, true )
+			case "route":
+				return parseRoute( trimmed, args, arguments.module, arguments.prefix, "" )
+			default:
+				if ( static.verbInitiators.keyExists( lCase( initiator ) ) ) {
+					return parseRoute( trimmed, args, arguments.module, arguments.prefix, static.verbInitiators[ lCase( initiator ) ] )
+				}
+				return []
+		}
+	}
+
+	/**
+	 * One `route()`/`get()`/`post()`/... declaration, including whatever
+	 * its chained modifiers and terminator say.
+	 *
+	 * @statement The whole statement, chained calls included
+	 * @args The initiator call's own argument text
+	 * @module The module context
+	 * @prefix The URL prefix context
+	 * @verb The HTTP verb the initiator itself restricts to, or ""
+	 */
+	private array function parseRoute(
+		required string statement,
+		required string args,
+		required string module,
+		required string prefix,
+		required string verb
+	) {
+		var parsed = parseArguments( arguments.args )
+		var pattern = literalArgument( parsed, "pattern", 1 )
+
+		// No literal pattern means it was built at runtime - skip rather
+		// than publish a route whose URL we'd be guessing at.
+		if ( !len( pattern ) ) {
+			return []
+		}
+
+		var target = literalArgument( parsed, "target", 2 )
+		var targetType = len( target ) ? "event" : ""
+
+		// `route( "/echo", ( event, rc, prc ) => {...} )` - an inline
+		// closure as the target is the shorthand for `.toResponse()`, so
+		// record it as the response route it is rather than as a route
+		// with no target at all.
+		if ( !len( targetType ) && hasInlineTarget( parsed ) ) {
+			targetType = "response"
+		}
+
+		var terminator = findTerminator( arguments.statement )
+
+		if ( len( terminator.type ) ) {
+			targetType = terminator.type
+			target = len( terminator.value ) ? terminator.value : target
+		}
+
+		if ( !len( targetType ) && findCall( arguments.statement, "end" ) ) {
+			targetType = "convention"
+		}
+
+		var verbs = arguments.verb
+		var withVerbs = chainedValue( arguments.statement, "withVerbs" )
+		if ( len( withVerbs ) ) {
+			verbs = withVerbs.listToArray( "," ).map( ( entry ) => uCase( trim( entry ) ) ).toList( "/" )
+		}
+
+		var name = literalArgument( parsed, "name", 3 )
+		var chainedName = chainedValue( arguments.statement, "as" )
+		if ( len( chainedName ) ) {
+			name = chainedName
+		}
+
+		var routeModule = arguments.module
+		var chainedModule = chainedValue( arguments.statement, "withModule" )
+		if ( len( chainedModule ) ) {
+			routeModule = chainedModule
+		}
+
+		return [ route(
+			pattern    = joinPattern( arguments.prefix, pattern ),
+			verbs      = verbs,
+			target     = target,
+			targetType = targetType,
+			name       = name,
+			module     = routeModule
+		) ]
+	}
+
+	/**
+	 * A `group()` call: read its options, then recurse into its closure
+	 * body so nested declarations parse exactly like top-level ones,
+	 * carrying the group's own pattern prefix and module.
+	 *
+	 * @args The group call's argument text
+	 * @module The module context
+	 * @prefix The URL prefix context
+	 */
+	private array function parseGroup( required string args, required string module, required string prefix ) {
+		var blocks = topLevelBlocks( arguments.args )
+
+		if ( !blocks.len() ) {
+			return []
+		}
+
+		// `group( options, body )`: the body is the last brace block, the
+		// options struct the first - unless there's only one block, which
+		// is then the body.
+		var body = blocks[ blocks.len() ]
+		var options = blocks.len() > 1 ? parseArguments( blocks[ 1 ] ) : {}
+
+		var groupPattern = literalArgument( options, "pattern", 0 )
+		var groupModule = literalArgument( options, "module", 0 )
+
+		return parseSource(
+			source = body,
+			module = len( groupModule ) ? groupModule : arguments.module,
+			prefix = joinPattern( arguments.prefix, groupPattern )
+		)
+	}
+
+	/**
+	 * A `resources()`/`apiResources()` call, expanded into the individual
+	 * routes ColdBox generates for it.
+	 *
+	 * @args The call's argument text
+	 * @module The module context
+	 * @prefix The URL prefix context
+	 * @apiOnly Whether this was `apiResources()`, which drops the two HTML-form actions
+	 */
+	private array function parseResources(
+		required string args,
+		required string module,
+		required string prefix,
+		required boolean apiOnly
+	) {
+		var parsed = parseArguments( arguments.args )
+		var resource = literalArgument( parsed, "resource", 1 )
+
+		if ( !len( resource ) ) {
+			return []
+		}
+
+		var handler = literalArgument( parsed, "handler", 0 )
+		handler = len( handler ) ? handler : resource
+
+		var pattern = literalArgument( parsed, "pattern", 0 )
+		pattern = len( pattern ) ? pattern : "/" & resource
+
+		var parameterName = literalArgument( parsed, "parameterName", 0 )
+		parameterName = len( parameterName ) ? parameterName : "id"
+
+		var resourceModule = literalArgument( parsed, "module", 0 )
+		resourceModule = len( resourceModule ) ? resourceModule : arguments.module
+
+		var only = listArgument( parsed, "only" )
+		var except = listArgument( parsed, "except" )
+		var routes = []
+
+		for ( var entry in static.resourceActions ) {
+			if ( arguments.apiOnly && static.apiExcludedActions.findNoCase( entry.action ) ) {
+				continue
+			}
+			if ( only.len() && !only.findNoCase( entry.action ) ) {
+				continue
+			}
+			if ( except.len() && except.findNoCase( entry.action ) ) {
+				continue
+			}
+
+			routes.append( route(
+				pattern    = joinPattern( arguments.prefix, pattern & entry.suffix.replace( ":id", ":" & parameterName ) ),
+				verbs      = entry.verb,
+				target     = handler & "." & entry.action,
+				targetType = "event",
+				name       = "",
+				module     = resourceModule,
+				purpose    = entry.purpose & " " & resource
+			) )
+		}
+
+		return routes
+	}
+
+	/**
+	 * One normalized route row - the single place the shape every caller
+	 * relies on is defined.
+	 *
+	 * @pattern The URL pattern, prefix already applied
+	 * @verbs The HTTP verbs this route answers, or "" for any
+	 * @target What the route resolves to, in `targetType`'s terms
+	 * @targetType One of event/handler/action/view/redirect/response/module/namespace/sse/ai/mcp/convention, or ""
+	 * @name The route's registered name, or ""
+	 * @module The owning module, or ""
+	 * @purpose A human description, when the declaration implies one
+	 */
+	private struct function route(
+		required string pattern,
+		required string verbs,
+		required string target,
+		required string targetType,
+		required string name,
+		required string module,
+		string purpose = ""
+	) {
+		return {
+			"pattern"    : arguments.pattern,
+			"verbs"      : arguments.verbs,
+			"target"     : arguments.target,
+			"targetType" : arguments.targetType,
+			"name"       : arguments.name,
+			"module"     : arguments.module,
+			"purpose"    : arguments.purpose
+		}
+	}
+
+	/**
+	 * The first route terminator present in a statement.
+	 *
+	 * @statement The statement to search
+	 *
+	 * @return `{ type, value }`, both "" when the statement has no terminator
+	 */
+	private struct function findTerminator( required string statement ) {
+		for ( var terminator in static.terminators ) {
+			if ( findCall( arguments.statement, terminator.call ) ) {
+				return { "type" : terminator.type, "value" : chainedValue( arguments.statement, terminator.call ) }
+			}
+		}
+
+		return { "type" : "", "value" : "" }
+	}
+
+	/**
+	 * Whether a statement chains a given call, e.g. `.end()`.
+	 *
+	 * @statement The statement to search
+	 * @call The chained method name
+	 */
+	private boolean function findCall( required string statement, required string call ) {
+		return reFindNoCase( "\.\s*#arguments.call#\s*\(", arguments.statement ) > 0
+	}
+
+	/**
+	 * The first string-literal argument of a chained call, e.g. the
+	 * `"users.index"` in `.to( "users.index" )`. Returns "" when the call
+	 * isn't there, or when its argument isn't a literal.
+	 *
+	 * @statement The statement to search
+	 * @call The chained method name
+	 */
+	private string function chainedValue( required string statement, required string call ) {
+		var position = reFindNoCase( "\.\s*#arguments.call#\s*\(", arguments.statement )
+
+		if ( !position ) {
+			return ""
+		}
+
+		var open = find( "(", arguments.statement, position )
+		var block = balancedBlock( arguments.statement, open, "(", ")" )
+
+		return literalArgument( parseArguments( block.content ), "", 1 )
+	}
+
+	/**
+	 * The argument text of the initiator call at the start of a statement.
+	 *
+	 * @statement The statement
+	 *
+	 * @return `{ content, closed }` - `closed` is false when the call's parentheses never balance
+	 */
+	private struct function callArguments( required string statement ) {
+		var open = find( "(", arguments.statement )
+
+		if ( !open ) {
+			return { "content" : "", "closed" : false }
+		}
+
+		return balancedBlock( arguments.statement, open, "(", ")" )
+	}
+
+	/**
+	 * Splits an argument list into positional and named arguments, keyed
+	 * by name for the named ones and by ordinal for the positional.
+	 *
+	 * @args The raw argument text
+	 *
+	 * @return `{ named : { name -> raw }, positional : [ raw, ... ] }`
+	 */
+	private struct function parseArguments( required string args ) {
+		var parsed = { "named" : {}, "positional" : [] }
+
+		for ( var part in splitTopLevel( arguments.args, "," ) ) {
+			var argument = trim( part )
+
+			if ( !len( argument ) ) {
+				continue
+			}
+
+			var match = reFind( "^([a-zA-Z_][a-zA-Z0-9_]*)[ #char( 9 )#]*[:=]([^=]|$)", argument, 1, true )
+
+			if ( match.pos[ 1 ] > 0 ) {
+				var name = argument.mid( match.pos[ 2 ], match.len[ 2 ] )
+				parsed.named[ name ] = trim( argument.mid( match.pos[ 2 ] + match.len[ 2 ], argument.len() ) .reReplace( "^[ #char( 9 )#]*[:=]", "" ) )
+			} else {
+				parsed.positional.append( argument )
+			}
+		}
+
+		return parsed
+	}
+
+	/**
+	 * One argument's string-literal value: the named one if present, else
+	 * the positional at `position` (1-based; 0 means "named only").
+	 * Anything that isn't a quoted literal reads as "" - see this class'
+	 * own docblock on why a non-literal is skipped rather than guessed.
+	 *
+	 * @parsed A `parseArguments()` result
+	 * @name The argument's name
+	 * @position Its positional index, or 0 when it has none
+	 */
+	private string function literalArgument( required struct parsed, required string name, required numeric position ) {
+		if ( len( arguments.name ) && arguments.parsed.named.keyExists( arguments.name ) ) {
+			return unquote( arguments.parsed.named[ arguments.name ] )
+		}
+
+		if ( arguments.position > 0 && arguments.parsed.positional.len() >= arguments.position ) {
+			return unquote( arguments.parsed.positional[ arguments.position ] )
+		}
+
+		return ""
+	}
+
+	/**
+	 * A list-or-array argument (`only`/`except`) as an array of strings.
+	 *
+	 * @parsed A `parseArguments()` result
+	 * @name The argument's name
+	 */
+	private array function listArgument( required struct parsed, required string name ) {
+		if ( !arguments.parsed.named.keyExists( arguments.name ) ) {
+			return []
+		}
+
+		var raw = trim( arguments.parsed.named[ arguments.name ] )
+
+		if ( raw.startsWith( "[" ) ) {
+			return splitTopLevel( raw.reReplace( "^\[", "" ).reReplace( "\]$", "" ), "," )
+				.map( ( entry ) => unquote( trim( entry ) ) )
+				.filter( ( entry ) => len( entry ) )
+		}
+
+		return unquote( raw ).listToArray( "," ).map( ( entry ) => trim( entry ) )
+	}
+
+	/**
+	 * Strips the surrounding quotes from a string literal, returning ""
+	 * for anything that isn't one.
+	 *
+	 * @value The raw argument text
+	 */
+	private string function unquote( required string value ) {
+		var trimmed = trim( arguments.value )
+
+		if ( trimmed.len() < 2 ) {
+			return ""
+		}
+
+		var quote = trimmed.left( 1 )
+
+		if ( ( quote != """" && quote != "'" ) || trimmed.right( 1 ) != quote ) {
+			return ""
+		}
+
+		return trimmed.mid( 2, trimmed.len() - 2 )
+	}
+
+	/**
+	 * Whether a route's target argument was given, but as something other
+	 * than a string literal - in practice an inline closure.
+	 *
+	 * @parsed A `parseArguments()` result
+	 */
+	private boolean function hasInlineTarget( required struct parsed ) {
+		if ( arguments.parsed.named.keyExists( "target" ) ) {
+			return true
+		}
+
+		return arguments.parsed.positional.len() >= 2
+	}
+
+	/**
+	 * Joins a prefix and a pattern into one clean URL pattern. With no
+	 * prefix the declared pattern is left exactly as the router wrote it -
+	 * a conventions route reads `:handler/:action?` in the source and
+	 * should read that way on the page too.
+	 *
+	 * @prefix The inherited prefix, possibly ""
+	 * @pattern The declared pattern
+	 */
+	private string function joinPattern( required string prefix, required string pattern ) {
+		var left = arguments.prefix.reReplace( "[\/]+$", "" )
+		var right = arguments.pattern
+
+		if ( !len( left ) ) {
+			return right
+		}
+
+		// A module's entry point is declared bare (`this.entryPoint = "api"`),
+		// but the URL it mounts at is rooted.
+		if ( !left.startsWith( "/" ) ) {
+			left = "/" & left
+		}
+
+		if ( !len( right ) ) {
+			return left
+		}
+
+		return left & ( right.startsWith( "/" ) ? right : "/" & right )
+	}
+
+	/**
+	 * Removes line and block comments, leaving string literals intact -
+	 * a `//` inside a `"https://..."` is not a comment.
+	 *
+	 * @source The router source
+	 */
+	private string function stripComments( required string source ) {
+		var output = createObject( "java", "java.lang.StringBuilder" ).init()
+		var length = arguments.source.len()
+		var index = 1
+		var quote = ""
+
+		while ( index <= length ) {
+			var current = arguments.source.mid( index, 1 )
+			var next = index < length ? arguments.source.mid( index + 1, 1 ) : ""
+
+			if ( len( quote ) ) {
+				output.append( current )
+				if ( current == quote ) {
+					quote = ""
+				}
+				index++
+				continue
+			}
+
+			if ( current == """" || current == "'" ) {
+				quote = current
+				output.append( current )
+				index++
+				continue
+			}
+
+			if ( current == "/" && next == "/" ) {
+				while ( index <= length && arguments.source.mid( index, 1 ) != char( 10 ) ) {
+					index++
+				}
+				continue
+			}
+
+			if ( current == "/" && next == "*" ) {
+				index += 2
+				while ( index < length && !( arguments.source.mid( index, 1 ) == "*" && arguments.source.mid( index + 1, 1 ) == "/" ) ) {
+					index++
+				}
+				index += 2
+				continue
+			}
+
+			output.append( current )
+			index++
+		}
+
+		return output.toString()
+	}
+
+	/**
+	 * Splits comment-free source into statements.
+	 *
+	 * Boundaries are `;`, `{` and `}` at parenthesis depth zero, plus
+	 * newlines - with the one rule that makes fluent routers parse: a
+	 * newline only ends a statement when the next non-blank line doesn't
+	 * continue the chain with a leading `.`. Braces inside parentheses
+	 * (a `group()` body, an inline closure) never split, so such a call
+	 * stays the single statement it is.
+	 *
+	 * @source Comment-free router source
+	 */
+	private array function splitStatements( required string source ) {
+		var statements = []
+		var buffer = ""
+		var depth = 0
+		var quote = ""
+		var length = arguments.source.len()
+
+		for ( var index = 1; index <= length; index++ ) {
+			var current = arguments.source.mid( index, 1 )
+
+			if ( len( quote ) ) {
+				buffer &= current
+				if ( current == quote ) {
+					quote = ""
+				}
+				continue
+			}
+
+			if ( current == """" || current == "'" ) {
+				quote = current
+				buffer &= current
+				continue
+			}
+
+			if ( current == "(" ) {
+				depth++
+			} else if ( current == ")" ) {
+				depth = max( depth - 1, 0 )
+			}
+
+			if ( depth == 0 && ( current == ";" || current == "{" || current == "}" ) ) {
+				statements.append( buffer )
+				buffer = ""
+				continue
+			}
+
+			if ( depth == 0 && current == char( 10 ) ) {
+				if ( continuesChain( arguments.source, index ) ) {
+					buffer &= current
+					continue
+				}
+
+				statements.append( buffer )
+				buffer = ""
+				continue
+			}
+
+			buffer &= current
+		}
+
+		statements.append( buffer )
+
+		return statements.map( ( statement ) => trim( statement ) ).filter( ( statement ) => len( statement ) )
+	}
+
+	/**
+	 * Whether the first non-whitespace character after a newline chains
+	 * onto the statement before it.
+	 *
+	 * @source The source being split
+	 * @index The newline's index
+	 */
+	private boolean function continuesChain( required string source, required numeric index ) {
+		var length = arguments.source.len()
+
+		for ( var lookahead = arguments.index + 1; lookahead <= length; lookahead++ ) {
+			var candidate = arguments.source.mid( lookahead, 1 )
+
+			if ( candidate == " " || candidate == char( 9 ) || candidate == char( 13 ) || candidate == char( 10 ) ) {
+				continue
+			}
+
+			return candidate == "."
+		}
+
+		return false
+	}
+
+	/**
+	 * Splits text on a delimiter that appears at top level only - commas
+	 * inside nested parens, braces, brackets or strings are left alone.
+	 *
+	 * @text The text to split
+	 * @delimiter The single-character delimiter
+	 */
+	private array function splitTopLevel( required string text, required string delimiter ) {
+		var parts = []
+		var buffer = ""
+		var depth = 0
+		var quote = ""
+		var length = arguments.text.len()
+
+		for ( var index = 1; index <= length; index++ ) {
+			var current = arguments.text.mid( index, 1 )
+
+			if ( len( quote ) ) {
+				buffer &= current
+				if ( current == quote ) {
+					quote = ""
+				}
+				continue
+			}
+
+			if ( current == """" || current == "'" ) {
+				quote = current
+				buffer &= current
+				continue
+			}
+
+			if ( current == "(" || current == "{" || current == "[" ) {
+				depth++
+			} else if ( current == ")" || current == "}" || current == "]" ) {
+				depth = max( depth - 1, 0 )
+			}
+
+			if ( depth == 0 && current == arguments.delimiter ) {
+				parts.append( buffer )
+				buffer = ""
+				continue
+			}
+
+			buffer &= current
+		}
+
+		parts.append( buffer )
+
+		return parts
+	}
+
+	/**
+	 * Every top-level `{ ... }` block in a piece of text, contents only.
+	 *
+	 * @text The text to scan
+	 */
+	private array function topLevelBlocks( required string text ) {
+		var blocks = []
+		var index = 1
+		var length = arguments.text.len()
+
+		while ( index <= length ) {
+			if ( arguments.text.mid( index, 1 ) == "{" ) {
+				var block = balancedBlock( arguments.text, index, "{", "}" )
+				blocks.append( block.content )
+				index = block.endIndex + 1
+				continue
+			}
+
+			index++
+		}
+
+		return blocks
+	}
+
+	/**
+	 * The contents of the balanced block opening at `openIndex`.
+	 *
+	 * @text The text to scan
+	 * @openIndex Index of the opening character
+	 * @openChar The opening character
+	 * @closeChar The closing character
+	 *
+	 * @return `{ content, endIndex, closed }`
+	 */
+	private struct function balancedBlock(
+		required string text,
+		required numeric openIndex,
+		required string openChar,
+		required string closeChar
+	) {
+		var depth = 0
+		var quote = ""
+		var length = arguments.text.len()
+
+		for ( var index = arguments.openIndex; index <= length; index++ ) {
+			var current = arguments.text.mid( index, 1 )
+
+			if ( len( quote ) ) {
+				if ( current == quote ) {
+					quote = ""
+				}
+				continue
+			}
+
+			if ( current == """" || current == "'" ) {
+				quote = current
+				continue
+			}
+
+			if ( current == arguments.openChar ) {
+				depth++
+			} else if ( current == arguments.closeChar ) {
+				depth--
+
+				if ( depth == 0 ) {
+					return {
+						"content"  : arguments.text.mid( arguments.openIndex + 1, index - arguments.openIndex - 1 ),
+						"endIndex" : index,
+						"closed"   : true
+					}
+				}
+			}
+		}
+
+		return {
+			"content"  : arguments.text.mid( arguments.openIndex + 1, length - arguments.openIndex ),
+			"endIndex" : length,
+			"closed"   : false
+		}
+	}
+
+}

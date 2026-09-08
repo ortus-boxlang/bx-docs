@@ -996,6 +996,46 @@ class extends="testbox.system.BaseSpec" {
 				expect( config.docbox.tags ).toBe( [ "reference" ] );
 			} );
 
+			it( "defaults [coldbox] to the api/coldbox page prefix and the routes page set", function() {
+				var dir = newProjectDir( '{"name":"My Docs"}' );
+				var config = loader.load( dir );
+
+				expect( config.coldbox.appRoot ).toBe( "" );
+				expect( config.coldbox.pagePathPrefix ).toBe( "api/coldbox" );
+				expect( config.coldbox.tags ).toBe( [ "api", "coldbox" ] );
+				expect( config.coldbox.include ).toBe( [ "routes" ] );
+			} );
+
+			it( "preserves a fully-configured [coldbox] block", function() {
+				var dir = newProjectDir( '{"name":"My Docs","coldbox":{"appRoot":"app","pagePathPrefix":"reference","tags":["reference"],"include":["routes"]}}' );
+				var config = loader.load( dir );
+
+				expect( config.coldbox.appRoot ).toBe( "app" );
+				expect( config.coldbox.pagePathPrefix ).toBe( "reference" );
+				expect( config.coldbox.tags ).toBe( [ "reference" ] );
+			} );
+
+			it( "throws BxSites.InvalidConfig when [coldbox] is not an object", function() {
+				var dir = newProjectDir( '{"name":"My Docs","coldbox":"not-an-object"}' );
+				expect( function() {
+					loader.load( dir );
+				} ).toThrow( "BxSites.InvalidConfig" );
+			} );
+
+			it( "throws BxSites.InvalidConfig when [coldbox.appRoot] is not a string", function() {
+				var dir = newProjectDir( '{"name":"My Docs","coldbox":{"appRoot":["app"]}}' );
+				expect( function() {
+					loader.load( dir );
+				} ).toThrow( "BxSites.InvalidConfig" );
+			} );
+
+			it( "throws BxSites.InvalidConfig when [coldbox.include] is not an array", function() {
+				var dir = newProjectDir( '{"name":"My Docs","coldbox":{"include":"routes"}}' );
+				expect( function() {
+					loader.load( dir );
+				} ).toThrow( "BxSites.InvalidConfig" );
+			} );
+
 			it( "throws BxSites.InvalidConfig when [docbox] is not an object", function() {
 				var dir = newProjectDir( '{"name":"My Docs","docbox":"not-an-object"}' );
 				expect( function() {

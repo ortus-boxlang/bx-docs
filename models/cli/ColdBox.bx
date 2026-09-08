@@ -1,0 +1,201 @@
+/**
+ * `coldbox` CLI verb - documents a ColdBox application into a project's
+ * own content tree, from its conventions on disk.
+ *
+ * The ColdBox-side counterpart of the Gradle/Maven plugins'
+ * `bxSitesControllerScanDoc`, with one deliberate difference in method:
+ * the Spring generator reflects over compiled classes, while this one
+ * never boots or loads anything. `ColdBoxAppScanner` finds the
+ * conventions, `ColdBoxRouterParser` reads the routers,
+ * `ColdBoxConfigParser` reads each module's own declarations, and
+ * `ColdBoxDocGenerator` turns all of it into pages. Nothing is built or
+ * served here - the pages are ordinary content, picked up by the next
+ * `build`/`serve` like any other.
+ *
+ * Because it's static, a route or handler that only exists once the app
+ * is running can't appear. That's the trade named in each of those
+ * classes' own docblocks, and the reason this verb works on a CI runner
+ * with no datasources, no environment, and no app to boot.
+ */
+class {
+
+	/**
+	 * @options { projectRoot (required, absolute path), appRoot, pagePathPrefix, tags (comma list), include (comma list) }
+	 */
+	struct function run( struct options = {} ) {
+		var projectRoot = trim( arguments.options.projectRoot ?: "" )
+		if ( !len( projectRoot ) ) {
+			throw( type = "BxSites.MissingProjectRoot", message = "`coldbox` requires a project root" )
+		}
+		var root = projectRoot.reReplace( "[\/]+$", "" )
+
+		var config = new "models.config.ConfigLoader@bxsites"().load( root )
+		var settings = config.coldbox ?: {}
+		var contentDir = new "models.config.SourceDirResolver@bxsites"().resolve( root )
+		var appRoot = resolveAppRoot( root, settings, arguments.options )
+
+		var scanner = new "models.build.ColdBoxAppScanner@bxsites"()
+		var app = scanner.scan( appRoot )
+
+		if ( !app.isColdBoxApp ) {
+			throw(
+				type    = "BxSites.NotAColdBoxApp",
+				message = "No ColdBox application found at [#appRoot#] - expected a handlers/ folder, a config/ColdBox file, a config/Router file, or modules_app/. Point at the right root with [coldbox.appRoot] in bxsites.yaml, or --appRoot=<path>"
+			)
+		}
+
+		var routes = collectRoutes( app )
+
+		var generated = new "models.build.ColdBoxDocGenerator@bxsites"().generate(
+			app            = app,
+			routes         = routes,
+			contentDir     = contentDir,
+			pagePathPrefix = pagePathPrefixFor( settings, arguments.options ),
+			tags           = tagsFor( settings, arguments.options ),
+			include        = includeFor( settings, arguments.options )
+		)
+
+		return {
+			exitCode : 0,
+			message  : report( app, routes, generated, contentDir, pagePathPrefixFor( settings, arguments.options ) )
+		}
+	}
+
+	/**
+	 * Every route the app declares: its own router first, then each
+	 * module's, prefixed by that module's declared entry point so a
+	 * module route's pattern reads as the URL it actually answers on.
+	 *
+	 * @app A `ColdBoxAppScanner.scan()` result
+	 */
+	private array function collectRoutes( required struct app ) {
+		var parser = new "models.build.ColdBoxRouterParser@bxsites"()
+		var configParser = new "models.build.ColdBoxConfigParser@bxsites"()
+		var routes = parser.parse( arguments.app.routerFile )
+
+		for ( var module in arguments.app.modules ) {
+			if ( !len( module.routerFile ) ) {
+				continue
+			}
+
+			var metadata = configParser.moduleMetadata( module.configFile )
+
+			routes.append(
+				parser.parse(
+					routerFile = module.routerFile,
+					module     = module.name,
+					prefix     = metadata.entryPoint ?: module.name
+				),
+				true
+			)
+		}
+
+		return routes
+	}
+
+	/**
+	 * Where the ColdBox app itself lives: `--appRoot`, else
+	 * `coldbox.appRoot`, else the project root - which is the common case,
+	 * a docs site living inside the app it documents.
+	 *
+	 * @projectRoot Absolute path to the project root
+	 * @settings The config's `coldbox` block
+	 * @options The parsed CLI options
+	 */
+	private string function resolveAppRoot( required string projectRoot, required struct settings, required struct options ) {
+		var configured = trim( arguments.options.appRoot ?: arguments.settings.appRoot ?: "" )
+
+		if ( !len( configured ) || configured == "." ) {
+			return arguments.projectRoot
+		}
+
+		if ( configured.startsWith( "/" ) || reFind( "^[A-Za-z]:[\/]", configured ) ) {
+			return configured.reReplace( "[\/]+$", "" )
+		}
+
+		return ( arguments.projectRoot & "/" & configured.reReplace( "^\./", "" ) ).reReplace( "[\/]+$", "" )
+	}
+
+	/**
+	 * Where pages land, relative to the content directory.
+	 *
+	 * @settings The config's `coldbox` block
+	 * @options The parsed CLI options
+	 */
+	private string function pagePathPrefixFor( required struct settings, required struct options ) {
+		var prefix = trim( arguments.options.pagePathPrefix ?: arguments.settings.pagePathPrefix ?: "" )
+
+		return len( prefix ) ? prefix : "api/coldbox"
+	}
+
+	/**
+	 * The frontmatter tags every generated page carries.
+	 *
+	 * @settings The config's `coldbox` block
+	 * @options The parsed CLI options
+	 */
+	private array function tagsFor( required struct settings, required struct options ) {
+		var flag = trim( arguments.options.tags ?: "" )
+
+		if ( len( flag ) ) {
+			return commaList( flag )
+		}
+
+		return isArray( arguments.settings.tags ?: "" ) ? arguments.settings.tags : [ "api", "coldbox" ]
+	}
+
+	/**
+	 * Which page sets to generate.
+	 *
+	 * @settings The config's `coldbox` block
+	 * @options The parsed CLI options
+	 */
+	private array function includeFor( required struct settings, required struct options ) {
+		var flag = trim( arguments.options.include ?: "" )
+
+		if ( len( flag ) ) {
+			return commaList( flag )
+		}
+
+		return isArray( arguments.settings.include ?: "" ) && arguments.settings.include.len()
+			? arguments.settings.include
+			: [ "routes" ]
+	}
+
+	/**
+	 * A comma-delimited flag value as a trimmed, non-empty array.
+	 *
+	 * @value The raw flag value
+	 */
+	private array function commaList( required string value ) {
+		return arguments.value.listToArray( "," ).map( ( entry ) => trim( entry ) ).filter( ( entry ) => len( entry ) )
+	}
+
+	/**
+	 * The verb's own stdout report.
+	 *
+	 * @app The scanned application
+	 * @routes Every parsed route
+	 * @generated ColdBoxDocGenerator's result struct
+	 * @contentDir The project's content directory
+	 * @pagePathPrefix Where pages were written, relative to `contentDir`
+	 */
+	private string function report(
+		required struct app,
+		required array routes,
+		required struct generated,
+		required string contentDir,
+		required string pagePathPrefix
+	) {
+		var lines = [
+			"Documented #arguments.routes.len()# route(s), #arguments.app.handlers.len()# handler(s), #arguments.app.models.len()# model(s) and #arguments.app.modules.len()# module(s) into #arguments.generated.pageFiles.len()# page(s) under #arguments.contentDir#/#arguments.pagePathPrefix#"
+		]
+
+		for ( var warning in arguments.generated.warnings ) {
+			lines.append( "  - " & warning )
+		}
+
+		return lines.toList( char( 10 ) )
+	}
+
+}

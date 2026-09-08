@@ -121,7 +121,8 @@ class {
 			"blog:find"    : "models.cli.BlogFind",
 			"search:query" : "models.cli.SearchQuery",
 			"lint"         : "models.cli.Lint",
-			"docbox"       : "models.cli.DocBox"
+			"docbox"       : "models.cli.DocBox",
+			"coldbox"      : "models.cli.ColdBox"
 		}
 
 		verbDescriptions = {
@@ -154,7 +155,8 @@ class {
 			"blog:find"    : "Filter blog posts ([--author], [--category], [--tag], [--since], [--until], [--drafts])",
 			"search:query" : "Query a built search-index.json and rank results (--query, required; [--limit])",
 			"lint"         : "Pre-build content checks: heading level skips, blog posts missing a valid date",
-			"docbox"       : "Generate a BoxLang/CFML API reference from DocBox into the content dir; needs the bx-docbox module ([--mappings:<name>=<path>], [--projectTitle], [--excludes], [--pagePathPrefix], [--tags], [--jsonDir])"
+			"docbox"       : "Generate a BoxLang/CFML API reference from DocBox into the content dir; needs the bx-docbox module ([--mappings:<name>=<path>], [--projectTitle], [--excludes], [--pagePathPrefix], [--tags], [--jsonDir])",
+			"coldbox"      : "Document a ColdBox application from its conventions on disk: routes, handlers, models, modules ([--appRoot], [--pagePathPrefix], [--tags], [--include])"
 		}
 	}
 

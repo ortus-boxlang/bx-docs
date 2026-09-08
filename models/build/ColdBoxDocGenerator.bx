@@ -1,0 +1,329 @@
+/**
+ * Renders a scanned ColdBox application as bx-sites Markdown pages: an
+ * app overview, and a routes table covering the app router plus every
+ * module router.
+ *
+ * The ColdBox-side counterpart of the Gradle/Maven plugins'
+ * `bxSitesControllerScanDoc`, which does the same job for Spring MVC -
+ * except that where Spring reflection can only see mapped methods, a
+ * ColdBox app declares far more about itself on disk, so this grows to
+ * cover handlers, models and modules in their own milestones.
+ *
+ * Like `DocBoxDocGenerator`, this is a pure transform: it takes the
+ * structs `ColdBoxAppScanner` and `ColdBoxRouterParser` produce and
+ * writes Markdown. It never reads a project's disk itself, so every spec
+ * runs against fixture structs.
+ */
+class {
+
+	variables.hash = char( 35 )
+	variables.newline = char( 10 )
+
+	/**
+	 * The page sets this generator can emit, and the config/CLI token
+	 * that selects each. Later milestones extend this list; anything not
+	 * named in `include` is skipped entirely.
+	 */
+	static {
+		sections = [ "routes" ]
+	}
+
+	/**
+	 * Renders every requested page for one scanned application.
+	 *
+	 * @app A `ColdBoxAppScanner.scan()` result
+	 * @routes Every route parsed from the app and its modules
+	 * @contentDir Absolute path of the project's content directory (`docs/` or `src/`)
+	 * @pagePathPrefix Where pages go, relative to `contentDir`
+	 * @tags Frontmatter tags applied to every generated page
+	 * @include Which page sets to emit
+	 *
+	 * @return `{ pageFiles, warnings }`
+	 */
+	struct function generate(
+		required struct app,
+		required array routes,
+		required string contentDir,
+		string pagePathPrefix = "api/coldbox",
+		array tags = [ "api", "coldbox" ],
+		array include = [ "routes" ]
+	) {
+		var pagesRoot = arguments.contentDir & "/" & arguments.pagePathPrefix.reReplace( "^/+|/+$", "", "all" )
+		var pageFiles = []
+		var warnings = []
+
+		if ( arguments.include.findNoCase( "routes" ) ) {
+			if ( arguments.routes.len() ) {
+				var routesFile = pagesRoot & "/routes.md"
+				writePage( routesFile, renderRoutesPage( arguments.routes, arguments.tags ) )
+				pageFiles.append( routesFile )
+			} else {
+				warnings.append( "No routes found - the app declares no router, or every route is built at runtime" )
+			}
+		}
+
+		var indexFile = pagesRoot & "/index.md"
+		writePage( indexFile, renderIndexPage( arguments.app, arguments.routes, arguments.tags, pageFiles ) )
+		pageFiles.append( indexFile )
+
+		return { "pageFiles" : pageFiles, "warnings" : warnings }
+	}
+
+	/**
+	 * The app overview: what the scan found, and links to the pages that
+	 * describe each part of it.
+	 *
+	 * @app The scanned application
+	 * @routes Every parsed route
+	 * @tags Frontmatter tags
+	 * @pageFiles The pages written so far, used to link only what exists
+	 */
+	private string function renderIndexPage( required struct app, required array routes, required array tags, required array pageFiles ) {
+		var moduleHandlers = arguments.app.modules.reduce( ( total, module ) => total + module.handlers.len(), 0 )
+		var lines = [
+			frontMatter( "ColdBox Application", "Routes, handlers, models and modules discovered from this application's conventions.", arguments.tags ),
+			heading( 1, "ColdBox Application" ),
+			"",
+			"Generated from the application's own conventions on disk - nothing was booted, so anything registered at runtime isn't listed here.",
+			"",
+			"| What | Count |",
+			"|---|---|",
+			"| Routes | #arguments.routes.len()# |",
+			"| Handlers | #arguments.app.handlers.len() + moduleHandlers# |",
+			"| Models | #arguments.app.models.len()# |",
+			"| Interceptors | #arguments.app.interceptors.len()# |",
+			"| Modules | #arguments.app.modules.len()# |",
+			""
+		]
+
+		var links = arguments.pageFiles
+			.filter( ( file ) => file.listLast( "/" ) != "index.md" )
+			.map( ( file ) => {
+				var name = file.listLast( "/" )
+				return "- [" & titleize( name.reReplace( "\.md$", "" ) ) & "](" & name & ")"
+			} )
+
+		if ( links.len() ) {
+			lines.append( heading( 2, "Pages" ) )
+			lines.append( "" )
+			lines.append( links, true )
+			lines.append( "" )
+		}
+
+		if ( arguments.app.modules.len() ) {
+			lines.append( heading( 2, "Modules" ) )
+			lines.append( "" )
+
+			for ( var module in arguments.app.modules ) {
+				lines.append( "- `#module.name#` &mdash; #module.handlers.len()# handler(s), #module.models.len()# model(s)" )
+			}
+
+			lines.append( "" )
+		}
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * The routes table: every declared route, in declaration order.
+	 *
+	 * A plain Markdown pipe table on purpose. A generator-authored raw
+	 * `<table>` carrying its own per-row Alpine attributes does not
+	 * survive this pipeline - `TableWrapProcessor` injects its own
+	 * `x-show` into every `<tr>` of a table with ten or more rows, and the
+	 * Markdown renderer entity-escapes a `<tr>`'s own attribute values -
+	 * so per-row filtering has to come from bx-sites rather than from
+	 * here. That is no loss: the same processor gives every table of this
+	 * size a live filter box for free, and a pipe table stays readable in
+	 * the raw Markdown, themed everywhere, and fully in the search index.
+	 *
+	 * @routes Every parsed route
+	 * @tags Frontmatter tags
+	 */
+	private string function renderRoutesPage( required array routes, required array tags ) {
+		var lines = [
+			frontMatter( "Routes", "Every URL pattern this application declares, and what each one resolves to.", arguments.tags ),
+			heading( 1, "Routes" ),
+			"",
+			"#arguments.routes.len()# route(s), in the order the routers declare them - ColdBox matches the first one that fits, so order is meaningful.",
+			"",
+			"| Verbs | Pattern | Target | Name | Module |",
+			"|---|---|---|---|---|"
+		]
+
+		for ( var route in arguments.routes ) {
+			lines.append(
+				"| #cell( verbLabel( route.verbs ) )# | `#cell( route.pattern )#` | #targetCell( route )# | #nameCell( route.name )# | #nameCell( route.module )# |"
+			)
+		}
+
+		lines.append( "" )
+		lines.append( legend( arguments.routes ), true )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * How a route's verb restriction reads in the table.
+	 *
+	 * @verbs The route's verb restriction, "" for none
+	 */
+	private string function verbLabel( required string verbs ) {
+		return len( trim( arguments.verbs ) ) ? trim( arguments.verbs ) : "ANY"
+	}
+
+	/**
+	 * A route's target cell: the target itself, qualified by what kind of
+	 * target it is whenever that isn't the ordinary event case.
+	 *
+	 * @route One parsed route
+	 */
+	private string function targetCell( required struct route ) {
+		var target = trim( arguments.route.target )
+		var type = trim( arguments.route.targetType )
+
+		if ( !len( target ) ) {
+			return len( type ) ? "*" & cell( typeLabel( type ) ) & "*" : "&mdash;"
+		}
+
+		if ( type == "event" ) {
+			return "`" & cell( target ) & "`"
+		}
+
+		return "`" & cell( target ) & "` *" & cell( typeLabel( type ) ) & "*"
+	}
+
+	/**
+	 * A plain-language label for a route's target type.
+	 *
+	 * @type The parsed target type
+	 */
+	private string function typeLabel( required string type ) {
+		var labels = {
+			"event"     : "event",
+			"handler"   : "handler",
+			"action"    : "action",
+			"view"      : "view",
+			"redirect"  : "redirect",
+			"response"  : "inline response",
+			"module"    : "module routing",
+			"namespace" : "namespace routing",
+			"sse"       : "SSE stream",
+			"ai"        : "AI inference",
+			"mcp"       : "MCP endpoint",
+			"convention" : "by convention"
+		}
+
+		return labels[ arguments.type ] ?: arguments.type
+	}
+
+	/**
+	 * A name/module cell, em-dashed when empty.
+	 *
+	 * @value The raw value
+	 */
+	private string function nameCell( required string value ) {
+		return len( trim( arguments.value ) ) ? "`" & cell( arguments.value ) & "`" : "&mdash;"
+	}
+
+	/**
+	 * A short note under the table, when the routes include anything
+	 * whose meaning isn't self-evident from the row itself.
+	 *
+	 * @routes Every parsed route
+	 */
+	private array function legend( required array routes ) {
+		var hasConvention = arguments.routes.some( ( route ) => route.targetType == "convention" )
+
+		if ( !hasConvention ) {
+			return []
+		}
+
+		return [
+			"A route marked *by convention* has no explicit target: ColdBox resolves the handler and action from the URL pattern's own placeholders.",
+			""
+		]
+	}
+
+	/**
+	 * Renders a page's frontmatter block.
+	 *
+	 * @title The page title
+	 * @summary A one-line summary, or "" to omit the key
+	 * @tags Frontmatter tags
+	 */
+	private string function frontMatter( required string title, required string summary, required array tags ) {
+		var lines = [ "---", "title: " & quoted( arguments.title ) ]
+
+		if ( len( trim( arguments.summary ) ) ) {
+			lines.append( "summary: " & quoted( arguments.summary ) )
+		}
+
+		if ( arguments.tags.len() ) {
+			lines.append( "tags: [" & arguments.tags.toList( ", " ) & "]" )
+		}
+
+		lines.append( "---" )
+		lines.append( "" )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * A Markdown ATX heading at the given level.
+	 *
+	 * @level Heading level, 1-6
+	 * @text The heading text
+	 */
+	private string function heading( required numeric level, required string text ) {
+		return repeatString( variables.hash, arguments.level ) & " " & arguments.text
+	}
+
+	/**
+	 * A file name turned into a page title, e.g. `routes` -> `Routes`.
+	 *
+	 * @value The raw name
+	 */
+	private string function titleize( required string value ) {
+		return uCase( arguments.value.left( 1 ) ) & arguments.value.mid( 2, arguments.value.len() )
+	}
+
+	/**
+	 * A table cell: single-lined, with pipes escaped so a pattern or
+	 * target containing one can't break the table it sits in.
+	 *
+	 * @value The raw cell text
+	 */
+	private string function cell( required string value ) {
+		return arguments.value
+			.reReplace( "[#variables.newline##char( 13 )#]+", " ", "all" )
+			.replace( "|", "\|", "all" )
+			.trim()
+	}
+
+	/**
+	 * A double-quoted YAML scalar with any inner quotes escaped.
+	 *
+	 * @value The raw value
+	 */
+	private string function quoted( required string value ) {
+		return """" & arguments.value.replace( """", "\""", "all" ) & """"
+	}
+
+	/**
+	 * Writes one page, creating its parent directory tree first.
+	 *
+	 * @pageFile Absolute path of the page to write
+	 * @content The rendered Markdown
+	 */
+	private void function writePage( required string pageFile, required string content ) {
+		var parent = arguments.pageFile.reReplace( "/[^/]+$", "" )
+
+		if ( !directoryExists( parent ) ) {
+			directoryCreate( parent, true, true )
+		}
+
+		fileWrite( arguments.pageFile, arguments.content )
+	}
+
+}

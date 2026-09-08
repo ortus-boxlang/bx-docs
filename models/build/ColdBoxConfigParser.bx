@@ -1,0 +1,191 @@
+/**
+ * Reads the literal declarations out of a ColdBox configuration class -
+ * a `ModuleConfig`'s `this.*` properties today, with the app's own
+ * `config/ColdBox`, `config/WireBox` and `config/Scheduler` following in
+ * the milestones that document them.
+ *
+ * Same static-only contract as `ColdBoxAppScanner` and
+ * `ColdBoxRouterParser`: nothing is executed, so only literal values are
+ * readable. A property assigned from a variable, an environment lookup or
+ * a function call is reported as absent rather than guessed at.
+ */
+class {
+
+	/**
+	 * The `this.*` properties a module declares about itself, in the
+	 * order they're worth reading on a page. Anything not in this list is
+	 * still returned by `thisProperties()`, just not promoted into the
+	 * module's own summary.
+	 */
+	static {
+		moduleKeys = [
+			"title",
+			"author",
+			"webURL",
+			"description",
+			"version",
+			"entryPoint",
+			"modelNamespace",
+			"cfmapping",
+			"autoMapModels",
+			"dependencies",
+			"disabled"
+		]
+	}
+
+	/**
+	 * A module's own declared metadata.
+	 *
+	 * @configFile Absolute path to a `ModuleConfig.bx`/`.cfc`
+	 *
+	 * @return A struct of every readable `this.*` property; empty when the file doesn't exist
+	 */
+	struct function moduleMetadata( required string configFile ) {
+		if ( !fileExists( arguments.configFile ) ) {
+			return {}
+		}
+
+		return thisProperties( fileRead( arguments.configFile ) )
+	}
+
+	/**
+	 * Every `this.<name> = <literal>` assignment in a class' source.
+	 *
+	 * Values are returned in their natural type where that's unambiguous:
+	 * a quoted literal as a string, `true`/`false` as a boolean, a bare
+	 * number as a number, and a flat `[ ... ]` literal as an array of
+	 * strings. Anything else (a struct, an expression, a function call) is
+	 * skipped - see this class' docblock.
+	 *
+	 * @source The class' source code
+	 *
+	 * @return Struct of property name -> value
+	 */
+	struct function thisProperties( required string source ) {
+		var properties = {}
+		var matches = arguments.source.reMatch( "this\.[a-zA-Z_][a-zA-Z0-9_]*[ #char( 9 )#]*=[^=]" )
+
+		for ( var match in matches ) {
+			var name = match.reReplace( "^this\.", "" ).reReplace( "[ #char( 9 )#]*=.*$", "" )
+			var position = arguments.source.find( match )
+
+			if ( !position ) {
+				continue
+			}
+
+			var value = readValue( arguments.source, position + match.len() - 1 )
+
+			if ( !isNull( value ) ) {
+				properties[ name ] = value
+			}
+		}
+
+		return properties
+	}
+
+	/**
+	 * Reads the literal starting at `start`, or returns null when what's
+	 * there isn't one.
+	 *
+	 * @source The class' source
+	 * @start Index of the assignment's first value character
+	 */
+	private any function readValue( required string source, required numeric start ) {
+		var index = arguments.start
+		var length = arguments.source.len()
+
+		while ( index <= length && isWhitespace( arguments.source.mid( index, 1 ) ) ) {
+			index++
+		}
+
+		if ( index > length ) {
+			return javacast( "null", "" )
+		}
+
+		var current = arguments.source.mid( index, 1 )
+
+		if ( current == """" || current == "'" ) {
+			return readString( arguments.source, index )
+		}
+
+		if ( current == "[" ) {
+			return readArray( arguments.source, index )
+		}
+
+		var word = arguments.source.mid( index, min( 5, length - index + 1 ) )
+
+		if ( word.left( 4 ) == "true" ) {
+			return true
+		}
+
+		if ( word.left( 5 ) == "false" ) {
+			return false
+		}
+
+		var number = arguments.source.mid( index, length - index + 1 ).reReplace( "^([0-9]+(\.[0-9]+)?).*$", "\1", "one" )
+
+		return reFind( "^[0-9]", number ) && !number.find( char( 10 ) ) ? val( number ) : javacast( "null", "" )
+	}
+
+	/**
+	 * The contents of the string literal opening at `start`.
+	 *
+	 * @source The class' source
+	 * @start Index of the opening quote
+	 */
+	private string function readString( required string source, required numeric start ) {
+		var quote = arguments.source.mid( arguments.start, 1 )
+		var length = arguments.source.len()
+
+		for ( var index = arguments.start + 1; index <= length; index++ ) {
+			if ( arguments.source.mid( index, 1 ) == quote ) {
+				return arguments.source.mid( arguments.start + 1, index - arguments.start - 1 )
+			}
+		}
+
+		return ""
+	}
+
+	/**
+	 * A flat array literal's string entries. A nested or computed entry
+	 * reads as "" and is dropped.
+	 *
+	 * @source The class' source
+	 * @start Index of the opening bracket
+	 */
+	private array function readArray( required string source, required numeric start ) {
+		var length = arguments.source.len()
+		var depth = 0
+
+		for ( var index = arguments.start; index <= length; index++ ) {
+			var current = arguments.source.mid( index, 1 )
+
+			if ( current == "[" ) {
+				depth++
+			} else if ( current == "]" ) {
+				depth--
+
+				if ( depth == 0 ) {
+					var body = arguments.source.mid( arguments.start + 1, index - arguments.start - 1 )
+
+					return body.listToArray( "," )
+						.map( ( entry ) => trim( entry ).reReplace( "^[""']", "" ).reReplace( "[""']$", "" ) )
+						.filter( ( entry ) => len( entry ) )
+				}
+			}
+		}
+
+		return []
+	}
+
+	/**
+	 * Whether a character is whitespace, including the tab and carriage
+	 * return a hand-formatted config is full of.
+	 *
+	 * @character The single character to test
+	 */
+	private boolean function isWhitespace( required string character ) {
+		return [ " ", char( 9 ), char( 10 ), char( 13 ) ].findNoCase( arguments.character ) > 0
+	}
+
+}
