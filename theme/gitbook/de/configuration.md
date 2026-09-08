@@ -434,15 +434,17 @@ Welche Such-UI `search: true` verdrahtet:
 ## `mcp`
 
 `false` (Standard) überspringt es vollständig. `true` schreibt bei jedem
-`build` die Datei `site/mcp-index.json` - einen vollständigen,
-unabgeschnittenen Inhaltsindex für den öffentlichen, schreibgeschützten
-MCP-Server von [bxSites Cloud](https://bxsites.io/cloud) für deine
-veröffentlichte Website. Vollständig unabhängig von `search`/
-`searchProvider` oben - er wird unabhängig davon erzeugt, welcher
-Such-Provider (oder keiner) konfiguriert ist. Das Erzeugen der Datei
-selbst ist kostenlos; bxSites Cloud liefert sie nur in den
-kostenpflichtigen Plänen tatsächlich als laufenden MCP-Server aus, nicht
-im kostenlosen Plan. Siehe [MCP-Server](guides/mcp.md).
+`build` drei Dateien - eine vollständige, unabgeschnittene
+`mcp-index.json`, eine `mcp-nav.json` pro Baum und eine websiteweite
+`mcp-manifest.json`, die jeden Baum auflistet - für den öffentlichen,
+schreibgeschützten MCP-Server von
+[bxSites Cloud](https://bxsites.io/cloud) für deine veröffentlichte
+Website. Vollständig unabhängig von `search`/`searchProvider` oben - sie
+werden unabhängig davon erzeugt, welcher Such-Provider (oder keiner)
+konfiguriert ist. Das Erzeugen der Dateien selbst ist kostenlos; bxSites
+Cloud liefert sie nur in den kostenpflichtigen Plänen tatsächlich als
+laufenden MCP-Server aus, nicht im kostenlosen Plan. Siehe
+[MCP-Server](guides/mcp.md).
 
 ## `nav`
 

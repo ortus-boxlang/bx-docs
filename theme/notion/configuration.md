@@ -515,14 +515,15 @@ Which search UI `search: true` wires up:
 
 ## `mcp`
 
-`false` (the default) skips it entirely. `true` writes `site/mcp-index.json`
-on every `build` - a full-text, untruncated content index for
-[bxSites Cloud](https://bxsites.io/cloud)'s public, read-only MCP server
-for your published site. Entirely independent of `search`/`searchProvider`
-above - it's produced no matter which search provider (or none) is
-configured. Building the file itself is free; bxSites Cloud only actually
-serves it as a live MCP server on its paid plans, not the free plan. See
-[MCP Server](guides/mcp.md).
+`false` (the default) skips it entirely. `true` writes three files on
+every `build` - a full-text, untruncated `mcp-index.json`, a per-tree
+`mcp-nav.json`, and a site-wide `mcp-manifest.json` listing every tree -
+for [bxSites Cloud](https://bxsites.io/cloud)'s public, read-only MCP
+server for your published site. Entirely independent of `search`/
+`searchProvider` above - it's produced no matter which search provider
+(or none) is configured. Building the files themselves is free; bxSites
+Cloud only actually serves them as a live MCP server on its paid plans,
+not the free plan. See [MCP Server](guides/mcp.md).
 
 ## `nav`
 
