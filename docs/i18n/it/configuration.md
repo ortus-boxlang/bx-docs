@@ -381,13 +381,14 @@ Quale UI di ricerca `search: true` attiva:
 
 ## `mcp`
 
-`false` (predefinito) lo salta del tutto. `true` scrive
-`site/mcp-index.json` a ogni `build` - un indice dei contenuti completo e
-non troncato per il server MCP pubblico e di sola lettura di
+`false` (predefinito) lo salta del tutto. `true` scrive tre file a ogni
+`build` - un `mcp-index.json` completo e non troncato, un `mcp-nav.json`
+per ogni albero, e un `mcp-manifest.json` a livello di sito che elenca
+ogni albero - per il server MCP pubblico e di sola lettura di
 [bxSites Cloud](https://bxsites.io/cloud) per il tuo sito pubblicato.
-Del tutto indipendente da `search`/`searchProvider` sopra - viene
-prodotto indipendentemente dal provider di ricerca configurato (o
-dall'assenza di uno). Generare il file in sé è gratuito; bxSites Cloud lo
+Del tutto indipendente da `search`/`searchProvider` sopra - vengono
+prodotti indipendentemente dal provider di ricerca configurato (o
+dall'assenza di uno). Generare i file in sé è gratuito; bxSites Cloud li
 espone realmente come server MCP attivo solo nei piani a pagamento, non
 nel piano gratuito. Vedi [Server MCP](guides/mcp.md).
 
