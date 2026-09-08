@@ -188,24 +188,44 @@ tags: [api, controllers]
 </code></pre>
 <p>And this body, reproduced below not as a code block but rendered for real -
 this <em>is</em> the generated page's actual body, live, confirmed against this
-exact controller class in the plugin's own test suite:</p>
+exact controller class in the plugin's own test suite. Try the GET chip,
+or type &quot;create&quot; into the search box:</p>
 <hr />
 <h1 id="bookcontroller"><a href="#bookcontroller" id="bookcontroller" name="bookcontroller" class="anchor"></a>BookController</h1>
 <p><code>com.example.BookController</code></p>
-<div class="bxsites-table-wrap"><table class="table">
-<thead>
-<tr><th>Method</th><th>Path</th><th>Handler</th></tr>
-</thead>
+<style>
+.bx-filter-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 1.5rem 0; }
+.bx-filter-search { flex: 1 1 12rem; min-width: 8rem; padding: 0.4rem 0.75rem; border: 1px solid var(--bxsites-border); border-radius: 999px; background: var(--bxsites-bg); color: var(--bxsites-text); font-size: 0.9rem; }
+.bx-filter-chip { padding: 0.35rem 0.9rem; border: 1px solid var(--bxsites-border); border-radius: 999px; background: transparent; color: var(--bxsites-muted); font-size: 0.85rem; cursor: pointer; transition: all 0.15s ease; }
+.bx-filter-chip:hover { border-color: var(--bxsites-accent); color: var(--bxsites-text); }
+.bx-filter-chip.bx-filter-chip-on { background: var(--bxsites-accent); border-color: var(--bxsites-accent); color: var(--bxsites-bg); }
+</style>
+<div class="bx-filter" x-data="{ q: '', k: 'all' }">
+<div class="bx-filter-toolbar">
+<input type="search" class="bx-filter-search" x-model="q" placeholder="Search...">
+<button type="button" class="bx-filter-chip" :class="{ 'bx-filter-chip-on': k==='all' }" @click="k='all'">All</button>
+<button type="button" class="bx-filter-chip" :class="{ 'bx-filter-chip-on': k==='get' }" @click="k='get'">GET</button>
+<button type="button" class="bx-filter-chip" :class="{ 'bx-filter-chip-on': k==='post' }" @click="k='post'">POST</button>
+</div>
+<div class="bxsites-table-wrap"><div class="bxsites-table-wrap"><table class="table">
+<thead><tr><th>Method</th><th>Path</th><th>Handler</th></tr></thead>
 <tbody>
-<tr><td>GET</td><td><code>/api/books</code></td><td><code>String list()</code></td></tr>
-<tr><td>GET</td><td><code>/api/books/{id}</code></td><td><code>String getOne(String)</code></td></tr>
-<tr><td>POST</td><td><code>/api/books</code></td><td><code>String create(String)</code></td></tr>
+<tr data-k="get" data-n="/api/books String list()" x-show="(k==='all'||k===&#x24;el.dataset.k&#x29;&amp;&amp;&#x28;&#x21;q&#x7c;&#x7c;&#x24;el.dataset.n.toLowerCase().includes(q.toLowerCase()))"><td>GET</td><td><code>/api/books</code></td><td><code>String list()</code></td></tr>
+<tr data-k="post" data-n="/api/books String create(String)" x-show="(k==='all'||k===&#x24;el.dataset.k&#x29;&amp;&amp;&#x28;&#x21;q&#x7c;&#x7c;&#x24;el.dataset.n.toLowerCase().includes(q.toLowerCase()))"><td>POST</td><td><code>/api/books</code></td><td><code>String create(String)</code></td></tr>
+<tr data-k="get" data-n="/api/books/{id} String getOne(String)" x-show="(k==='all'||k===&#x24;el.dataset.k&#x29;&amp;&amp;&#x28;&#x21;q&#x7c;&#x7c;&#x24;el.dataset.n.toLowerCase().includes(q.toLowerCase()))"><td>GET</td><td><code>/api/books/{id}</code></td><td><code>String getOne(String)</code></td></tr>
 </tbody>
-</table></div>
+</table></div></div>
+</div>
 <hr />
 <p>Notice the class-level <code>@RequestMapping(&quot;/api/books&quot;)</code> base path is combined
 with each method's own mapping to produce the full path in each row - real
-path composition, not string concatenation guesswork.</p>
+path composition, not string concatenation guesswork. Row order comes
+straight from the JVM's own reflection over the compiled class (not
+necessarily source order - real behavior, not tidied up for this example).
+The toolbar/chips/search box above are real, working Alpine.js, built
+entirely from plain HTML attributes and a small inline stylesheet driven by
+this theme's own <code>--bxsites-*</code> variables, exactly like the Javadoc
+generator's toolbar.</p>
 <h2 id="what-this-doesnt-cover"><a href="#what-this-doesnt-cover" id="what-this-doesnt-cover" name="what-this-doesnt-cover" class="anchor"></a>What this doesn't cover</h2>
 <p><strong>Deliberately scoped down</strong>, matching the same spirit as the Javadoc
 generator: only classes directly annotated <code>@Controller</code>/<code>@RestController</code>
@@ -214,12 +234,12 @@ directly-annotated <code>@RequestMapping</code>/<code>@GetMapping</code>/<code>@
 <code>@PutMapping</code>/<code>@DeleteMapping</code>/<code>@PatchMapping</code> methods are recognized;
 nested classes are skipped; and since reflection has no access to
 source-level doc comments, there's no per-endpoint description text like
-the row above showing &quot;List books&quot; - only the method, path, and handler
+&quot;List books&quot; next to a row above - only the method, path, and handler
 signature. See the Gradle/Maven guides linked above for the full scope.</p>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/java-controller-scan-example.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/theme/docsy/guides/java-controller-scan-example.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 8, 2026, 4&#x3a;08&#x3a;58 PM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/java-controller-scan-example.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/theme/docsy/guides/java-controller-scan-example.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 8, 2026, 6&#x3a;10&#x3a;50 PM</span></div>
 
 			</article>
 

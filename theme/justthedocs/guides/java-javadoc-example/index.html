@@ -138,7 +138,7 @@ Javadoc Output Example</h1>
 
 
 
-	<details class="bxsites-toc-mobile jtd-toc--mobile"><summary class="jtd-toc--mobile__summary">On this page</summary><ul><li class="jtd-toc__item jtd-toc__item--2"><a href="#constructors">Constructors</a></li><li class="jtd-toc__item jtd-toc__item--3"><a href="#bookjavalangstring-title-javalangstring-author">Book&#x28;java.lang.String title, java.lang.String author&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#methods">Methods</a></li><li class="jtd-toc__item jtd-toc__item--3"><a href="#comexamplebook-withtitlejavalangstring-newtitle">com.example.Book withTitle&#x28;java.lang.String newTitle&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#what-this-doesnt-cover">What this doesn&#x27;t cover</a></li></ul></details>
+	<details class="bxsites-toc-mobile jtd-toc--mobile"><summary class="jtd-toc--mobile__summary">On this page</summary><ul><li class="jtd-toc__item jtd-toc__item--2"><a href="#constructors">Constructors</a></li><li class="jtd-toc__item jtd-toc__item--3"><a href="#bookjavalangstring-title-javalangstring-author">Book&#x28;java.lang.String title, java.lang.String author&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#methods">Methods</a></li><li class="jtd-toc__item jtd-toc__item--3"><a href="#comexamplebook-withtitlejavalangstring-newtitle">com.example.Book withTitle&#x28;java.lang.String newTitle&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#fields">Fields</a></li><li class="jtd-toc__item jtd-toc__item--3"><a href="#public-static-final-int-max-title-length">public static final int MAX_TITLE_LENGTH</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#what-this-doesnt-cover">What this doesn&#x27;t cover</a></li></ul></details>
 
 				<div class="jtd-content-body">
 				<h1 id="javadoc-output-example"><a href="#javadoc-output-example" id="javadoc-output-example" name="javadoc-output-example" class="anchor"></a>Javadoc Output Example</h1>
@@ -148,7 +148,10 @@ Javadoc Output Example</h1>
 <a href="/theme/justthedocs/guides/maven-plugin/index.html#spring-boot-doc-generation">Maven Plugin</a> for how to turn
 this on in your own project.</p>
 <p>Point it at your own project's <code>.java</code> sources and it walks every public
-top-level type, emitting one page per type. Given this class:</p>
+top-level type, emitting one page per type, its constructors/methods/fields
+wrapped in a small Alpine.js-driven filter toolbar - a search box plus one
+chip per kind actually present - so a long class stays easy to scan. Given
+this class:</p>
 <pre data-bxsites-title="com&#x2f;example&#x2f;Book.java"><code class="language-java">package com.example;
 
 /**
@@ -156,6 +159,9 @@ top-level type, emitting one page per type. Given this class:</p>
  * considered equal only by reference, not by content.
  */
 public class Book {
+
+    /** The longest title this shelf will accept. */
+    public static final int MAX_TITLE_LENGTH = 200;
 
     /**
      * Creates a book with the given title and author.
@@ -188,39 +194,75 @@ tags: [api, javadoc]
 ---
 </code></pre>
 <p>And this body, reproduced below not as a code block but rendered for real -
-this <em>is</em> the generated page's actual body, live:</p>
+this <em>is</em> the generated page's actual body, live, including the filter
+toolbar. Try the Fields chip, or type &quot;title&quot; into the search box:</p>
 <hr />
 <h1 id="book"><a href="#book" id="book" name="book" class="anchor"></a>Book</h1>
 <p><code>com.example.Book</code></p>
 <p>A single book in the shelf, immutable once created. Two books are
 considered equal only by reference, not by content.</p>
+<style>
+.bx-filter-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 1.5rem 0; }
+.bx-filter-search { flex: 1 1 12rem; min-width: 8rem; padding: 0.4rem 0.75rem; border: 1px solid var(--bxsites-border); border-radius: 999px; background: var(--bxsites-bg); color: var(--bxsites-text); font-size: 0.9rem; }
+.bx-filter-chip { padding: 0.35rem 0.9rem; border: 1px solid var(--bxsites-border); border-radius: 999px; background: transparent; color: var(--bxsites-muted); font-size: 0.85rem; cursor: pointer; transition: all 0.15s ease; }
+.bx-filter-chip:hover { border-color: var(--bxsites-accent); color: var(--bxsites-text); }
+.bx-filter-chip.bx-filter-chip-on { background: var(--bxsites-accent); border-color: var(--bxsites-accent); color: var(--bxsites-bg); }
+</style>
+<div class="bx-filter" x-data="{ q: '', k: 'all' }">
+<div class="bx-filter-toolbar">
+<input type="search" class="bx-filter-search" x-model="q" placeholder="Search...">
+<button type="button" class="bx-filter-chip" :class="{ 'bx-filter-chip-on': k==='all' }" @click="k='all'">All</button>
+<button type="button" class="bx-filter-chip" :class="{ 'bx-filter-chip-on': k==='constructor' }" @click="k='constructor'">Constructors</button>
+<button type="button" class="bx-filter-chip" :class="{ 'bx-filter-chip-on': k==='method' }" @click="k='method'">Methods</button>
+<button type="button" class="bx-filter-chip" :class="{ 'bx-filter-chip-on': k==='field' }" @click="k='field'">Fields</button>
+</div>
+<div x-show="(k==='all'||k==='constructor')&&(!q||Array.from($el.querySelectorAll('.bx-filter-item')).some(el=>el.dataset.n.toLowerCase().includes(q.toLowerCase())))">
 <h2 id="constructors"><a href="#constructors" id="constructors" name="constructors" class="anchor"></a>Constructors</h2>
+<div class="bx-filter-item" data-n="Book(java.lang.String title, java.lang.String author)" x-show="!q||$el.dataset.n.toLowerCase().includes(q.toLowerCase())">
 <h3 id="bookjavalangstring-title-javalangstring-author"><a href="#bookjavalangstring-title-javalangstring-author" id="bookjavalangstring-title-javalangstring-author" name="bookjavalangstring-title-javalangstring-author" class="anchor"></a><code>Book(java.lang.String title, java.lang.String author)</code></h3>
 <p>Creates a book with the given title and author.</p>
 <ul>
 <li><strong>Parameter</strong> <code>title</code> - the book's title</li>
 <li><strong>Parameter</strong> <code>author</code> - the book's author</li>
 </ul>
+</div>
+</div>
+<div x-show="(k==='all'||k==='method')&&(!q||Array.from($el.querySelectorAll('.bx-filter-item')).some(el=>el.dataset.n.toLowerCase().includes(q.toLowerCase())))">
 <h2 id="methods"><a href="#methods" id="methods" name="methods" class="anchor"></a>Methods</h2>
+<div class="bx-filter-item" data-n="com.example.Book withTitle(java.lang.String newTitle)" x-show="!q||$el.dataset.n.toLowerCase().includes(q.toLowerCase())">
 <h3 id="comexamplebook-withtitlejavalangstring-newtitle"><a href="#comexamplebook-withtitlejavalangstring-newtitle" id="comexamplebook-withtitlejavalangstring-newtitle" name="comexamplebook-withtitlejavalangstring-newtitle" class="anchor"></a><code>com.example.Book withTitle(java.lang.String newTitle)</code></h3>
 <p>Returns a copy of this book with a new title.</p>
 <ul>
 <li><strong>Parameter</strong> <code>newTitle</code> - the new title</li>
 <li><strong>Returns</strong> a copy of this book with the given title</li>
 </ul>
+</div>
+</div>
+<div x-show="(k==='all'||k==='field')&&(!q||Array.from($el.querySelectorAll('.bx-filter-item')).some(el=>el.dataset.n.toLowerCase().includes(q.toLowerCase())))">
+<h2 id="fields"><a href="#fields" id="fields" name="fields" class="anchor"></a>Fields</h2>
+<div class="bx-filter-item" data-n="public static final int MAX_TITLE_LENGTH" x-show="!q||$el.dataset.n.toLowerCase().includes(q.toLowerCase())">
+<h3 id="public-static-final-int-max-title-length"><a href="#public-static-final-int-max-title-length" id="public-static-final-int-max-title-length" name="public-static-final-int-max-title-length" class="anchor"></a><code>public static final int MAX_TITLE_LENGTH</code></h3>
+<p>The longest title this shelf will accept.</p>
+</div>
+</div>
+</div>
 <hr />
 <p>Notice the class's first sentence became the frontmatter <code>summary</code>, while
 the page body carries the <em>full</em> doc comment (both sentences) - that's real
 <code>DocCommentTree</code> first-sentence extraction, not a simplification made for
-this example.</p>
+this example. Notice too that the toolbar/chips/search box above are real,
+working Alpine.js - not a screenshot - built entirely from plain HTML
+attributes and a small inline stylesheet driven by this theme's own
+<code>--bxsites-*</code> variables, so it looks right in whichever theme you're
+reading this in without bx-sites itself needing any changes.</p>
 <h2 id="what-this-doesnt-cover"><a href="#what-this-doesnt-cover" id="what-this-doesnt-cover" name="what-this-doesnt-cover" class="anchor"></a>What this doesn't cover</h2>
 <p><strong>Deliberately scoped down for v1, not a complete Javadoc-to-Markdown
 converter</strong> - this is the heaviest of the three Spring Boot generators.
-Nested and package-private types (and fields) are skipped entirely; only
-each member's <em>own</em> doc comment is used, never an inherited one; inline
-HTML in doc comments is stripped rather than converted to Markdown;
-<code>{@link}</code>/<code>{@see}</code> render as inline code with no cross-page hyperlink
-resolution; no index/nav page is generated. A <code>record</code> also picks up its
+Nested and package-private types are skipped entirely; only each member's
+<em>own</em> doc comment is used, never an inherited one; inline HTML in doc
+comments is stripped rather than converted to Markdown; <code>{@link}</code>/<code>{@see}</code>
+render as inline code with no cross-page hyperlink resolution; no
+index/nav page is generated. A <code>record</code> also picks up its
 compiler-generated accessors/<code>toString</code>/<code>equals</code>/<code>hashCode</code>, matching the
 standard <code>javadoc</code> tool's own behavior - <code>Book</code> above is a plain class so
 this example stays focused on the common case. See the Gradle/Maven guides
@@ -228,7 +270,7 @@ linked above for the full list.</p>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/java-javadoc-example.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/theme/justthedocs/guides/java-javadoc-example.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 8, 2026, 4&#x3a;08&#x3a;58 PM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/java-javadoc-example.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/theme/justthedocs/guides/java-javadoc-example.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 8, 2026, 6&#x3a;10&#x3a;50 PM</span></div>
 
 			</article>
 
@@ -250,7 +292,7 @@ linked above for the full list.</p>
 		</main>
 
 		<aside class="jtd-toc-sidebar">
-			<nav class="jtd-toc" aria-label="On this page"><div class="jtd-toc__title">On this page</div><ul><li class="jtd-toc__item jtd-toc__item--2"><a href="#constructors">Constructors</a></li><li class="jtd-toc__item jtd-toc__item--3"><a href="#bookjavalangstring-title-javalangstring-author">Book&#x28;java.lang.String title, java.lang.String author&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#methods">Methods</a></li><li class="jtd-toc__item jtd-toc__item--3"><a href="#comexamplebook-withtitlejavalangstring-newtitle">com.example.Book withTitle&#x28;java.lang.String newTitle&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#what-this-doesnt-cover">What this doesn&#x27;t cover</a></li></ul></nav>
+			<nav class="jtd-toc" aria-label="On this page"><div class="jtd-toc__title">On this page</div><ul><li class="jtd-toc__item jtd-toc__item--2"><a href="#constructors">Constructors</a></li><li class="jtd-toc__item jtd-toc__item--3"><a href="#bookjavalangstring-title-javalangstring-author">Book&#x28;java.lang.String title, java.lang.String author&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#methods">Methods</a></li><li class="jtd-toc__item jtd-toc__item--3"><a href="#comexamplebook-withtitlejavalangstring-newtitle">com.example.Book withTitle&#x28;java.lang.String newTitle&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#fields">Fields</a></li><li class="jtd-toc__item jtd-toc__item--3"><a href="#public-static-final-int-max-title-length">public static final int MAX_TITLE_LENGTH</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#what-this-doesnt-cover">What this doesn&#x27;t cover</a></li></ul></nav>
 		</aside>
 
 	</div>
