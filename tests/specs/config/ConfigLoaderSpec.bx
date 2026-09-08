@@ -966,6 +966,64 @@ class extends="testbox.system.BaseSpec" {
 				expect( config.cloud.apiUrl ).toBe( "https://cloud.bxsites.app" );
 			} );
 
+			it( "defaults [docbox] to the api/docbox page prefix with no mappings", function() {
+				var dir = newProjectDir( '{"name":"My Docs"}' );
+				var config = loader.load( dir );
+
+				expect( config.docbox.mappings ).toBeEmpty();
+				expect( config.docbox.projectTitle ).toBe( "" );
+				expect( config.docbox.excludes ).toBe( "" );
+				expect( config.docbox.pagePathPrefix ).toBe( "api/docbox" );
+				expect( config.docbox.tags ).toBe( [ "api", "docbox" ] );
+			} );
+
+			it( "deep-merges a partial [docbox] override, keeping the default page prefix", function() {
+				var dir = newProjectDir( '{"name":"My Docs","docbox":{"mappings":{"models":"models"}}}' );
+				var config = loader.load( dir );
+
+				expect( config.docbox.mappings.models ).toBe( "models" );
+				expect( config.docbox.pagePathPrefix ).toBe( "api/docbox" );
+			} );
+
+			it( "preserves a fully-configured [docbox] block", function() {
+				var dir = newProjectDir( '{"name":"My Docs","docbox":{"projectTitle":"My API","mappings":{"models":"models","bifs":"bifs"},"excludes":"tests","pagePathPrefix":"reference","tags":["reference"]}}' );
+				var config = loader.load( dir );
+
+				expect( config.docbox.projectTitle ).toBe( "My API" );
+				expect( config.docbox.mappings.bifs ).toBe( "bifs" );
+				expect( config.docbox.excludes ).toBe( "tests" );
+				expect( config.docbox.pagePathPrefix ).toBe( "reference" );
+				expect( config.docbox.tags ).toBe( [ "reference" ] );
+			} );
+
+			it( "throws BxSites.InvalidConfig when [docbox] is not an object", function() {
+				var dir = newProjectDir( '{"name":"My Docs","docbox":"not-an-object"}' );
+				expect( function() {
+					loader.load( dir );
+				} ).toThrow( "BxSites.InvalidConfig" );
+			} );
+
+			it( "throws BxSites.InvalidConfig when [docbox.mappings] is not an object", function() {
+				var dir = newProjectDir( '{"name":"My Docs","docbox":{"mappings":["models"]}}' );
+				expect( function() {
+					loader.load( dir );
+				} ).toThrow( "BxSites.InvalidConfig" );
+			} );
+
+			it( "throws BxSites.InvalidConfig when [docbox.pagePathPrefix] is not a string", function() {
+				var dir = newProjectDir( '{"name":"My Docs","docbox":{"pagePathPrefix":["api"]}}' );
+				expect( function() {
+					loader.load( dir );
+				} ).toThrow( "BxSites.InvalidConfig" );
+			} );
+
+			it( "throws BxSites.InvalidConfig when [docbox.tags] is not an array", function() {
+				var dir = newProjectDir( '{"name":"My Docs","docbox":{"tags":"api"}}' );
+				expect( function() {
+					loader.load( dir );
+				} ).toThrow( "BxSites.InvalidConfig" );
+			} );
+
 			it( "throws BxSites.InvalidConfig when [cloud] is not an object", function() {
 				var dir = newProjectDir( '{"name":"My Docs","cloud":"not-an-object"}' );
 				expect( function() {

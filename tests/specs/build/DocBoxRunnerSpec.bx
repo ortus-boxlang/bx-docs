@@ -1,0 +1,162 @@
+/**
+ * Exercises DocBoxRunner - the half of the `docbox` pipeline that needs
+ * the real bx-docbox module. Every spec that actually drives DocBox is
+ * gated on `isAvailable()` so a checkout without bx-docbox installed
+ * still runs a green suite; CI installs the module, so the real path
+ * stays covered there (see .github/workflows/tests.yml's `modules:` list).
+ */
+class extends="testbox.system.BaseSpec" {
+
+	function run() {
+		describe( "build.DocBoxRunner", function() {
+
+			beforeEach( function() {
+				variables.runner = new "models.build.DocBoxRunner@bxsites"();
+				variables.tempDirs = [];
+			} );
+
+			afterEach( function() {
+				for ( var dir in tempDirs ) {
+					if ( directoryExists( dir ) ) {
+						directoryDelete( dir, true );
+					}
+				}
+			} );
+
+			private string function newTempDir() {
+				var dir = createTempDirectory( prefix = "bxsites-docboxrunner-" );
+				tempDirs.append( dir );
+				return dir;
+			}
+
+			/**
+			 * A tiny source tree exercising everything the enrichment pass
+			 * exists for: declared properties, an implemented interface, a
+			 * class-level annotation, and a `@return` tag.
+			 */
+			private string function newSourceDir() {
+				var dir = newTempDir() & "/app";
+				directoryCreate( dir, true, true );
+
+				fileWrite( dir & "/IVehicle.bx", "
+/**
+ * Vehicle contract
+ */
+interface {
+	function drive( numeric speed )
+}
+" );
+				fileWrite( dir & "/Car.bx", "
+/**
+ * A car model.
+ */
+class accessors=true implements=""bxsitesdocboxfixture.IVehicle"" singleton {
+
+	/**
+	 * The car brand
+	 */
+	property name=""brand"" type=""string"" default=""ford"";
+
+	/**
+	 * Drive it
+	 *
+	 * @speed How fast
+	 *
+	 * @return the driving log
+	 */
+	string function drive( numeric speed = 10 ) {
+		return ""vroom""
+	}
+}
+" );
+
+				return dir;
+			}
+
+			it( "reports whether bx-docbox is available to this runtime", function() {
+				expect( runner.isAvailable() ).toBeBoolean();
+			} );
+
+			it( "throws BxSites.NoDocBoxSources when no source directory exists", function() {
+				expect( () => runner.run(
+					sources   = [ { dir : newTempDir() & "/nope", mapping : "nope" } ],
+					outputDir = newTempDir() & "/json"
+				) ).toThrow( type = "BxSites.NoDocBoxSources" );
+			} );
+
+			it( "throws BxSites.NoDocBoxSources when handed no sources at all", function() {
+				expect( () => runner.run( sources = [], outputDir = newTempDir() & "/json" ) )
+					.toThrow( type = "BxSites.NoDocBoxSources" );
+			} );
+
+			it( "writes DocBox's own JSON tree for the configured sources", function() {
+				if ( !runner.isAvailable() ) {
+					return;
+				}
+
+				var outputDir = newTempDir() & "/json";
+				var result = runner.run(
+					sources      = [ { dir : newSourceDir(), mapping : "bxsitesdocboxfixture" } ],
+					outputDir    = outputDir,
+					projectTitle = "Fixture API"
+				);
+
+				expect( result.classCount ).toBe( 2 );
+				expect( fileExists( outputDir & "/overview-summary.json" ) ).toBeTrue();
+				expect( fileExists( outputDir & "/bxsitesdocboxfixture/Car.json" ) ).toBeTrue();
+				expect( jsonDeserialize( fileRead( outputDir & "/overview-summary.json" ) ).title ).toBe( "Fixture API" );
+			} );
+
+			it( "enriches each class with the metadata DocBox's JSON strategy drops", function() {
+				if ( !runner.isAvailable() ) {
+					return;
+				}
+
+				var outputDir = newTempDir() & "/json";
+				var result = runner.run(
+					sources   = [ { dir : newSourceDir(), mapping : "bxsitesdocboxfixture" } ],
+					outputDir = outputDir
+				);
+
+				expect( result.enrichedCount ).toBe( 2 );
+
+				var car = jsonDeserialize( fileRead( outputDir & "/bxsitesdocboxfixture/Car.json" ) );
+
+				for ( var key in [ "properties", "implements", "annotations", "documentation" ] ) {
+					expect( car ).toHaveKey( key );
+				}
+
+				expect( car.properties.len() ).toBe( 1 );
+				expect( car.properties[ 1 ].name ).toBe( "brand" );
+				expect( car.properties[ 1 ].default ).toBe( "ford" );
+				expect( car.properties[ 1 ].hint ).toBe( "The car brand" );
+				expect( car[ "implements" ] ).toInclude( "bxsitesdocboxfixture.IVehicle" );
+				expect( car.annotations ).toHaveKey( "singleton" );
+
+				var drive = car.functions.filter( ( fn ) => fn.name == "drive" )[ 1 ];
+				expect( drive.documentation[ "return" ] ).toBe( "the driving log" );
+			} );
+
+			it( "warns about a missing source directory instead of failing the whole run", function() {
+				if ( !runner.isAvailable() ) {
+					return;
+				}
+
+				var outputDir = newTempDir() & "/json";
+				var result = runner.run(
+					sources = [
+						{ dir : newSourceDir(), mapping : "bxsitesdocboxfixture" },
+						{ dir : newTempDir() & "/gone", mapping : "gone" }
+					],
+					outputDir = outputDir
+				);
+
+				expect( result.warnings.len() ).toBe( 1 );
+				expect( result.warnings[ 1 ] ).toInclude( "does not exist" );
+				expect( result.classCount ).toBe( 2 );
+			} );
+
+		} );
+	}
+
+}

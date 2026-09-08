@@ -1,0 +1,174 @@
+/**
+ * Exercises the `docbox` verb end to end. The specs that need DocBox to
+ * actually run are gated on the runner's own `isAvailable()`, exactly
+ * like DocBoxRunnerSpec - the argument/config resolution around it is
+ * covered unconditionally.
+ */
+class extends="testbox.system.BaseSpec" {
+
+	function run() {
+		describe( "cli.DocBox", function() {
+
+			beforeEach( function() {
+				variables.verb = new "models.cli.DocBox@bxsites"();
+				variables.runner = new "models.build.DocBoxRunner@bxsites"();
+				variables.tempDirs = [];
+			} );
+
+			afterEach( function() {
+				for ( var dir in tempDirs ) {
+					if ( directoryExists( dir ) ) {
+						directoryDelete( dir, true );
+					}
+				}
+			} );
+
+			/**
+			 * A project root with a valid config, a docs/ tree, and a
+			 * conventional `models/` folder holding one documented class.
+			 */
+			private string function newProjectRoot( boolean withModels = true ) {
+				var dir = createTempDirectory( prefix = "bxsites-cli-docbox-" );
+				tempDirs.append( dir );
+				directoryCreate( dir & "/docs", true, true );
+				fileWrite( dir & "/docs/index.md", "## Home" );
+				fileWrite( dir & "/bxsites.json", jsonSerialize( { "name" : "Demo" } ) );
+
+				if ( withModels ) {
+					directoryCreate( dir & "/models", true, true );
+					fileWrite( dir & "/models/Car.bx", "
+/**
+ * A car model.
+ */
+class {
+
+	/**
+	 * Drive it
+	 *
+	 * @speed How fast
+	 */
+	string function drive( numeric speed = 10 ) {
+		return ""vroom""
+	}
+}
+" );
+				}
+
+				return dir;
+			}
+
+			it( "throws BxSites.MissingProjectRoot when projectRoot is blank", function() {
+				expect( () => verb.run( {} ) ).toThrow( "BxSites.MissingProjectRoot" );
+			} );
+
+			it( "throws BxSites.NoDocBoxSources when the project has no documentable source folders", function() {
+				var projectRoot = newProjectRoot( withModels = false );
+
+				expect( () => verb.run( { projectRoot : projectRoot } ) ).toThrow( "BxSites.NoDocBoxSources" );
+			} );
+
+			it( "documents the conventional folders and writes pages into the content dir", function() {
+				if ( !runner.isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+
+				var result = verb.run( { projectRoot : projectRoot } );
+
+				expect( result.exitCode ).toBe( 0 );
+				expect( result.message ).toInclude( "Documented 1 class(es)" );
+				expect( fileExists( projectRoot & "/docs/api/docbox/models/Car.md" ) ).toBeTrue();
+				expect( fileExists( projectRoot & "/docs/api/docbox/index.md" ) ).toBeTrue();
+			} );
+
+			it( "titles the overview after the site name when nothing else is configured", function() {
+				if ( !runner.isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+				verb.run( { projectRoot : projectRoot } );
+
+				expect( fileRead( projectRoot & "/docs/api/docbox/index.md" ) ).toInclude( 'title: "Demo API"' );
+			} );
+
+			it( "honors --projectTitle, --pagePathPrefix and --tags", function() {
+				if ( !runner.isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+
+				verb.run( {
+					projectRoot    : projectRoot,
+					projectTitle   : "Handbook",
+					pagePathPrefix : "reference",
+					tags           : "reference, api"
+				} );
+
+				var index = fileRead( projectRoot & "/docs/reference/index.md" );
+				expect( index ).toInclude( 'title: "Handbook"' );
+				expect( index ).toInclude( "tags: [reference, api]" );
+			} );
+
+			it( "honors an explicit --mappings:<name>=<path> flag over the conventional folders", function() {
+				if ( !runner.isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+				directoryCreate( projectRoot & "/domain", true, true );
+				fileWrite( projectRoot & "/domain/Bike.bx", "
+/**
+ * A bike.
+ */
+class {}
+" );
+
+				verb.run( { projectRoot : projectRoot, "mappings:domain" : "domain" } );
+
+				expect( fileExists( projectRoot & "/docs/api/docbox/domain/Bike.md" ) ).toBeTrue();
+				expect( fileExists( projectRoot & "/docs/api/docbox/models/Car.md" ) ).toBeFalse();
+			} );
+
+			it( "reads mappings, title and page prefix from the project's own config", function() {
+				if ( !runner.isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+				fileWrite( projectRoot & "/bxsites.json", jsonSerialize( {
+					"name"   : "Demo",
+					"docbox" : {
+						"projectTitle"   : "Configured API",
+						"mappings"       : { "models" : "models" },
+						"pagePathPrefix" : "api/classes",
+						"tags"           : [ "classes" ]
+					}
+				} ) );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				var index = fileRead( projectRoot & "/docs/api/classes/index.md" );
+				expect( index ).toInclude( 'title: "Configured API"' );
+				expect( index ).toInclude( "tags: [classes]" );
+				expect( fileExists( projectRoot & "/docs/api/classes/models/Car.md" ) ).toBeTrue();
+			} );
+
+			it( "discards the DocBox JSON tree unless --jsonDir asks to keep it", function() {
+				if ( !runner.isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+
+				verb.run( { projectRoot : projectRoot, jsonDir : "build/docbox-json" } );
+
+				expect( fileExists( projectRoot & "/build/docbox-json/overview-summary.json" ) ).toBeTrue();
+			} );
+
+		} );
+	}
+
+}

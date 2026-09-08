@@ -1,0 +1,150 @@
+/**
+ * Emits a small, self-contained Alpine.js-driven filter toolbar directly
+ * into generated Markdown - raw HTML the underlying Markdown pipeline
+ * passes through untouched. A blank line immediately after an opening
+ * block-level tag, and another immediately before its closing tag, lets
+ * any Markdown nested inside still convert normally (CommonMark's own
+ * HTML-block rules, not something specific to bx-sites) - every
+ * open/close pair below follows that rule.
+ *
+ * No theme changes are needed for this to work: every theme already loads
+ * Alpine.js identically and already defines the same `--bxsites-*` CSS
+ * variable API, so the one inline stylesheet (emitted once per page)
+ * looks right everywhere.
+ *
+ * The BoxLang-side twin of `core/.../springboot/MemberFilterUi.java`,
+ * which does exactly this for the Java/Spring Boot generators. The two
+ * emit byte-identical markup on purpose - a Javadoc page and a DocBox
+ * page sitting in the same site must not look subtly different.
+ */
+class {
+
+	/**
+	 * The one-time inline stylesheet for a page carrying a filter toolbar.
+	 *
+	 * @return The `<style>` block, followed by a blank line
+	 */
+	string function styles() {
+		var lines = [
+			"<style>",
+			".bx-filter-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 1.5rem 0; }",
+			".bx-filter-search { flex: 1 1 12rem; min-width: 8rem; padding: 0.4rem 0.75rem; border: 1px solid var(--bxsites-border); border-radius: 999px; background: var(--bxsites-bg); color: var(--bxsites-text); font-size: 0.9rem; }",
+			".bx-filter-chip { padding: 0.35rem 0.9rem; border: 1px solid var(--bxsites-border); border-radius: 999px; background: transparent; color: var(--bxsites-muted); font-size: 0.85rem; cursor: pointer; transition: all 0.15s ease; }",
+			".bx-filter-chip:hover { border-color: var(--bxsites-accent); color: var(--bxsites-text); }",
+			".bx-filter-chip.bx-filter-chip-on { background: var(--bxsites-accent); border-color: var(--bxsites-accent); color: var(--bxsites-bg); }",
+			"</style>",
+			"",
+			""
+		]
+
+		return lines.toList( char( 10 ) )
+	}
+
+	/**
+	 * Opens the filter wrapper and renders its toolbar: a search box, an
+	 * always-present "All" chip, then one chip per kind.
+	 *
+	 * @chips Ordered array of `{ kind, label }` structs, e.g. `{ kind : "method", label : "Methods" }`
+	 *
+	 * @return The opening markup, ending with a blank line
+	 */
+	string function toolbarOpen( required array chips ) {
+		var lines = [
+			"<div class=""bx-filter"" x-data=""{ q: '', k: 'all' }"">",
+			"",
+			"<div class=""bx-filter-toolbar"">",
+			"<input type=""search"" class=""bx-filter-search"" x-model=""q"" placeholder=""Search..."">",
+			"<button type=""button"" class=""bx-filter-chip"" :class=""{ 'bx-filter-chip-on': k==='all' }"" @click=""k='all'"">All</button>"
+		]
+
+		for ( var chip in arguments.chips ) {
+			lines.append(
+				"<button type=""button"" class=""bx-filter-chip"" :class=""{ 'bx-filter-chip-on': k==='#chip.kind#' }"" @click=""k='#chip.kind#'"">#chip.label#</button>"
+			)
+		}
+
+		lines.append( "</div>" )
+		lines.append( "" )
+		lines.append( "" )
+
+		return lines.toList( char( 10 ) )
+	}
+
+	/**
+	 * Closes the filter wrapper opened by `toolbarOpen()`.
+	 */
+	string function toolbarClose() {
+		return "</div>" & char( 10 ) & char( 10 )
+	}
+
+	/**
+	 * Wraps a whole kind's section (heading plus its items) so it
+	 * hides/shows as a unit - including when the kind matches but the
+	 * search query matches none of its items, so a heading never sits
+	 * alone over an empty section.
+	 *
+	 * @kind The chip kind this section belongs to
+	 */
+	string function sectionOpen( required string kind ) {
+		var show = "(k==='all'||k==='#arguments.kind#')&&(!q||Array.from($el.querySelectorAll('.bx-filter-item')).some(el=>el.dataset.n.toLowerCase().includes(q.toLowerCase())))"
+
+		return "<div x-show=""#show#"">" & char( 10 ) & char( 10 )
+	}
+
+	/**
+	 * Closes a section opened by `sectionOpen()`.
+	 */
+	string function sectionClose() {
+		return char( 10 ) & "</div>" & char( 10 ) & char( 10 )
+	}
+
+	/**
+	 * Wraps one item; only needs to check the search query - kind
+	 * visibility is already handled by the enclosing section.
+	 *
+	 * @searchableName The text the search box matches against
+	 */
+	string function itemOpen( required string searchableName ) {
+		return "<div class=""bx-filter-item"" data-n=""#escapeAttr( arguments.searchableName )#"" x-show=""!q||$el.dataset.n.toLowerCase().includes(q.toLowerCase())"">"
+			& char( 10 ) & char( 10 )
+	}
+
+	/**
+	 * Closes an item opened by `itemOpen()`.
+	 */
+	string function itemClose() {
+		return char( 10 ) & "</div>" & char( 10 ) & char( 10 )
+	}
+
+	/**
+	 * For raw markup contexts that can't be div-wrapped without breaking
+	 * their own structure (a table row, say) - filters by both kind and
+	 * search query on the one element itself, rather than relying on an
+	 * enclosing section for kind. Embed directly inside the element's
+	 * opening tag.
+	 *
+	 * @kind The chip kind this row belongs to
+	 * @searchableName The text the search box matches against
+	 */
+	string function rowAttributes( required string kind, required string searchableName ) {
+		return "data-k=""#arguments.kind#"" data-n=""#escapeAttr( arguments.searchableName )#"" x-show=""(k==='all'||k===$el.dataset.k)&&(!q||$el.dataset.n.toLowerCase().includes(q.toLowerCase()))"""
+	}
+
+	/**
+	 * Escapes a value for use inside a double-quoted HTML attribute.
+	 */
+	string function escapeAttr( required string value ) {
+		return arguments.value.replace( "&", "&amp;", "all" ).replace( """", "&quot;", "all" )
+	}
+
+	/**
+	 * Escapes a value for use as HTML text content.
+	 */
+	string function escapeHtml( required string value ) {
+		return arguments.value
+			.replace( "&", "&amp;", "all" )
+			.replace( "<", "&lt;", "all" )
+			.replace( ">", "&gt;", "all" )
+	}
+
+}

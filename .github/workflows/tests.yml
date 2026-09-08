@@ -35,7 +35,11 @@ jobs:
         uses: ortus-boxlang/setup-boxlang@1.4.0
         with:
           with-commandbox: true
-          modules: bx-esapi bx-yaml bx-toml bx-markdown bx-image
+          # bx-docbox is a test-only prerequisite: DocBoxRunnerSpec and
+          # cli/DocBoxSpec skip their real-generation specs when it isn't
+          # installed, so without it here the `docbox` verb's actual
+          # DocBox path would silently go uncovered.
+          modules: bx-esapi bx-yaml bx-toml bx-markdown bx-image bx-docbox
 
       - name: Check BoxLang Version
         run: boxlang --version

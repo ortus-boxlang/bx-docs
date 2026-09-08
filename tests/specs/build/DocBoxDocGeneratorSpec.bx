@@ -1,0 +1,306 @@
+/**
+ * Exercises DocBoxDocGenerator against hand-written DocBox JSON fixtures -
+ * deliberately without bx-docbox installed anywhere in the picture, since
+ * the generator is a pure JSON-tree-in/Markdown-out transform (see its own
+ * docblock). DocBoxRunnerSpec covers the half that does need DocBox.
+ */
+class extends="testbox.system.BaseSpec" {
+
+	function run() {
+		describe( "build.DocBoxDocGenerator", function() {
+
+			beforeEach( function() {
+				variables.generator = new "models.build.DocBoxDocGenerator@bxsites"();
+				variables.tempDirs = [];
+			} );
+
+			afterEach( function() {
+				for ( var dir in tempDirs ) {
+					if ( directoryExists( dir ) ) {
+						directoryDelete( dir, true );
+					}
+				}
+			} );
+
+			private string function newTempDir() {
+				var dir = createTempDirectory( prefix = "bxsites-docboxgen-" );
+				tempDirs.append( dir );
+				return dir;
+			}
+
+			/**
+			 * Writes a minimal but realistic DocBox JSON tree: one package
+			 * (`app`) holding the class described by `classDoc`.
+			 */
+			private string function newJsonDir( required struct classDoc, string title = "Fixture API" ) {
+				var dir = newTempDir() & "/json";
+				directoryCreate( dir & "/app", true, true );
+
+				var relativePath = "app/" & classDoc.name & ".json";
+
+				fileWrite( dir & "/overview-summary.json", jsonSerialize( {
+					"title"    : title,
+					"classes"  : [ { "name" : classDoc.name, "path" : relativePath } ],
+					"packages" : { "app" : { "name" : "app", "path" : "app/package-summary.json" } }
+				} ) );
+				fileWrite( dir & "/app/package-summary.json", jsonSerialize( {
+					"classes" : [ { "name" : classDoc.name, "path" : relativePath } ]
+				} ) );
+				fileWrite( dir & "/" & relativePath, jsonSerialize( classDoc ) );
+
+				return dir;
+			}
+
+			private struct function carDoc() {
+				return {
+					"name"          : "Car",
+					"package"       : "app",
+					"type"          : "Class",
+					"extends"       : "app.Vehicle",
+					"hint"          : "A car model. Drives on roads.",
+					"implements"    : [ "app.IVehicle" ],
+					"annotations"   : { "singleton" : "", "accessors" : true, "implements" : "app.IVehicle" },
+					"documentation" : { "hint" : "A car model. Drives on roads.", "author" : "Luis" },
+					"properties"    : [
+						{
+							"name"        : "brand",
+							"type"        : "string",
+							"default"     : "ford",
+							"hint"        : "The car brand",
+							"annotations" : { "name" : "brand", "type" : "string", "inject" : "coldbox:setting:brand" }
+						}
+					],
+					"functions"     : [
+						{
+							"name"          : "init",
+							"access"        : "public",
+							"returnType"    : "Any",
+							"hint"          : "Build a car",
+							"documentation" : { "hint" : "Build a car" },
+							"parameters"    : [
+								{
+									"name"          : "brand",
+									"type"          : "string",
+									"required"      : true,
+									"default"       : "ford",
+									"documentation" : { "hint" : "The brand name" }
+								}
+							]
+						},
+						{
+							"name"          : "drive",
+							"access"        : "public",
+							"returnType"    : "String",
+							"hint"          : "Drive it",
+							"documentation" : { "hint" : "Drive it", "return" : "the driving log" },
+							"parameters"    : [
+								{ "name" : "speed", "type" : "numeric", "required" : false, "default" : 10, "documentation" : {} }
+							]
+						},
+						{
+							"name"          : "secret",
+							"access"        : "private",
+							"returnType"    : "Any",
+							"hint"          : "",
+							"documentation" : {},
+							"parameters"    : []
+						}
+					]
+				};
+			}
+
+			it( "writes one page per class, a package index, and an overview index", function() {
+				var jsonDir = newJsonDir( carDoc() );
+				var contentDir = newTempDir();
+
+				var result = generator.generate( jsonDir = jsonDir, contentDir = contentDir );
+
+				expect( result.warnings.len() ).toBe( 0 );
+				expect( result.pageFiles.len() ).toBe( 3 );
+				expect( fileExists( contentDir & "/api/docbox/app/Car.md" ) ).toBeTrue();
+				expect( fileExists( contentDir & "/api/docbox/app/index.md" ) ).toBeTrue();
+				expect( fileExists( contentDir & "/api/docbox/index.md" ) ).toBeTrue();
+			} );
+
+			it( "honors pagePathPrefix and tags", function() {
+				var jsonDir = newJsonDir( carDoc() );
+				var contentDir = newTempDir();
+
+				generator.generate(
+					jsonDir        = jsonDir,
+					contentDir     = contentDir,
+					pagePathPrefix = "reference/classes",
+					tags           = [ "reference" ]
+				);
+
+				var page = fileRead( contentDir & "/reference/classes/app/Car.md" );
+				expect( page ).toInclude( "tags: [reference]" );
+			} );
+
+			it( "renders frontmatter with the class name and its hint's first sentence", function() {
+				var jsonDir = newJsonDir( carDoc() );
+				var contentDir = newTempDir();
+
+				generator.generate( jsonDir = jsonDir, contentDir = contentDir );
+				var page = fileRead( contentDir & "/api/docbox/app/Car.md" );
+
+				expect( page ).toInclude( 'title: "Car"' );
+				expect( page ).toInclude( 'summary: "A car model."' );
+				expect( page ).toInclude( "tags: [api, docbox]" );
+			} );
+
+			it( "renders an identity line carrying the qualified name, kind, extends and implements", function() {
+				var jsonDir = newJsonDir( carDoc() );
+				var contentDir = newTempDir();
+
+				generator.generate( jsonDir = jsonDir, contentDir = contentDir );
+				var page = fileRead( contentDir & "/api/docbox/app/Car.md" );
+
+				expect( page ).toInclude( "`app.Car`" );
+				expect( page ).toInclude( "Class" );
+				expect( page ).toInclude( "extends `app.Vehicle`" );
+				expect( page ).toInclude( "implements `app.IVehicle`" );
+			} );
+
+			it( "lists class annotations but never repeats implements, which the identity line already carries", function() {
+				var jsonDir = newJsonDir( carDoc() );
+				var contentDir = newTempDir();
+
+				generator.generate( jsonDir = jsonDir, contentDir = contentDir );
+				var page = fileRead( contentDir & "/api/docbox/app/Car.md" );
+
+				expect( page ).toInclude( "- `@singleton`" );
+				expect( page ).toInclude( "- `@accessors` true" );
+				expect( page ).notToInclude( "- `@implements`" );
+			} );
+
+			it( "renders declared properties, keeping non-obvious annotations like inject visible", function() {
+				var jsonDir = newJsonDir( carDoc() );
+				var contentDir = newTempDir();
+
+				generator.generate( jsonDir = jsonDir, contentDir = contentDir );
+				var page = fileRead( contentDir & "/api/docbox/app/Car.md" );
+
+				expect( page ).toInclude( "| `brand` | `string` | `ford` | The car brand" );
+				expect( page ).toInclude( "@inject coldbox:setting:brand" );
+			} );
+
+			it( "groups functions by kind, with init as the constructor", function() {
+				var jsonDir = newJsonDir( carDoc() );
+				var contentDir = newTempDir();
+
+				generator.generate( jsonDir = jsonDir, contentDir = contentDir );
+				var page = fileRead( contentDir & "/api/docbox/app/Car.md" );
+
+				expect( page ).toInclude( "Constructor" );
+				expect( page ).toInclude( "Public methods" );
+				expect( page ).toInclude( "Private methods" );
+				expect( page ).toInclude( "k==='constructor'" );
+				expect( page ).toInclude( "k==='private'" );
+			} );
+
+			it( "renders full signatures, quoting string defaults", function() {
+				var jsonDir = newJsonDir( carDoc() );
+				var contentDir = newTempDir();
+
+				generator.generate( jsonDir = jsonDir, contentDir = contentDir );
+				var page = fileRead( contentDir & "/api/docbox/app/Car.md" );
+
+				expect( page ).toInclude( '`Any init( required string brand = "ford" )`' );
+				expect( page ).toInclude( "`String drive( numeric speed = 10 )`" );
+			} );
+
+			it( "renders a parameter table and the function's own return tag", function() {
+				var jsonDir = newJsonDir( carDoc() );
+				var contentDir = newTempDir();
+
+				generator.generate( jsonDir = jsonDir, contentDir = contentDir );
+				var page = fileRead( contentDir & "/api/docbox/app/Car.md" );
+
+				expect( page ).toInclude( "| `brand` | `string` | yes | `ford` | The brand name |" );
+				expect( page ).toInclude( "- **Returns** the driving log" );
+			} );
+
+			it( "emits the shared Alpine filter toolbar exactly once per page", function() {
+				var jsonDir = newJsonDir( carDoc() );
+				var contentDir = newTempDir();
+
+				generator.generate( jsonDir = jsonDir, contentDir = contentDir );
+				var page = fileRead( contentDir & "/api/docbox/app/Car.md" );
+
+				expect( page.reMatch( "bx-filter-toolbar" ).len() ).toBeGT( 1 );
+				expect( page ).toInclude( "x-data=""{ q: '', k: 'all' }""" );
+				expect( page.reMatch( "<style>" ).len() ).toBe( 1 );
+			} );
+
+			it( "escapes a pipe inside a hint so it can't break the table it lands in", function() {
+				var doc = carDoc();
+				doc.properties[ 1 ].hint = "Either ford | chevy";
+				var jsonDir = newJsonDir( doc );
+				var contentDir = newTempDir();
+
+				generator.generate( jsonDir = jsonDir, contentDir = contentDir );
+				var page = fileRead( contentDir & "/api/docbox/app/Car.md" );
+
+				expect( page ).toInclude( "Either ford \| chevy" );
+			} );
+
+			it( "renders a class with no functions at all without a filter toolbar", function() {
+				var doc = carDoc();
+				doc.functions = [];
+				doc.properties = [];
+				var jsonDir = newJsonDir( doc );
+				var contentDir = newTempDir();
+
+				generator.generate( jsonDir = jsonDir, contentDir = contentDir );
+				var page = fileRead( contentDir & "/api/docbox/app/Car.md" );
+
+				expect( page ).notToInclude( "bx-filter-toolbar" );
+				expect( page ).toInclude( "A car model." );
+			} );
+
+			it( "links every package and class from the overview index", function() {
+				var jsonDir = newJsonDir( carDoc(), "Demo API" );
+				var contentDir = newTempDir();
+
+				generator.generate( jsonDir = jsonDir, contentDir = contentDir );
+				var index = fileRead( contentDir & "/api/docbox/index.md" );
+
+				expect( index ).toInclude( 'title: "Demo API"' );
+				expect( index ).toInclude( "[`app`](app/index.md)" );
+				expect( index ).toInclude( "[`Car`](app/Car.md)" );
+			} );
+
+			it( "prefers an explicit indexTitle over the one DocBox recorded", function() {
+				var jsonDir = newJsonDir( carDoc(), "Demo API" );
+				var contentDir = newTempDir();
+
+				generator.generate( jsonDir = jsonDir, contentDir = contentDir, indexTitle = "Handbook" );
+
+				expect( fileRead( contentDir & "/api/docbox/index.md" ) ).toInclude( 'title: "Handbook"' );
+			} );
+
+			it( "warns, rather than throwing, when a class listed in the overview is missing on disk", function() {
+				var jsonDir = newJsonDir( carDoc() );
+				var contentDir = newTempDir();
+				fileDelete( jsonDir & "/app/Car.json" );
+
+				var result = generator.generate( jsonDir = jsonDir, contentDir = contentDir );
+
+				expect( result.warnings.len() ).toBe( 1 );
+				expect( result.warnings[ 1 ] ).toInclude( "app/Car.json" );
+				expect( fileExists( contentDir & "/api/docbox/index.md" ) ).toBeTrue();
+			} );
+
+			it( "throws BxSites.DocBoxOutputNotFound when the JSON directory has no overview", function() {
+				var emptyDir = newTempDir();
+				var contentDir = newTempDir();
+
+				expect( () => generator.generate( jsonDir = emptyDir, contentDir = contentDir ) )
+					.toThrow( type = "BxSites.DocBoxOutputNotFound" );
+			} );
+
+		} );
+	}
+
+}

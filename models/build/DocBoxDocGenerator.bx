@@ -1,0 +1,638 @@
+/**
+ * Turns a DocBox JSON tree (see `DocBoxRunner`) into native bx-sites
+ * Markdown pages - one per documented class, one index per package, and
+ * one overview index for the whole API.
+ *
+ * Deliberately a pure file-in/file-out transform: it reads a directory of
+ * JSON and writes a directory of Markdown, and never talks to DocBox, the
+ * runtime's class loader, or a project's config. That keeps it testable
+ * against fixture JSON on a machine with no bx-docbox installed at all,
+ * and keeps every "how do we run DocBox" concern in `DocBoxRunner` where
+ * it belongs.
+ *
+ * ## What a generated page contains
+ *
+ * The class' own docblock hint, its declared `property` rows, and its
+ * functions grouped by access (constructors first, then public, package
+ * and private), each with its full signature, hint, `@param` text,
+ * `@return` text and any other docblock tags. Members sit inside the same
+ * Alpine.js filter toolbar (`MemberFilterUi`) the Javadoc pages use, so a
+ * BoxLang API page and a Java one behave identically in the same site.
+ *
+ * ## What it deliberately doesn't do yet
+ *
+ * - No cross-page hyperlink resolution: an `extends`/`implements` target,
+ *   or a type named in a signature, renders as inline code even when
+ *   that class has its own generated page.
+ * - No inherited members: only what the class itself declares, matching
+ *   DocBox's own JSON output.
+ * - No nav wiring: pages land under `pagePathPrefix` and it's up to the
+ *   project's own `nav` (or the automatic directory nav) to surface them.
+ */
+class {
+
+	variables.hash = char( 35 )
+	variables.newline = char( 10 )
+
+	/**
+	 * The access kinds rendered as their own section, in page order, with
+	 * the chip label each gets in the filter toolbar.
+	 */
+	static {
+		memberKinds = [
+			{ "kind" : "constructor", "label" : "Constructor" },
+			{ "kind" : "public",      "label" : "Public" },
+			{ "kind" : "package",     "label" : "Package" },
+			{ "kind" : "private",     "label" : "Private" }
+		]
+	}
+
+	/**
+	 * Renders every page for one DocBox JSON tree.
+	 *
+	 * @jsonDir Absolute path of the DocBox JSON output directory (must contain `overview-summary.json`)
+	 * @contentDir Absolute path of the project's content directory (`docs/` or `src/`)
+	 * @pagePathPrefix Where pages go, relative to `contentDir`
+	 * @tags Frontmatter tags applied to every generated page
+	 * @indexTitle Title for the generated overview page; defaults to the title DocBox recorded
+	 *
+	 * @throws BxSites.DocBoxOutputNotFound When `jsonDir` has no `overview-summary.json`
+	 *
+	 * @return `{ pageFiles, warnings }`
+	 */
+	struct function generate(
+		required string jsonDir,
+		required string contentDir,
+		string pagePathPrefix = "api/docbox",
+		array tags = [ "api", "docbox" ],
+		string indexTitle = ""
+	) {
+		var overviewFile = arguments.jsonDir & "/overview-summary.json"
+
+		if ( !fileExists( overviewFile ) ) {
+			throw(
+				type    = "BxSites.DocBoxOutputNotFound",
+				message = "No overview-summary.json found in [#arguments.jsonDir#] - DocBox produced no documentation for the configured sources"
+			)
+		}
+
+		var overview = jsonDeserialize( fileRead( overviewFile ) )
+		var pagesRoot = arguments.contentDir & "/" & arguments.pagePathPrefix.reReplace( "^/+|/+$", "", "all" )
+		var pageFiles = []
+		var warnings = []
+
+		for ( var classEntry in ( overview.classes ?: [] ) ) {
+			var classFile = arguments.jsonDir & "/" & classEntry.path
+
+			if ( !fileExists( classFile ) ) {
+				warnings.append( "Class file [#classEntry.path#] listed in overview-summary.json is missing - skipped" )
+				continue
+			}
+
+			var pageFile = pagesRoot & "/" & classEntry.path.reReplace( "\.json$", ".md" )
+			writePage( pageFile, renderClassPage( jsonDeserialize( fileRead( classFile ) ), arguments.tags ) )
+			pageFiles.append( pageFile )
+		}
+
+		for ( var packageName in ( overview.packages ?: {} ) ) {
+			var packageEntry = overview.packages[ packageName ]
+			var packageFile = arguments.jsonDir & "/" & packageEntry.path
+
+			if ( !fileExists( packageFile ) ) {
+				warnings.append( "Package file [#packageEntry.path#] listed in overview-summary.json is missing - skipped" )
+				continue
+			}
+
+			var pageFile = pagesRoot & "/" & packageEntry.path.reReplace( "package-summary\.json$", "index.md" )
+			writePage(
+				pageFile,
+				renderPackagePage( packageName, jsonDeserialize( fileRead( packageFile ) ), arguments.tags )
+			)
+			pageFiles.append( pageFile )
+		}
+
+		var indexFile = pagesRoot & "/index.md"
+		var title = len( trim( arguments.indexTitle ) ) ? arguments.indexTitle : ( overview.title ?: "API Reference" )
+		writePage( indexFile, renderOverviewPage( title, overview, arguments.tags ) )
+		pageFiles.append( indexFile )
+
+		return { "pageFiles" : pageFiles, "warnings" : warnings }
+	}
+
+	/**
+	 * The API overview: every package, then every documented class.
+	 *
+	 * @title The page title
+	 * @overview The deserialized `overview-summary.json`
+	 * @tags Frontmatter tags
+	 */
+	private string function renderOverviewPage( required string title, required struct overview, required array tags ) {
+		var lines = [
+			frontMatter( arguments.title, "", arguments.tags ),
+			heading( 1, arguments.title ),
+			""
+		]
+
+		var packages = arguments.overview.packages ?: {}
+		if ( !packages.isEmpty() ) {
+			lines.append( heading( 2, "Packages" ) )
+			lines.append( "" )
+			lines.append( "| Package | Classes |" )
+			lines.append( "|---|---|" )
+
+			for ( var packageName in packages.keyArray().sort( "textnocase" ) ) {
+				var link = packages[ packageName ].path.reReplace( "package-summary\.json$", "index.md" )
+				var classesInPackage = ( arguments.overview.classes ?: [] ).filter( ( entry ) => {
+					return entry.path.listLen( "/" ) > 1
+						&& entry.path.reReplace( "/[^/]+$", "" ).replace( "/", ".", "all" ) == packageName
+				} )
+				lines.append( "| [`#packageName#`](#link#) | #classesInPackage.len()# |" )
+			}
+
+			lines.append( "" )
+		}
+
+		var classes = arguments.overview.classes ?: []
+		if ( classes.len() ) {
+			lines.append( heading( 2, "Classes" ) )
+			lines.append( "" )
+
+			for ( var classEntry in classes ) {
+				var link = classEntry.path.reReplace( "\.json$", ".md" )
+				lines.append( "- [`#classEntry.name#`](#link#)" )
+			}
+
+			lines.append( "" )
+		}
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * One package's index: the classes it contains.
+	 *
+	 * @packageName The dotted package name
+	 * @summary The deserialized `package-summary.json`
+	 * @tags Frontmatter tags
+	 */
+	private string function renderPackagePage( required string packageName, required struct summary, required array tags ) {
+		var lines = [
+			frontMatter( arguments.packageName, "", arguments.tags ),
+			heading( 1, arguments.packageName ),
+			""
+		]
+
+		var classes = arguments.summary.classes ?: []
+
+		if ( !classes.len() ) {
+			lines.append( "No documented classes in this package." )
+			lines.append( "" )
+			return lines.toList( variables.newline )
+		}
+
+		for ( var classEntry in classes ) {
+			lines.append( "- [`#classEntry.name#`](#classEntry.name#.md)" )
+		}
+
+		lines.append( "" )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * One class page: identity line, docblock, properties, then members
+	 * grouped by access inside the filter toolbar.
+	 *
+	 * @doc The deserialized (and `DocBoxRunner`-enriched) class JSON
+	 * @tags Frontmatter tags
+	 */
+	private string function renderClassPage( required struct doc, required array tags ) {
+		var name = arguments.doc.name ?: "Class"
+		var hint = trim( arguments.doc.hint ?: "" )
+		var lines = [
+			frontMatter( name, firstSentence( hint ), arguments.tags ),
+			heading( 1, name ),
+			"",
+			identityLine( arguments.doc ),
+			""
+		]
+
+		if ( len( hint ) ) {
+			lines.append( hint )
+			lines.append( "" )
+		}
+
+		var annotationRows = annotationLines( arguments.doc.annotations ?: {} )
+		if ( annotationRows.len() ) {
+			lines.append( heading( 2, "Annotations" ) )
+			lines.append( "" )
+			lines.append( annotationRows, true )
+			lines.append( "" )
+		}
+
+		var properties = arguments.doc.properties ?: []
+		if ( isArray( properties ) && properties.len() ) {
+			lines.append( heading( 2, "Properties" ) )
+			lines.append( "" )
+			lines.append( propertyTable( properties ), true )
+			lines.append( "" )
+		}
+
+		lines.append( memberSections( arguments.doc.functions ?: [] ), true )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * The `package.Class` / kind / extends / implements line under the H1.
+	 *
+	 * @doc The deserialized class JSON
+	 */
+	private string function identityLine( required struct doc ) {
+		var qualified = len( arguments.doc.package ?: "" )
+			? arguments.doc.package & "." & ( arguments.doc.name ?: "" )
+			: ( arguments.doc.name ?: "" )
+		var parts = [ "`#qualified#`", arguments.doc.type ?: "Class" ]
+
+		if ( len( trim( arguments.doc[ "extends" ] ?: "" ) ) ) {
+			parts.append( "extends `#arguments.doc[ "extends" ]#`" )
+		}
+
+		var interfaces = arguments.doc[ "implements" ] ?: []
+		if ( isArray( interfaces ) && interfaces.len() ) {
+			parts.append( "implements " & interfaces.map( ( name ) => "`#name#`" ).toList( ", " ) )
+		}
+
+		return parts.toList( " &middot; " )
+	}
+
+	/**
+	 * Class-level annotations (`@singleton`, `@author`, ...) as a bullet
+	 * list. Documentation tags and real annotations are both worth
+	 * showing, so both are folded in here.
+	 *
+	 * @annotations The class' annotation struct
+	 */
+	private array function annotationLines( required any annotations ) {
+		if ( !isStruct( arguments.annotations ) || arguments.annotations.isEmpty() ) {
+			return []
+		}
+
+		// `implements` already has a more readable home in the identity
+		// line under the H1 - repeating it here as a raw annotation adds
+		// nothing but noise.
+		var skipKeys = [ "implements" ]
+		var lines = []
+
+		for ( var key in arguments.annotations.keyArray().sort( "textnocase" ) ) {
+			if ( skipKeys.findNoCase( key ) ) {
+				continue
+			}
+
+			var value = arguments.annotations[ key ]
+			var rendered = isSimpleValue( value ) ? trim( value ) : jsonSerialize( value )
+			lines.append( len( rendered ) ? "- `@#key#` #rendered#" : "- `@#key#`" )
+		}
+
+		return lines
+	}
+
+	/**
+	 * The declared `property` rows as a Markdown table, with any extra
+	 * annotations (`inject`, `delegate`, ...) kept in their own column so
+	 * ColdBox/WireBox wiring stays visible.
+	 *
+	 * @properties The normalized property array
+	 */
+	private array function propertyTable( required array properties ) {
+		var lines = [ "| Property | Type | Default | Description |", "|---|---|---|---|" ]
+		var skipKeys = [ "name", "type", "default" ]
+
+		for ( var property in arguments.properties ) {
+			var description = trim( property.hint ?: "" )
+			var extras = ( isStruct( property.annotations ?: "" ) ? property.annotations : {} )
+				.keyArray()
+				.filter( ( key ) => !skipKeys.findNoCase( key ) )
+				.sort( "textnocase" )
+				.map( ( key ) => {
+					var value = property.annotations[ key ]
+					var rendered = isSimpleValue( value ) ? trim( value ) : jsonSerialize( value )
+					return len( rendered ) ? "`@#key# #rendered#`" : "`@#key#`"
+				} )
+
+			if ( extras.len() ) {
+				description = len( description ) ? description & " " & extras.toList( " " ) : extras.toList( " " )
+			}
+
+			lines.append(
+				"| `#property.name ?: ""#` | `#property.type ?: "any"#` | #defaultCell( property[ "default" ] ?: "" )# | #cell( description )# |"
+			)
+		}
+
+		return lines
+	}
+
+	/**
+	 * Every function section: one per access kind actually present,
+	 * wrapped in the shared Alpine filter toolbar.
+	 *
+	 * @functions DocBox's `functions` array for the class
+	 */
+	private array function memberSections( required any functions ) {
+		if ( !isArray( arguments.functions ) || !arguments.functions.len() ) {
+			return []
+		}
+
+		var filterUi = new "models.build.MemberFilterUi@bxsites"()
+		var grouped = {}
+
+		for ( var member in arguments.functions ) {
+			var kind = kindOf( member )
+			grouped[ kind ] = grouped[ kind ] ?: []
+			grouped[ kind ].append( member )
+		}
+
+		var chips = static.memberKinds
+			.filter( ( entry ) => grouped.keyExists( entry.kind ) )
+			.map( ( entry ) => { return { "kind" : entry.kind, "label" : entry.label } } )
+
+		if ( !chips.len() ) {
+			return []
+		}
+
+		var lines = [ filterUi.styles() & filterUi.toolbarOpen( chips ) ]
+
+		for ( var entry in static.memberKinds ) {
+			if ( !grouped.keyExists( entry.kind ) ) {
+				continue
+			}
+
+			lines.append( filterUi.sectionOpen( entry.kind ) )
+			var sectionTitle = entry.kind == "constructor" ? "Constructor" : entry.label & " methods"
+			lines.append( heading( 2, sectionTitle ) )
+			lines.append( "" )
+
+			for ( var member in grouped[ entry.kind ] ) {
+				lines.append( renderMember( member, filterUi ), true )
+			}
+
+			lines.append( filterUi.sectionClose() )
+		}
+
+		lines.append( filterUi.toolbarClose() )
+
+		return lines
+	}
+
+	/**
+	 * One function: signature heading, hint, then its parameter table and
+	 * docblock tags.
+	 *
+	 * @member One entry of DocBox's `functions` array
+	 * @filterUi The shared filter-toolbar renderer
+	 */
+	private array function renderMember( required struct member, required any filterUi ) {
+		var signature = signatureOf( arguments.member )
+		var lines = [ arguments.filterUi.itemOpen( signature ) ]
+
+		lines.append( heading( 3, "`" & signature & "`" ) )
+		lines.append( "" )
+
+		var hint = trim( arguments.member.hint ?: "" )
+		if ( len( hint ) ) {
+			lines.append( hint )
+			lines.append( "" )
+		}
+
+		var parameters = arguments.member.parameters ?: []
+		if ( isArray( parameters ) && parameters.len() ) {
+			lines.append( "| Parameter | Type | Required | Default | Description |" )
+			lines.append( "|---|---|---|---|---|" )
+
+			for ( var parameter in parameters ) {
+				var description = isStruct( parameter.documentation ?: "" ) ? ( parameter.documentation.hint ?: "" ) : ""
+				var requiredCell = ( parameter.required ?: false ) ? "yes" : "no"
+				var parameterDefault = isNull( parameter[ "default" ] ) ? "" : parameter[ "default" ]
+				lines.append(
+					"| `#parameter.name ?: ""#` | `#parameter.type ?: "any"#` | #requiredCell# | #defaultCell( parameterDefault )# | #cell( description )# |"
+				)
+			}
+
+			lines.append( "" )
+		}
+
+		lines.append( tagLines( arguments.member ), true )
+		lines.append( arguments.filterUi.itemClose() )
+
+		return lines
+	}
+
+	/**
+	 * The docblock tags worth surfacing under a function - its return
+	 * text first, then any other project-specific tag. `@param` tags are
+	 * skipped here: they're already rendered as the parameter table's own
+	 * description column.
+	 *
+	 * @member One entry of DocBox's `functions` array
+	 */
+	private array function tagLines( required struct member ) {
+		var documentation = arguments.member.documentation ?: {}
+
+		if ( !isStruct( documentation ) || documentation.isEmpty() ) {
+			return []
+		}
+
+		var parameterNames = ( isArray( arguments.member.parameters ?: "" ) ? arguments.member.parameters : [] )
+			.map( ( parameter ) => parameter.name ?: "" )
+		var lines = []
+
+		if ( len( trim( documentation[ "return" ] ?: "" ) ) ) {
+			lines.append( "- **Returns** #trim( documentation[ "return" ] )#" )
+		}
+
+		var skipKeys = [ "hint", "return" ]
+		for ( var key in documentation.keyArray().sort( "textnocase" ) ) {
+			if ( skipKeys.findNoCase( key ) || parameterNames.findNoCase( key ) ) {
+				continue
+			}
+
+			var value = documentation[ key ]
+			var rendered = isSimpleValue( value ) ? trim( value ) : jsonSerialize( value )
+			lines.append( len( rendered ) ? "- **@#key#** #rendered#" : "- **@#key#**" )
+		}
+
+		if ( lines.len() ) {
+			lines.append( "" )
+		}
+
+		return lines
+	}
+
+	/**
+	 * A function's rendered signature, e.g. `string drive( numeric speed = 10 )`.
+	 *
+	 * @member One entry of DocBox's `functions` array
+	 */
+	private string function signatureOf( required struct member ) {
+		var parameters = ( isArray( arguments.member.parameters ?: "" ) ? arguments.member.parameters : [] )
+			.map( ( parameter ) => {
+				var rendered = "#parameter.type ?: "any"# #parameter.name ?: ""#"
+
+				if ( !isNull( parameter[ "default" ] ) && len( toDisplay( parameter[ "default" ] ) ) ) {
+					rendered &= " = " & literal( parameter[ "default" ], parameter.type ?: "any" )
+				}
+
+				return ( parameter.required ?: false ) ? "required " & rendered : rendered
+			} )
+
+		var returnType = arguments.member.returnType ?: "any"
+
+		return "#returnType# #arguments.member.name ?: ""#( #parameters.toList( ", " )# )"
+	}
+
+	/**
+	 * Which filter section a function belongs in - its `init` is the
+	 * constructor, everything else groups by its declared access.
+	 *
+	 * @member One entry of DocBox's `functions` array
+	 */
+	private string function kindOf( required struct member ) {
+		if ( ( arguments.member.name ?: "" ) == "init" ) {
+			return "constructor"
+		}
+
+		var access = lCase( trim( arguments.member.access ?: "public" ) )
+
+		return static.memberKinds.some( ( entry ) => entry.kind == access ) ? access : "public"
+	}
+
+	/**
+	 * Renders a page's frontmatter block.
+	 *
+	 * @title The page title
+	 * @summary A one-line summary, or "" to omit the key
+	 * @tags Frontmatter tags
+	 */
+	private string function frontMatter( required string title, required string summary, required array tags ) {
+		var lines = [ "---", "title: " & quoted( arguments.title ) ]
+
+		if ( len( trim( arguments.summary ) ) ) {
+			lines.append( "summary: " & quoted( arguments.summary ) )
+		}
+
+		if ( arguments.tags.len() ) {
+			lines.append( "tags: [" & arguments.tags.toList( ", " ) & "]" )
+		}
+
+		lines.append( "---" )
+		lines.append( "" )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * A Markdown ATX heading at the given level.
+	 *
+	 * @level Heading level, 1-6
+	 * @text The heading text
+	 */
+	private string function heading( required numeric level, required string text ) {
+		return repeatString( variables.hash, arguments.level ) & " " & arguments.text
+	}
+
+	/**
+	 * A table cell: single-lined, with pipes escaped so a hint containing
+	 * one can't break the table it sits in.
+	 *
+	 * @value The raw cell text
+	 */
+	private string function cell( required any value ) {
+		return toDisplay( arguments.value )
+			.reReplace( "[#variables.newline##char( 13 )#]+", " ", "all" )
+			.replace( "|", "\|", "all" )
+			.trim()
+	}
+
+	/**
+	 * A default-value cell - rendered as inline code, or an em dash when
+	 * there is no default at all.
+	 *
+	 * @value The raw default value
+	 */
+	private string function defaultCell( required any value ) {
+		var rendered = cell( arguments.value )
+
+		return len( rendered ) ? "`" & rendered & "`" : "&mdash;"
+	}
+
+	/**
+	 * Best-effort string rendering of any metadata value - structs and
+	 * arrays serialize to JSON rather than blowing up a page.
+	 *
+	 * @value The value to render
+	 */
+	private string function toDisplay( required any value ) {
+		if ( isNull( arguments.value ) ) {
+			return ""
+		}
+
+		return isSimpleValue( arguments.value ) ? toString( arguments.value ) : jsonSerialize( arguments.value )
+	}
+
+	/**
+	 * A default value as it would be written in source - quoted when the
+	 * parameter is declared `string`, so a signature reads
+	 * `string brand = "ford"` rather than the ambiguous `brand = ford`.
+	 *
+	 * @value The raw default value
+	 * @type The parameter's declared type
+	 */
+	private string function literal( required any value, required string type ) {
+		var rendered = toDisplay( arguments.value )
+
+		return lCase( arguments.type ) == "string" ? """" & rendered & """" : rendered
+	}
+
+	/**
+	 * The first sentence of a docblock hint, for frontmatter `summary`.
+	 *
+	 * @hint The full hint text
+	 */
+	private string function firstSentence( required string hint ) {
+		var flattened = trim( arguments.hint.reReplace( "\s+", " ", "all" ) )
+
+		if ( !len( flattened ) ) {
+			return ""
+		}
+
+		var terminator = flattened.reFind( "\. " )
+
+		return terminator > 0 ? flattened.left( terminator ) : flattened
+	}
+
+	/**
+	 * A double-quoted YAML scalar with any inner quotes escaped.
+	 *
+	 * @value The raw value
+	 */
+	private string function quoted( required string value ) {
+		return """" & arguments.value.replace( """", "\""", "all" ) & """"
+	}
+
+	/**
+	 * Writes one page, creating its parent directory tree first.
+	 *
+	 * @pageFile Absolute path of the page to write
+	 * @content The rendered Markdown
+	 */
+	private void function writePage( required string pageFile, required string content ) {
+		var parent = arguments.pageFile.reReplace( "/[^/]+$", "" )
+
+		if ( !directoryExists( parent ) ) {
+			directoryCreate( parent, true, true )
+		}
+
+		fileWrite( arguments.pageFile, arguments.content )
+	}
+
+}
