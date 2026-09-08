@@ -1,7 +1,8 @@
 /**
  * Renders a scanned ColdBox application as bx-sites Markdown pages: an
  * app overview, a routes table covering the app router plus every module
- * router, and a page per event handler.
+ * router, a page per event handler, and a page per model alongside the
+ * WireBox mappings that wire them together.
  *
  * The ColdBox-side counterpart of the Gradle/Maven plugins'
  * `bxSitesControllerScanDoc`, which does the same job for Spring MVC -
@@ -25,7 +26,7 @@ class {
 	 * named in `include` is skipped entirely.
 	 */
 	static {
-		sections = [ "routes", "handlers" ]
+		sections = [ "routes", "handlers", "models" ]
 
 		/**
 		 * ColdBox's own handler lifecycle methods - implicit hooks the
@@ -61,8 +62,9 @@ class {
 		required string contentDir,
 		string pagePathPrefix = "api/coldbox",
 		array tags = [ "api", "coldbox" ],
-		array include = [ "routes", "handlers" ],
-		struct classDocs = {}
+		array include = [ "routes", "handlers", "models" ],
+		struct classDocs = {},
+		array mappings = []
 	) {
 		var pagesRoot = arguments.contentDir & "/" & arguments.pagePathPrefix.reReplace( "^/+|/+$", "", "all" )
 		var pageFiles = []
@@ -87,6 +89,16 @@ class {
 
 			if ( handlerResult.pageFiles.len() ) {
 				sectionLinks.append( { "title" : "Handlers", "link" : "handlers/index.md" } )
+			}
+		}
+
+		if ( arguments.include.findNoCase( "models" ) ) {
+			var modelResult = writeModelPages( arguments.app, arguments.mappings, pagesRoot, arguments.tags, arguments.classDocs )
+			pageFiles.append( modelResult.pageFiles, true )
+			warnings.append( modelResult.warnings, true )
+
+			if ( modelResult.pageFiles.len() ) {
+				sectionLinks.append( { "title" : "Models", "link" : "models/index.md" } )
 			}
 		}
 
@@ -131,7 +143,7 @@ class {
 		var undocumented = 0
 
 		for ( var handler in handlers ) {
-			var key = handlerKey( handler.module, handler.name )
+			var key = classKey( "handler", handler.module, handler.name )
 			var doc = arguments.classDocs[ key ] ?: {}
 
 			if ( doc.isEmpty() ) {
@@ -248,6 +260,346 @@ class {
 	}
 
 	/**
+	 * Writes one page per model, plus the index that lists them and the
+	 * WireBox mappings that wire them together.
+	 *
+	 * @app The scanned application
+	 * @mappings Every WireBox mapping parsed from the app and its modules
+	 * @pagesRoot Absolute path of this generator's page root
+	 * @tags Frontmatter tags
+	 * @classDocs DocBox class metadata, keyed by `classKey()`
+	 *
+	 * @return `{ pageFiles, warnings }`
+	 */
+	private struct function writeModelPages(
+		required struct app,
+		required array mappings,
+		required string pagesRoot,
+		required array tags,
+		required struct classDocs
+	) {
+		var models = arguments.app.models.map( ( model ) => {
+			return { "name" : model.name, "file" : model.file, "module" : "" };
+		} )
+
+		for ( var module in arguments.app.modules ) {
+			for ( var model in module.models ) {
+				models.append( { "name" : model.name, "file" : model.file, "module" : module.name } )
+			}
+		}
+
+		if ( !models.len() && !arguments.mappings.len() ) {
+			return { "pageFiles" : [], "warnings" : [] }
+		}
+
+		var pageFiles = []
+		var warnings = []
+		var undocumented = 0
+
+		for ( var model in models ) {
+			var doc = arguments.classDocs[ classKey( "model", model.module, model.name ) ] ?: {}
+
+			if ( doc.isEmpty() ) {
+				undocumented++
+			}
+
+			var pageFile = arguments.pagesRoot & "/models/" & handlerPagePath( model.module, model.name )
+			writePage( pageFile, renderModelPage( model, doc, arguments.mappings, arguments.tags ) )
+			pageFiles.append( pageFile )
+		}
+
+		var indexFile = arguments.pagesRoot & "/models/index.md"
+		writePage( indexFile, renderModelsIndexPage( models, arguments.classDocs, arguments.mappings, arguments.tags ) )
+		pageFiles.append( indexFile )
+
+		if ( models.len() && undocumented == models.len() ) {
+			warnings.append(
+				"Model pages list no members - model metadata comes from DocBox, so install the bx-docbox module to document them"
+			)
+		} else if ( undocumented ) {
+			warnings.append( "#undocumented# model(s) had no readable metadata and list no members" )
+		}
+
+		return { "pageFiles" : pageFiles, "warnings" : warnings }
+	}
+
+	/**
+	 * The models index: every model with its scope and dependency count,
+	 * then the binder's own declared mappings.
+	 *
+	 * @models Every model, app and module alike
+	 * @classDocs DocBox class metadata keyed by `classKey()`
+	 * @mappings Every parsed WireBox mapping
+	 * @tags Frontmatter tags
+	 */
+	private string function renderModelsIndexPage(
+		required array models,
+		required struct classDocs,
+		required array mappings,
+		required array tags
+	) {
+		var lines = [
+			frontMatter( "Models", "The application's model layer, and the WireBox mappings that wire it together.", arguments.tags ),
+			heading( 1, "Models" ),
+			""
+		]
+
+		if ( arguments.models.len() ) {
+			lines.append( "| Model | Module | Scope | Injects |" )
+			lines.append( "|---|---|---|---|" )
+
+			for ( var model in arguments.models ) {
+				var doc = arguments.classDocs[ classKey( "model", model.module, model.name ) ] ?: {}
+				var link = handlerPagePath( model.module, model.name )
+
+				lines.append(
+					"| [`#cell( model.name )#`](#link#) | #nameCell( model.module )# | #nameCell( scopeOf( model, doc, arguments.mappings ) )# | #injectionsOf( doc ).len()# |"
+				)
+			}
+
+			lines.append( "" )
+		}
+
+		lines.append( mappingsSection( arguments.mappings ), true )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * The binder's declared mappings, as their own section.
+	 *
+	 * @mappings Every parsed WireBox mapping
+	 */
+	private array function mappingsSection( required array mappings ) {
+		if ( !arguments.mappings.len() ) {
+			return []
+		}
+
+		var lines = [
+			heading( 2, "WireBox mappings" ),
+			"",
+			"Declared in the application's binder. A model with no mapping here is still injectable - WireBox maps the models directory by convention.",
+			"",
+			"| Alias | Maps to | Kind | Scope | Module |",
+			"|---|---|---|---|---|"
+		]
+
+		for ( var mapping in arguments.mappings ) {
+			lines.append(
+				"| `#cell( mapping.alias )#` | #nameCell( mapping.target )# | #cell( mapping.targetType )# | #nameCell( mapping.scope )# | #nameCell( mapping.module )# |"
+			)
+		}
+
+		lines.append( "" )
+
+		return lines
+	}
+
+	/**
+	 * One model page: what it is, how it's scoped, what it has injected
+	 * into it, and the methods it exposes.
+	 *
+	 * @model One scanned model
+	 * @doc Its DocBox class metadata, or an empty struct when there is none
+	 * @mappings Every parsed WireBox mapping
+	 * @tags Frontmatter tags
+	 */
+	private string function renderModelPage(
+		required struct model,
+		required struct doc,
+		required array mappings,
+		required array tags
+	) {
+		var hint = trim( arguments.doc.hint ?: "" )
+		var lines = [
+			frontMatter( arguments.model.name, firstSentence( hint ), arguments.tags ),
+			heading( 1, arguments.model.name ),
+			"",
+			modelIdentityLine( arguments.model, arguments.doc, arguments.mappings ),
+			""
+		]
+
+		if ( len( hint ) ) {
+			lines.append( hint )
+			lines.append( "" )
+		}
+
+		var injections = injectionsOf( arguments.doc )
+		if ( injections.len() ) {
+			lines.append( heading( 2, "Injected dependencies" ) )
+			lines.append( "" )
+			lines.append( "| Property | Injects | Type | Description |" )
+			lines.append( "|---|---|---|---|" )
+
+			for ( var injection in injections ) {
+				lines.append(
+					"| `#cell( injection.name )#` | #nameCell( injection.inject )# | `#cell( injection.type )#` | #cell( injection.hint )# |"
+				)
+			}
+
+			lines.append( "" )
+		}
+
+		var properties = plainPropertiesOf( arguments.doc )
+		if ( properties.len() ) {
+			lines.append( heading( 2, "Properties" ) )
+			lines.append( "" )
+			lines.append( "| Property | Type | Default | Description |" )
+			lines.append( "|---|---|---|---|" )
+
+			for ( var property in properties ) {
+				var defaultValue = toDisplay( property[ "default" ] ?: "" )
+				lines.append(
+					"| `#cell( property.name ?: "" )#` | `#cell( property.type ?: "any" )#` | #len( defaultValue ) ? "`" & cell( defaultValue ) & "`" : "&mdash;"# | #cell( property.hint ?: "" )# |"
+				)
+			}
+
+			lines.append( "" )
+		}
+
+		var methods = publicFunctions( arguments.doc )
+		if ( methods.len() ) {
+			lines.append( heading( 2, "Methods" ) )
+			lines.append( "" )
+
+			for ( var method in methods ) {
+				lines.append( renderAction( method, { "name" : arguments.model.name, "module" : arguments.model.module }, [] ), true )
+			}
+		}
+
+		if ( arguments.doc.isEmpty() ) {
+			lines.append( "No metadata was readable for this model, so its members aren't listed. Install the `bx-docbox` module and re-run to document them." )
+			lines.append( "" )
+		}
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * The `models.UserService` / module / scope line under a model's H1.
+	 *
+	 * @model One scanned model
+	 * @doc Its DocBox class metadata
+	 * @mappings Every parsed WireBox mapping
+	 */
+	private string function modelIdentityLine( required struct model, required struct doc, required array mappings ) {
+		var parts = [ "`models.#arguments.model.name#`" ]
+
+		if ( len( trim( arguments.model.module ) ) ) {
+			parts.append( "module `#arguments.model.module#`" )
+		}
+
+		var scope = scopeOf( arguments.model, arguments.doc, arguments.mappings )
+		if ( len( scope ) ) {
+			parts.append( "scope `#scope#`" )
+		}
+
+		if ( len( trim( arguments.doc[ "extends" ] ?: "" ) ) ) {
+			parts.append( "extends `#arguments.doc[ "extends" ]#`" )
+		}
+
+		return parts.toList( " &middot; " )
+	}
+
+	/**
+	 * A model's scope: what the class itself declares by annotation,
+	 * else what the binder puts it into.
+	 *
+	 * @model One scanned model
+	 * @doc Its DocBox class metadata
+	 * @mappings Every parsed WireBox mapping
+	 */
+	private string function scopeOf( required struct model, required struct doc, required array mappings ) {
+		var annotations = arguments.doc.annotations ?: {}
+
+		if ( isStruct( annotations ) ) {
+			for ( var scope in [ "singleton", "transient" ] ) {
+				if ( annotations.keyExists( scope ) ) {
+					return scope
+				}
+			}
+
+			if ( len( trim( annotations.scope ?: "" ) ) ) {
+				return lCase( trim( annotations.scope ) )
+			}
+		}
+
+		var simpleName = arguments.model.name.listLast( "." )
+
+		for ( var mapping in arguments.mappings ) {
+			if ( !len( mapping.scope ) ) {
+				continue
+			}
+
+			if ( compareNoCase( mapping.alias, simpleName ) == 0 || mapping.target.listLast( "." ) == simpleName ) {
+				return mapping.scope
+			}
+		}
+
+		return ""
+	}
+
+	/**
+	 * A model's injected dependencies: the declared properties carrying
+	 * an `inject` annotation, which is how WireBox wiring shows up on a
+	 * class.
+	 *
+	 * @doc A DocBox class metadata struct
+	 */
+	private array function injectionsOf( required struct doc ) {
+		return normalizedProperties( arguments.doc )
+			.filter( ( property ) => isStruct( property.annotations ?: "" ) && property.annotations.keyExists( "inject" ) )
+			.map( ( property ) => {
+				var injected = property.annotations.inject
+
+				return {
+					"name"   : property.name ?: "",
+					"inject" : isSimpleValue( injected ) && len( trim( injected ) ) ? trim( injected ) : ( property.name ?: "" ),
+					"type"   : property.type ?: "any",
+					"hint"   : property.hint ?: ""
+				};
+			} )
+	}
+
+	/**
+	 * A model's declared properties that aren't injections - its own
+	 * state rather than its wiring.
+	 *
+	 * @doc A DocBox class metadata struct
+	 */
+	private array function plainPropertiesOf( required struct doc ) {
+		return normalizedProperties( arguments.doc )
+			.filter( ( property ) => !isStruct( property.annotations ?: "" ) || !property.annotations.keyExists( "inject" ) )
+	}
+
+	/**
+	 * A class' declared properties, or an empty array when it has none -
+	 * these are present only because `DocBoxRunner` merges them back in
+	 * (DocBox's own JSON strategy drops them), so a class documented some
+	 * other way legitimately has none.
+	 *
+	 * @doc A DocBox class metadata struct
+	 */
+	private array function normalizedProperties( required struct doc ) {
+		var properties = arguments.doc.properties ?: []
+
+		return isArray( properties ) ? properties : []
+	}
+
+	/**
+	 * Best-effort string rendering of any metadata value.
+	 *
+	 * @value The value to render
+	 */
+	private string function toDisplay( required any value ) {
+		if ( isNull( arguments.value ) ) {
+			return ""
+		}
+
+		return isSimpleValue( arguments.value ) ? toString( arguments.value ) : jsonSerialize( arguments.value )
+	}
+
+	/**
 	 * The handlers index: every handler, what it belongs to, how many
 	 * actions it exposes, and how many routes reach it.
 	 *
@@ -271,7 +623,7 @@ class {
 		]
 
 		for ( var handler in arguments.handlers ) {
-			var doc = arguments.classDocs[ handlerKey( handler.module, handler.name ) ] ?: {}
+			var doc = arguments.classDocs[ classKey( "handler", handler.module, handler.name ) ] ?: {}
 			var actions = actionsOf( doc ).len()
 			var routeCount = routesForHandler( arguments.routes, handler ).len()
 			var link = handlerPagePath( handler.module, handler.name )
@@ -541,14 +893,16 @@ class {
 	}
 
 	/**
-	 * The key a handler's metadata is looked up under - its module and
-	 * name together, since two modules can each declare a `Main`.
+	 * The key a class' metadata is looked up under - its kind, module and
+	 * name together, since two modules can each declare a `Main`, and a
+	 * handler and a model can share a name too.
 	 *
+	 * @kind `handler` or `model`
 	 * @module The owning module, or "" for the app's own
-	 * @name The handler's dotted name
+	 * @name The class' dotted name
 	 */
-	string function handlerKey( required string module, required string name ) {
-		return lCase( arguments.module & ":" & arguments.name )
+	string function classKey( required string kind, required string module, required string name ) {
+		return lCase( arguments.kind & ":" & arguments.module & ":" & arguments.name )
 	}
 
 	/**

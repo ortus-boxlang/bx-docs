@@ -1,0 +1,174 @@
+/**
+ * Exercises ColdBoxWireBoxParser against real WireBox binder DSL - every
+ * initiator, destination and scope shape the framework documents, plus
+ * the runtime-built mappings it deliberately can't read.
+ */
+class extends="testbox.system.BaseSpec" {
+
+	function run() {
+		describe( "build.ColdBoxWireBoxParser", function() {
+
+			beforeEach( function() {
+				variables.parser = new "models.build.ColdBoxWireBoxParser@bxsites"();
+				variables.tempDirs = [];
+			} );
+
+			afterEach( function() {
+				for ( var dir in tempDirs ) {
+					if ( directoryExists( dir ) ) {
+						directoryDelete( dir, true );
+					}
+				}
+			} );
+
+			/**
+			 * Wraps binder statements in the class/configure() scaffolding
+			 * a real binder has.
+			 */
+			private array function parseBody( required string body, string module = "" ) {
+				return parser.parseSource(
+					source = "class {" & char( 10 ) & "function configure() {" & char( 10 ) & body & char( 10 ) & "}" & char( 10 ) & "}",
+					module = module
+				);
+			}
+
+			private struct function firstMapping( required string body ) {
+				var mappings = parseBody( body );
+				expect( mappings.len() ).toBeGTE( 1 );
+				return mappings[ 1 ];
+			}
+
+			it( "returns nothing for a binder file that doesn't exist", function() {
+				expect( parser.parse( "/no/such/WireBox.bx" ) ).toBeEmpty();
+			} );
+
+			it( "parses a map() to a class, with its scope", function() {
+				var mapping = firstMapping( 'map( "UserService" ).to( "models.UserService" ).asSingleton()' );
+
+				expect( mapping.alias ).toBe( "UserService" );
+				expect( mapping.kind ).toBe( "alias" );
+				expect( mapping.target ).toBe( "models.UserService" );
+				expect( mapping.targetType ).toBe( "class" );
+				expect( mapping.scope ).toBe( "singleton" );
+			} );
+
+			it( "parses a mapping split across several lines", function() {
+				var mapping = firstMapping( 'map( "longEspresso" )' & char( 10 ) & '    .to( "models.Espresso" )' & char( 10 ) & '    .asSingleton()' );
+
+				expect( mapping.alias ).toBe( "longEspresso" );
+				expect( mapping.target ).toBe( "models.Espresso" );
+			} );
+
+			it( "recognizes every destination, never letting to() shadow a longer one", function() {
+				var mappings = parseBody(
+					'map( "Lui" ).toDSL( "coldbox:setting:luis" )' & char( 10 ) &
+					'map( "Buffer" ).toJava( "java.lang.StringBuffer" )' & char( 10 ) &
+					'map( "news" ).toRSS( "https://example.com/rss" )' & char( 10 ) &
+					'map( "Now" ).toValue( "fixed" )'
+				);
+
+				expect( mappings[ 1 ].targetType ).toBe( "DSL" );
+				expect( mappings[ 1 ].target ).toBe( "coldbox:setting:luis" );
+				expect( mappings[ 2 ].targetType ).toBe( "Java class" );
+				expect( mappings[ 3 ].targetType ).toBe( "RSS feed" );
+				expect( mappings[ 4 ].targetType ).toBe( "value" );
+			} );
+
+			it( "reads an explicit scope written as a SCOPES constant", function() {
+				var mapping = firstMapping( 'map( "cart" ).to( "models.Cart" ).into( this.SCOPES.SESSION )' );
+
+				expect( mapping.scope ).toBe( "session" );
+			} );
+
+			it( "reads an explicit scope written as a plain string", function() {
+				var mapping = firstMapping( 'map( "cart" ).to( "models.Cart" ).into( "request" )' );
+
+				expect( mapping.scope ).toBe( "request" );
+			} );
+
+			it( "leaves the scope empty when the binder doesn't set one", function() {
+				expect( firstMapping( 'map( "cart" ).to( "models.Cart" )' ).scope ).toBe( "" );
+			} );
+
+			it( "registers a mapPath() under the class name, the alias a developer injects", function() {
+				var mapping = firstMapping( 'mapPath( "models.security.Auth" )' );
+
+				expect( mapping.alias ).toBe( "Auth" );
+				expect( mapping.kind ).toBe( "path" );
+				expect( mapping.target ).toBe( "models.security.Auth" );
+				expect( mapping.targetType ).toBe( "class" );
+			} );
+
+			it( "reports a mapDirectory() as the directory-wide registration it is", function() {
+				var mapping = firstMapping( 'mapDirectory( "models.services" )' );
+
+				expect( mapping.alias ).toBe( "models.services" );
+				expect( mapping.kind ).toBe( "directory" );
+				expect( mapping.targetType ).toBe( "directory" );
+			} );
+
+			it( "parses named arguments", function() {
+				var mapping = firstMapping( 'mapDirectory( packagePath = "models.services", process = true )' );
+
+				expect( mapping.alias ).toBe( "models.services" );
+			} );
+
+			it( "reads mappings registered through an explicit binder reference", function() {
+				var mapping = firstMapping( 'binder.map( "UserService" ).to( "models.UserService" )' );
+
+				expect( mapping.alias ).toBe( "UserService" );
+				expect( mapping.target ).toBe( "models.UserService" );
+			} );
+
+			it( "attributes a module's mappings to that module", function() {
+				var mappings = parseBody( 'map( "OrderService" ).to( "models.OrderService" )', "api" );
+
+				expect( mappings[ 1 ].module ).toBe( "api" );
+			} );
+
+			it( "ignores commented-out mappings", function() {
+				var mappings = parseBody(
+					'// map( "Nope" ).to( "models.Nope" )' & char( 10 ) &
+					'map( "Real" ).to( "models.Real" )'
+				);
+
+				expect( mappings.len() ).toBe( 1 );
+				expect( mappings[ 1 ].alias ).toBe( "Real" );
+			} );
+
+			it( "skips a mapping whose alias is built at runtime rather than guessing at it", function() {
+				var mappings = parseBody(
+					'var dynamic = getProperty( "alias" )' & char( 10 ) &
+					'map( dynamic ).to( "models.Nope" )' & char( 10 ) &
+					'map( "Real" ).to( "models.Real" )'
+				);
+
+				expect( mappings.len() ).toBe( 1 );
+				expect( mappings[ 1 ].alias ).toBe( "Real" );
+			} );
+
+			it( "ignores non-mapping binder calls", function() {
+				var mappings = parseBody(
+					'scanLocations( "models" )' & char( 10 ) &
+					'mapDSL( "cool", "models.CoolFactory" )' & char( 10 ) &
+					'map( "Real" ).to( "models.Real" )'
+				);
+
+				expect( mappings.len() ).toBe( 1 );
+			} );
+
+			it( "parses a binder file from disk", function() {
+				var dir = createTempDirectory( prefix = "bxsites-wireboxparser-" );
+				tempDirs.append( dir );
+				fileWrite( dir & "/WireBox.bx", "class {" & char( 10 ) & "function configure() {" & char( 10 ) & 'map( "UserService" ).to( "models.UserService" )' & char( 10 ) & "}" & char( 10 ) & "}" );
+
+				var mappings = parser.parse( dir & "/WireBox.bx" );
+
+				expect( mappings.len() ).toBe( 1 );
+				expect( mappings[ 1 ].alias ).toBe( "UserService" );
+			} );
+
+		} );
+	}
+
+}

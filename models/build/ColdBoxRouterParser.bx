@@ -4,8 +4,8 @@
  *
  * ## How it reads a router
  *
- * Comments are stripped, then the source is split into statements at
- * parenthesis depth zero, and each statement that starts with a routing
+ * `BoxLangSourceReader` strips comments and splits the source into
+ * statements; this class adds the routing meaning. Each statement that starts with a routing
  * initiator (`route`, `get`, `post`, ..., `resources`, `apiResources`,
  * `group`) becomes one or more route rows. Chained modifiers and
  * terminators on the same statement (`.as()`, `.withVerbs()`, `.to()`,
@@ -27,6 +27,13 @@
  * does.
  */
 class {
+
+	/**
+	 * The shared source-scanning primitives - comments, statements,
+	 * balanced blocks, literal arguments. This class only adds ColdBox's
+	 * routing meaning on top of them.
+	 */
+	variables.reader = new "models.build.BoxLangSourceReader@bxsites"()
 
 	/**
 	 * The HTTP-verb initiators, and the verb each one restricts its route
@@ -114,7 +121,7 @@ class {
 	array function parseSource( required string source, string module = "", string prefix = "" ) {
 		var routes = []
 
-		for ( var statement in splitStatements( stripComments( arguments.source ) ) ) {
+		for ( var statement in variables.reader.statements( variables.reader.stripComments( arguments.source ) ) ) {
 			routes.append( parseStatement( statement, arguments.module, arguments.prefix ), true )
 		}
 
@@ -132,14 +139,14 @@ class {
 	private array function parseStatement( required string statement, required string module, required string prefix ) {
 		// A module's ModuleConfig registers routes through an explicit
 		// `router.` reference; the app router calls the same methods bare.
-		var trimmed = trim( arguments.statement ).reReplace( "^router\s*\.\s*", "" )
-		var initiator = trimmed.reReplace( "^([a-zA-Z]+)\s*\(.*$", "\1" )
+		var trimmed = variables.reader.withoutReceiver( arguments.statement )
+		var initiator = variables.reader.initiatorOf( arguments.statement )
 
-		if ( initiator == trimmed || !len( initiator ) ) {
+		if ( !len( initiator ) ) {
 			return []
 		}
 
-		var call = callArguments( trimmed )
+		var call = variables.reader.callArguments( trimmed )
 		if ( !call.closed ) {
 			return []
 		}
@@ -179,8 +186,8 @@ class {
 		required string prefix,
 		required string verb
 	) {
-		var parsed = parseArguments( arguments.args )
-		var pattern = literalArgument( parsed, "pattern", 1 )
+		var parsed = variables.reader.parseArguments( arguments.args )
+		var pattern = variables.reader.literalArgument( parsed, "pattern", 1 )
 
 		// No literal pattern means it was built at runtime - skip rather
 		// than publish a route whose URL we'd be guessing at.
@@ -188,7 +195,7 @@ class {
 			return []
 		}
 
-		var target = literalArgument( parsed, "target", 2 )
+		var target = variables.reader.literalArgument( parsed, "target", 2 )
 		var targetType = len( target ) ? "event" : ""
 
 		// `route( "/echo", ( event, rc, prc ) => {...} )` - an inline
@@ -206,24 +213,24 @@ class {
 			target = len( terminator.value ) ? terminator.value : target
 		}
 
-		if ( !len( targetType ) && findCall( arguments.statement, "end" ) ) {
+		if ( !len( targetType ) && variables.reader.hasCall( arguments.statement, "end" ) ) {
 			targetType = "convention"
 		}
 
 		var verbs = arguments.verb
-		var withVerbs = chainedValue( arguments.statement, "withVerbs" )
+		var withVerbs = variables.reader.chainedValue( arguments.statement, "withVerbs" )
 		if ( len( withVerbs ) ) {
 			verbs = withVerbs.listToArray( "," ).map( ( entry ) => uCase( trim( entry ) ) ).toList( "/" )
 		}
 
-		var name = literalArgument( parsed, "name", 3 )
-		var chainedName = chainedValue( arguments.statement, "as" )
+		var name = variables.reader.literalArgument( parsed, "name", 3 )
+		var chainedName = variables.reader.chainedValue( arguments.statement, "as" )
 		if ( len( chainedName ) ) {
 			name = chainedName
 		}
 
 		var routeModule = arguments.module
-		var chainedModule = chainedValue( arguments.statement, "withModule" )
+		var chainedModule = variables.reader.chainedValue( arguments.statement, "withModule" )
 		if ( len( chainedModule ) ) {
 			routeModule = chainedModule
 		}
@@ -248,7 +255,7 @@ class {
 	 * @prefix The URL prefix context
 	 */
 	private array function parseGroup( required string args, required string module, required string prefix ) {
-		var blocks = topLevelBlocks( arguments.args )
+		var blocks = variables.reader.topLevelBlocks( arguments.args )
 
 		if ( !blocks.len() ) {
 			return []
@@ -258,10 +265,10 @@ class {
 		// options struct the first - unless there's only one block, which
 		// is then the body.
 		var body = blocks[ blocks.len() ]
-		var options = blocks.len() > 1 ? parseArguments( blocks[ 1 ] ) : {}
+		var options = blocks.len() > 1 ? variables.reader.parseArguments( blocks[ 1 ] ) : { "named" : {}, "positional" : [] }
 
-		var groupPattern = literalArgument( options, "pattern", 0 )
-		var groupModule = literalArgument( options, "module", 0 )
+		var groupPattern = variables.reader.literalArgument( options, "pattern", 0 )
+		var groupModule = variables.reader.literalArgument( options, "module", 0 )
 
 		return parseSource(
 			source = body,
@@ -285,27 +292,27 @@ class {
 		required string prefix,
 		required boolean apiOnly
 	) {
-		var parsed = parseArguments( arguments.args )
-		var resource = literalArgument( parsed, "resource", 1 )
+		var parsed = variables.reader.parseArguments( arguments.args )
+		var resource = variables.reader.literalArgument( parsed, "resource", 1 )
 
 		if ( !len( resource ) ) {
 			return []
 		}
 
-		var handler = literalArgument( parsed, "handler", 0 )
+		var handler = variables.reader.literalArgument( parsed, "handler", 0 )
 		handler = len( handler ) ? handler : resource
 
-		var pattern = literalArgument( parsed, "pattern", 0 )
+		var pattern = variables.reader.literalArgument( parsed, "pattern", 0 )
 		pattern = len( pattern ) ? pattern : "/" & resource
 
-		var parameterName = literalArgument( parsed, "parameterName", 0 )
+		var parameterName = variables.reader.literalArgument( parsed, "parameterName", 0 )
 		parameterName = len( parameterName ) ? parameterName : "id"
 
-		var resourceModule = literalArgument( parsed, "module", 0 )
+		var resourceModule = variables.reader.literalArgument( parsed, "module", 0 )
 		resourceModule = len( resourceModule ) ? resourceModule : arguments.module
 
-		var only = listArgument( parsed, "only" )
-		var except = listArgument( parsed, "except" )
+		var only = variables.reader.listArgument( parsed, "only" )
+		var except = variables.reader.listArgument( parsed, "except" )
 		var routes = []
 
 		for ( var entry in static.resourceActions ) {
@@ -374,157 +381,12 @@ class {
 	 */
 	private struct function findTerminator( required string statement ) {
 		for ( var terminator in static.terminators ) {
-			if ( findCall( arguments.statement, terminator.call ) ) {
-				return { "type" : terminator.type, "value" : chainedValue( arguments.statement, terminator.call ) }
+			if ( variables.reader.hasCall( arguments.statement, terminator.call ) ) {
+				return { "type" : terminator.type, "value" : variables.reader.chainedValue( arguments.statement, terminator.call ) }
 			}
 		}
 
 		return { "type" : "", "value" : "" }
-	}
-
-	/**
-	 * Whether a statement chains a given call, e.g. `.end()`.
-	 *
-	 * @statement The statement to search
-	 * @call The chained method name
-	 */
-	private boolean function findCall( required string statement, required string call ) {
-		return reFindNoCase( "\.\s*#arguments.call#\s*\(", arguments.statement ) > 0
-	}
-
-	/**
-	 * The first string-literal argument of a chained call, e.g. the
-	 * `"users.index"` in `.to( "users.index" )`. Returns "" when the call
-	 * isn't there, or when its argument isn't a literal.
-	 *
-	 * @statement The statement to search
-	 * @call The chained method name
-	 */
-	private string function chainedValue( required string statement, required string call ) {
-		var position = reFindNoCase( "\.\s*#arguments.call#\s*\(", arguments.statement )
-
-		if ( !position ) {
-			return ""
-		}
-
-		var open = find( "(", arguments.statement, position )
-		var block = balancedBlock( arguments.statement, open, "(", ")" )
-
-		return literalArgument( parseArguments( block.content ), "", 1 )
-	}
-
-	/**
-	 * The argument text of the initiator call at the start of a statement.
-	 *
-	 * @statement The statement
-	 *
-	 * @return `{ content, closed }` - `closed` is false when the call's parentheses never balance
-	 */
-	private struct function callArguments( required string statement ) {
-		var open = find( "(", arguments.statement )
-
-		if ( !open ) {
-			return { "content" : "", "closed" : false }
-		}
-
-		return balancedBlock( arguments.statement, open, "(", ")" )
-	}
-
-	/**
-	 * Splits an argument list into positional and named arguments, keyed
-	 * by name for the named ones and by ordinal for the positional.
-	 *
-	 * @args The raw argument text
-	 *
-	 * @return `{ named : { name -> raw }, positional : [ raw, ... ] }`
-	 */
-	private struct function parseArguments( required string args ) {
-		var parsed = { "named" : {}, "positional" : [] }
-
-		for ( var part in splitTopLevel( arguments.args, "," ) ) {
-			var argument = trim( part )
-
-			if ( !len( argument ) ) {
-				continue
-			}
-
-			var match = reFind( "^([a-zA-Z_][a-zA-Z0-9_]*)[ #char( 9 )#]*[:=]([^=]|$)", argument, 1, true )
-
-			if ( match.pos[ 1 ] > 0 ) {
-				var name = argument.mid( match.pos[ 2 ], match.len[ 2 ] )
-				parsed.named[ name ] = trim( argument.mid( match.pos[ 2 ] + match.len[ 2 ], argument.len() ) .reReplace( "^[ #char( 9 )#]*[:=]", "" ) )
-			} else {
-				parsed.positional.append( argument )
-			}
-		}
-
-		return parsed
-	}
-
-	/**
-	 * One argument's string-literal value: the named one if present, else
-	 * the positional at `position` (1-based; 0 means "named only").
-	 * Anything that isn't a quoted literal reads as "" - see this class'
-	 * own docblock on why a non-literal is skipped rather than guessed.
-	 *
-	 * @parsed A `parseArguments()` result
-	 * @name The argument's name
-	 * @position Its positional index, or 0 when it has none
-	 */
-	private string function literalArgument( required struct parsed, required string name, required numeric position ) {
-		if ( len( arguments.name ) && arguments.parsed.named.keyExists( arguments.name ) ) {
-			return unquote( arguments.parsed.named[ arguments.name ] )
-		}
-
-		if ( arguments.position > 0 && arguments.parsed.positional.len() >= arguments.position ) {
-			return unquote( arguments.parsed.positional[ arguments.position ] )
-		}
-
-		return ""
-	}
-
-	/**
-	 * A list-or-array argument (`only`/`except`) as an array of strings.
-	 *
-	 * @parsed A `parseArguments()` result
-	 * @name The argument's name
-	 */
-	private array function listArgument( required struct parsed, required string name ) {
-		if ( !arguments.parsed.named.keyExists( arguments.name ) ) {
-			return []
-		}
-
-		var raw = trim( arguments.parsed.named[ arguments.name ] )
-
-		if ( raw.startsWith( "[" ) ) {
-			return splitTopLevel( raw.reReplace( "^\[", "" ).reReplace( "\]$", "" ), "," )
-				.map( ( entry ) => unquote( trim( entry ) ) )
-				.filter( ( entry ) => len( entry ) )
-		}
-
-		return unquote( raw ).listToArray( "," ).map( ( entry ) => trim( entry ) )
-	}
-
-	/**
-	 * Strips the surrounding quotes from a string literal, returning ""
-	 * for anything that isn't one.
-	 *
-	 * @value The raw argument text
-	 */
-	private string function unquote( required string value ) {
-		var trimmed = trim( arguments.value )
-
-		if ( trimmed.len() < 2 ) {
-			return ""
-		}
-
-		var quote = trimmed.left( 1 )
-
-		if ( ( quote != """" && quote != "'" ) || trimmed.right( 1 ) != quote ) {
-			return ""
-		}
-
-		return trimmed.mid( 2, trimmed.len() - 2 )
 	}
 
 	/**
@@ -569,283 +431,6 @@ class {
 		}
 
 		return left & ( right.startsWith( "/" ) ? right : "/" & right )
-	}
-
-	/**
-	 * Removes line and block comments, leaving string literals intact -
-	 * a `//` inside a `"https://..."` is not a comment.
-	 *
-	 * @source The router source
-	 */
-	private string function stripComments( required string source ) {
-		var output = createObject( "java", "java.lang.StringBuilder" ).init()
-		var length = arguments.source.len()
-		var index = 1
-		var quote = ""
-
-		while ( index <= length ) {
-			var current = arguments.source.mid( index, 1 )
-			var next = index < length ? arguments.source.mid( index + 1, 1 ) : ""
-
-			if ( len( quote ) ) {
-				output.append( current )
-				if ( current == quote ) {
-					quote = ""
-				}
-				index++
-				continue
-			}
-
-			if ( current == """" || current == "'" ) {
-				quote = current
-				output.append( current )
-				index++
-				continue
-			}
-
-			if ( current == "/" && next == "/" ) {
-				while ( index <= length && arguments.source.mid( index, 1 ) != char( 10 ) ) {
-					index++
-				}
-				continue
-			}
-
-			if ( current == "/" && next == "*" ) {
-				index += 2
-				while ( index < length && !( arguments.source.mid( index, 1 ) == "*" && arguments.source.mid( index + 1, 1 ) == "/" ) ) {
-					index++
-				}
-				index += 2
-				continue
-			}
-
-			output.append( current )
-			index++
-		}
-
-		return output.toString()
-	}
-
-	/**
-	 * Splits comment-free source into statements.
-	 *
-	 * Boundaries are `;`, `{` and `}` at parenthesis depth zero, plus
-	 * newlines - with the one rule that makes fluent routers parse: a
-	 * newline only ends a statement when the next non-blank line doesn't
-	 * continue the chain with a leading `.`. Braces inside parentheses
-	 * (a `group()` body, an inline closure) never split, so such a call
-	 * stays the single statement it is.
-	 *
-	 * @source Comment-free router source
-	 */
-	private array function splitStatements( required string source ) {
-		var statements = []
-		var buffer = ""
-		var depth = 0
-		var quote = ""
-		var length = arguments.source.len()
-
-		for ( var index = 1; index <= length; index++ ) {
-			var current = arguments.source.mid( index, 1 )
-
-			if ( len( quote ) ) {
-				buffer &= current
-				if ( current == quote ) {
-					quote = ""
-				}
-				continue
-			}
-
-			if ( current == """" || current == "'" ) {
-				quote = current
-				buffer &= current
-				continue
-			}
-
-			if ( current == "(" ) {
-				depth++
-			} else if ( current == ")" ) {
-				depth = max( depth - 1, 0 )
-			}
-
-			if ( depth == 0 && ( current == ";" || current == "{" || current == "}" ) ) {
-				statements.append( buffer )
-				buffer = ""
-				continue
-			}
-
-			if ( depth == 0 && current == char( 10 ) ) {
-				if ( continuesChain( arguments.source, index ) ) {
-					buffer &= current
-					continue
-				}
-
-				statements.append( buffer )
-				buffer = ""
-				continue
-			}
-
-			buffer &= current
-		}
-
-		statements.append( buffer )
-
-		return statements.map( ( statement ) => trim( statement ) ).filter( ( statement ) => len( statement ) )
-	}
-
-	/**
-	 * Whether the first non-whitespace character after a newline chains
-	 * onto the statement before it.
-	 *
-	 * @source The source being split
-	 * @index The newline's index
-	 */
-	private boolean function continuesChain( required string source, required numeric index ) {
-		var length = arguments.source.len()
-
-		for ( var lookahead = arguments.index + 1; lookahead <= length; lookahead++ ) {
-			var candidate = arguments.source.mid( lookahead, 1 )
-
-			if ( candidate == " " || candidate == char( 9 ) || candidate == char( 13 ) || candidate == char( 10 ) ) {
-				continue
-			}
-
-			return candidate == "."
-		}
-
-		return false
-	}
-
-	/**
-	 * Splits text on a delimiter that appears at top level only - commas
-	 * inside nested parens, braces, brackets or strings are left alone.
-	 *
-	 * @text The text to split
-	 * @delimiter The single-character delimiter
-	 */
-	private array function splitTopLevel( required string text, required string delimiter ) {
-		var parts = []
-		var buffer = ""
-		var depth = 0
-		var quote = ""
-		var length = arguments.text.len()
-
-		for ( var index = 1; index <= length; index++ ) {
-			var current = arguments.text.mid( index, 1 )
-
-			if ( len( quote ) ) {
-				buffer &= current
-				if ( current == quote ) {
-					quote = ""
-				}
-				continue
-			}
-
-			if ( current == """" || current == "'" ) {
-				quote = current
-				buffer &= current
-				continue
-			}
-
-			if ( current == "(" || current == "{" || current == "[" ) {
-				depth++
-			} else if ( current == ")" || current == "}" || current == "]" ) {
-				depth = max( depth - 1, 0 )
-			}
-
-			if ( depth == 0 && current == arguments.delimiter ) {
-				parts.append( buffer )
-				buffer = ""
-				continue
-			}
-
-			buffer &= current
-		}
-
-		parts.append( buffer )
-
-		return parts
-	}
-
-	/**
-	 * Every top-level `{ ... }` block in a piece of text, contents only.
-	 *
-	 * @text The text to scan
-	 */
-	private array function topLevelBlocks( required string text ) {
-		var blocks = []
-		var index = 1
-		var length = arguments.text.len()
-
-		while ( index <= length ) {
-			if ( arguments.text.mid( index, 1 ) == "{" ) {
-				var block = balancedBlock( arguments.text, index, "{", "}" )
-				blocks.append( block.content )
-				index = block.endIndex + 1
-				continue
-			}
-
-			index++
-		}
-
-		return blocks
-	}
-
-	/**
-	 * The contents of the balanced block opening at `openIndex`.
-	 *
-	 * @text The text to scan
-	 * @openIndex Index of the opening character
-	 * @openChar The opening character
-	 * @closeChar The closing character
-	 *
-	 * @return `{ content, endIndex, closed }`
-	 */
-	private struct function balancedBlock(
-		required string text,
-		required numeric openIndex,
-		required string openChar,
-		required string closeChar
-	) {
-		var depth = 0
-		var quote = ""
-		var length = arguments.text.len()
-
-		for ( var index = arguments.openIndex; index <= length; index++ ) {
-			var current = arguments.text.mid( index, 1 )
-
-			if ( len( quote ) ) {
-				if ( current == quote ) {
-					quote = ""
-				}
-				continue
-			}
-
-			if ( current == """" || current == "'" ) {
-				quote = current
-				continue
-			}
-
-			if ( current == arguments.openChar ) {
-				depth++
-			} else if ( current == arguments.closeChar ) {
-				depth--
-
-				if ( depth == 0 ) {
-					return {
-						"content"  : arguments.text.mid( arguments.openIndex + 1, index - arguments.openIndex - 1 ),
-						"endIndex" : index,
-						"closed"   : true
-					}
-				}
-			}
-		}
-
-		return {
-			"content"  : arguments.text.mid( arguments.openIndex + 1, length - arguments.openIndex ),
-			"endIndex" : length,
-			"closed"   : false
-		}
 	}
 
 }

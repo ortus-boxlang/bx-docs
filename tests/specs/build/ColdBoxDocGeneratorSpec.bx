@@ -80,7 +80,7 @@ class extends="testbox.system.BaseSpec" {
 
 			private struct function handlerDocs() {
 				return {
-					":main" : {
+					"handler::main" : {
 						"name"      : "Main",
 						"package"   : "handlers",
 						"type"      : "Class",
@@ -124,7 +124,7 @@ class extends="testbox.system.BaseSpec" {
 							}
 						]
 					},
-					"api:orders" : {
+					"handler:api:orders" : {
 						"name"      : "Orders",
 						"package"   : "cbmodules.api.handlers",
 						"type"      : "Class",
@@ -140,7 +140,10 @@ class extends="testbox.system.BaseSpec" {
 			it( "writes a routes page and an app index", function() {
 				var contentDir = newTempDir();
 
-				var result = generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = handlerDocs() );
+				var docs = handlerDocs();
+				docs.append( modelDocs() );
+
+				var result = generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = docs );
 
 				expect( result.warnings ).toBeEmpty();
 				expect( result.pageFiles.len() ).toBeGTE( 2 );
@@ -253,11 +256,14 @@ class extends="testbox.system.BaseSpec" {
 			it( "writes a page per handler, app and module alike, plus a handlers index", function() {
 				var contentDir = newTempDir();
 
+				var docs = handlerDocs();
+				docs.append( modelDocs() );
+
 				var result = generator.generate(
 					app        = fixtureApp(),
 					routes     = fixtureRoutes(),
 					contentDir = contentDir,
-					classDocs  = handlerDocs()
+					classDocs  = docs
 				);
 
 				expect( result.warnings ).toBeEmpty();
@@ -357,7 +363,7 @@ class extends="testbox.system.BaseSpec" {
 			it( "still writes handler pages without metadata, saying how to get it", function() {
 				var contentDir = newTempDir();
 
-				var result = generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+				var result = generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, include = [ "handlers" ] );
 
 				expect( result.warnings.len() ).toBe( 1 );
 				expect( result.warnings[ 1 ] ).toInclude( "bx-docbox" );
@@ -370,9 +376,9 @@ class extends="testbox.system.BaseSpec" {
 			it( "warns about only the handlers whose metadata is missing", function() {
 				var contentDir = newTempDir();
 				var docs = handlerDocs();
-				docs.delete( "api:orders" );
+				docs.delete( "handler:api:orders" );
 
-				var result = generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = docs );
+				var result = generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = docs, include = [ "handlers" ] );
 
 				expect( result.warnings.len() ).toBe( 1 );
 				expect( result.warnings[ 1 ] ).toInclude( "1 handler(s)" );
@@ -391,6 +397,194 @@ class extends="testbox.system.BaseSpec" {
 
 				expect( directoryExists( contentDir & "/api/coldbox/handlers" ) ).toBeFalse();
 				expect( fileExists( contentDir & "/api/coldbox/routes.md" ) ).toBeTrue();
+			} );
+
+			private struct function modelDocs() {
+				return {
+					"model::userservice" : {
+						"name"        : "UserService",
+						"package"     : "models",
+						"type"        : "Class",
+						"extends"     : "",
+						"hint"        : "Loads and stores users.",
+						"annotations" : { "singleton" : "" },
+						"properties"  : [
+							{
+								"name"        : "datasource",
+								"type"        : "string",
+								"default"     : "",
+								"hint"        : "The configured user datasource",
+								"annotations" : { "name" : "datasource", "inject" : "coldbox:setting:userDatasource" }
+							},
+							{
+								"name"        : "pageSize",
+								"type"        : "numeric",
+								"default"     : "25",
+								"hint"        : "How many users to page by",
+								"annotations" : { "name" : "pageSize" }
+							}
+						],
+						"functions"   : [
+							{
+								"name"          : "findById",
+								"access"        : "public",
+								"returnType"    : "Any",
+								"hint"          : "Find a user",
+								"documentation" : { "return" : "the user, or null" },
+								"parameters"    : [
+									{ "name" : "id", "type" : "numeric", "required" : true, "documentation" : { "hint" : "The user id" } }
+								]
+							}
+						]
+					}
+				};
+			}
+
+			private array function fixtureMappings() {
+				return [
+					{ "alias" : "UserService", "kind" : "alias", "target" : "models.UserService", "targetType" : "class", "scope" : "singleton", "module" : "" },
+					{ "alias" : "models.services", "kind" : "directory", "target" : "models.services", "targetType" : "directory", "scope" : "", "module" : "" },
+					{ "alias" : "OrderService", "kind" : "alias", "target" : "models.OrderService", "targetType" : "class", "scope" : "session", "module" : "api" }
+				];
+			}
+
+			it( "writes a page per model plus a models index", function() {
+				var contentDir = newTempDir();
+
+				generator.generate(
+					app        = fixtureApp(),
+					routes     = fixtureRoutes(),
+					contentDir = contentDir,
+					classDocs  = modelDocs(),
+					mappings   = fixtureMappings()
+				);
+
+				expect( fileExists( contentDir & "/api/coldbox/models/UserService.md" ) ).toBeTrue();
+				expect( fileExists( contentDir & "/api/coldbox/models/index.md" ) ).toBeTrue();
+			} );
+
+			it( "separates a model's injected dependencies from its own properties", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = modelDocs(), mappings = fixtureMappings() );
+
+				var page = fileRead( contentDir & "/api/coldbox/models/UserService.md" );
+
+				expect( page ).toInclude( "## Injected dependencies" );
+				expect( page ).toInclude( "| `datasource` | `coldbox:setting:userDatasource` | `string` | The configured user datasource |" );
+				expect( page ).toInclude( "## Properties" );
+				expect( page ).toInclude( "| `pageSize` | `numeric` | `25` | How many users to page by |" );
+			} );
+
+			it( "falls back to the property name when inject carries no value of its own", function() {
+				var contentDir = newTempDir();
+				var docs = modelDocs();
+				docs[ "model::userservice" ].properties[ 1 ].annotations.inject = "";
+
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = docs, mappings = [] );
+
+				expect( fileRead( contentDir & "/api/coldbox/models/UserService.md" ) ).toInclude( "| `datasource` | `datasource` |" );
+			} );
+
+			it( "reads a model's scope from its own annotation", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = modelDocs(), mappings = [] );
+
+				expect( fileRead( contentDir & "/api/coldbox/models/UserService.md" ) ).toInclude( "scope `singleton`" );
+			} );
+
+			it( "falls back to the binder's scope for a model that declares none", function() {
+				var contentDir = newTempDir();
+				var docs = modelDocs();
+				docs[ "model::userservice" ].annotations = {};
+
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = docs, mappings = fixtureMappings() );
+
+				expect( fileRead( contentDir & "/api/coldbox/models/UserService.md" ) ).toInclude( "scope `singleton`" );
+			} );
+
+			it( "lists a model's public methods with their parameters and return text", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = modelDocs(), mappings = [] );
+
+				var page = fileRead( contentDir & "/api/coldbox/models/UserService.md" );
+
+				expect( page ).toInclude( "## Methods" );
+				expect( page ).toInclude( "`Any findById( id )`" );
+				expect( page ).toInclude( "| `id` | `numeric` | yes | The user id |" );
+				expect( page ).toInclude( "- **Returns** the user, or null" );
+			} );
+
+			it( "tabulates the binder's own mappings on the models index", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = modelDocs(), mappings = fixtureMappings() );
+
+				var index = fileRead( contentDir & "/api/coldbox/models/index.md" );
+
+				expect( index ).toInclude( "## WireBox mappings" );
+				expect( index ).toInclude( "| `UserService` | `models.UserService` | class | `singleton` | &mdash; |" );
+				expect( index ).toInclude( "| `models.services` | `models.services` | directory | &mdash; | &mdash; |" );
+				expect( index ).toInclude( "| `OrderService` | `models.OrderService` | class | `session` | `api` |" );
+			} );
+
+			it( "counts each model's injections on the models index", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = modelDocs(), mappings = fixtureMappings() );
+
+				expect( fileRead( contentDir & "/api/coldbox/models/index.md" ) ).toInclude( "| [`UserService`](UserService.md) | &mdash; | `singleton` | 1 |" );
+			} );
+
+			it( "links the models index from the app index", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = modelDocs(), mappings = fixtureMappings() );
+
+				expect( fileRead( contentDir & "/api/coldbox/index.md" ) ).toInclude( "- [Models](models/index.md)" );
+			} );
+
+			it( "still writes model pages without metadata, saying how to get it", function() {
+				var contentDir = newTempDir();
+
+				var result = generator.generate(
+					app        = fixtureApp(),
+					routes     = fixtureRoutes(),
+					contentDir = contentDir,
+					include    = [ "models" ],
+					mappings   = fixtureMappings()
+				);
+
+				expect( result.warnings.len() ).toBe( 1 );
+				expect( result.warnings[ 1 ] ).toInclude( "bx-docbox" );
+				expect( fileRead( contentDir & "/api/coldbox/models/UserService.md" ) ).toInclude( "install the `bx-docbox` module" );
+			} );
+
+			it( "writes a models index for mappings alone, when the app declares no models", function() {
+				var contentDir = newTempDir();
+				var app = fixtureApp();
+				app.models = [];
+
+				generator.generate(
+					app        = app,
+					routes     = fixtureRoutes(),
+					contentDir = contentDir,
+					include    = [ "models" ],
+					mappings   = fixtureMappings()
+				);
+
+				expect( fileRead( contentDir & "/api/coldbox/models/index.md" ) ).toInclude( "## WireBox mappings" );
+			} );
+
+			it( "skips model pages when include doesn't ask for them", function() {
+				var contentDir = newTempDir();
+
+				generator.generate(
+					app        = fixtureApp(),
+					routes     = fixtureRoutes(),
+					contentDir = contentDir,
+					include    = [ "routes" ],
+					classDocs  = modelDocs(),
+					mappings   = fixtureMappings()
+				);
+
+				expect( directoryExists( contentDir & "/api/coldbox/models" ) ).toBeFalse();
 			} );
 
 			it( "escapes a pipe in a pattern so it can't break the table", function() {

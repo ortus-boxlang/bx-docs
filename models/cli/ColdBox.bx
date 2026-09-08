@@ -62,7 +62,8 @@ class {
 			pagePathPrefix = pagePathPrefix,
 			tags           = tagsFor( settings, arguments.options ),
 			include        = include,
-			classDocs      = include.findNoCase( "handlers" ) ? handlerDocs( app ) : {}
+			classDocs      = classDocs( app, include ),
+			mappings       = include.findNoCase( "models" ) ? collectMappings( app ) : []
 		)
 
 		return {
@@ -72,47 +73,61 @@ class {
 	}
 
 	/**
-	 * DocBox metadata for every handler in the app and its modules,
-	 * keyed the way `ColdBoxDocGenerator` looks it up.
+	 * DocBox metadata for every handler and model the requested page sets
+	 * need, keyed the way `ColdBoxDocGenerator` looks it up.
 	 *
-	 * Each handler root is documented under its own mapping so two
-	 * modules' identically-named handlers stay distinct, and the JSON is
-	 * written to a temp directory that goes away with the run - the pages
-	 * are the deliverable, not the metadata behind them.
+	 * Each root is documented under its own mapping, so two modules'
+	 * identically-named handlers - or a handler and a model sharing a
+	 * name - stay distinct. The JSON goes to a temp directory that leaves
+	 * with the run: the pages are the deliverable, not the metadata
+	 * behind them.
 	 *
 	 * Returns an empty struct rather than throwing when bx-docbox isn't
-	 * installed: the generator says so on the page, and every other page
+	 * installed. The generator says so on the page, and every other page
 	 * set is unaffected.
 	 *
 	 * @app A `ColdBoxAppScanner.scan()` result
+	 * @include The page sets being generated
 	 */
-	private struct function handlerDocs( required struct app ) {
+	private struct function classDocs( required struct app, required array include ) {
+		// Captured first: an arrow closure has its own `arguments` scope,
+		// so `arguments.include` inside the filter would not be this one.
+		var requested = arguments.include
+		var kinds = [ "handler", "model" ].filter( ( kind ) => requested.findNoCase( kind & "s" ) > 0 )
+
+		if ( !kinds.len() ) {
+			return {}
+		}
+
 		var runner = new "models.build.DocBoxRunner@bxsites"()
 
 		if ( !runner.isAvailable() ) {
 			return {}
 		}
 
-		var generator = new "models.build.ColdBoxDocGenerator@bxsites"()
 		var sources = []
-		var modulesByMapping = {}
+		var rootsByMapping = {}
 
-		var appHandlers = arguments.app.appRoot & "/handlers"
-		if ( directoryExists( appHandlers ) ) {
-			sources.append( { "dir" : appHandlers, "mapping" : "handlers" } )
-			modulesByMapping[ "handlers" ] = ""
-		}
+		for ( var kind in kinds ) {
+			var folder = kind & "s"
+			var appRoot = arguments.app.appRoot & "/" & folder
 
-		for ( var module in arguments.app.modules ) {
-			var moduleHandlers = module.root & "/handlers"
-
-			if ( !directoryExists( moduleHandlers ) ) {
-				continue
+			if ( directoryExists( appRoot ) ) {
+				sources.append( { "dir" : appRoot, "mapping" : folder } )
+				rootsByMapping[ folder ] = { "kind" : kind, "module" : "" }
 			}
 
-			var mapping = "cbmodules." & module.name.reReplace( "[^a-zA-Z0-9_]", "_", "all" ) & ".handlers"
-			sources.append( { "dir" : moduleHandlers, "mapping" : mapping } )
-			modulesByMapping[ mapping ] = module.name
+			for ( var module in arguments.app.modules ) {
+				var moduleRoot = module.root & "/" & folder
+
+				if ( !directoryExists( moduleRoot ) ) {
+					continue
+				}
+
+				var mapping = "cbmodules." & module.name.reReplace( "[^a-zA-Z0-9_]", "_", "all" ) & "." & folder
+				sources.append( { "dir" : moduleRoot, "mapping" : mapping } )
+				rootsByMapping[ mapping ] = { "kind" : kind, "module" : module.name }
+			}
 		}
 
 		if ( !sources.len() ) {
@@ -122,9 +137,9 @@ class {
 		var jsonDir = createTempDirectory( prefix = "bxsites-coldbox-" )
 
 		try {
-			runner.run( sources = sources, outputDir = jsonDir, projectTitle = "ColdBox Handlers" )
+			runner.run( sources = sources, outputDir = jsonDir, projectTitle = "ColdBox Application" )
 
-			return indexClassDocs( jsonDir, modulesByMapping, generator )
+			return indexClassDocs( jsonDir, rootsByMapping )
 		} catch ( any e ) {
 			return {}
 		} finally {
@@ -135,21 +150,21 @@ class {
 	}
 
 	/**
-	 * Turns a DocBox JSON tree into the `<module>:<handler name>` lookup
-	 * the generator wants, using each class' own recorded package to work
-	 * out which handler root - and so which module - it came from.
+	 * Turns a DocBox JSON tree into the lookup the generator wants, using
+	 * each class' own recorded package to work out which root - and so
+	 * which kind and module - it came from.
 	 *
 	 * @jsonDir The directory DocBox wrote to
-	 * @modulesByMapping Mapping name -> module name (with "" for the app's own handlers)
-	 * @generator The doc generator, for its own key-building rule
+	 * @rootsByMapping Mapping name -> `{ kind, module }`
 	 */
-	private struct function indexClassDocs( required string jsonDir, required struct modulesByMapping, required any generator ) {
+	private struct function indexClassDocs( required string jsonDir, required struct rootsByMapping ) {
 		var overviewFile = arguments.jsonDir & "/overview-summary.json"
 
 		if ( !fileExists( overviewFile ) ) {
 			return {}
 		}
 
+		var generator = new "models.build.ColdBoxDocGenerator@bxsites"()
 		var overview = jsonDeserialize( fileRead( overviewFile ) )
 		var docs = {}
 
@@ -163,20 +178,43 @@ class {
 			var doc = jsonDeserialize( fileRead( classFile ) )
 			var package = doc.package ?: ""
 
-			for ( var mapping in arguments.modulesByMapping ) {
+			for ( var mapping in arguments.rootsByMapping ) {
 				if ( package != mapping && !package.startsWith( mapping & "." ) ) {
 					continue
 				}
 
-				var handlerName = package.mid( mapping.len() + 2, package.len() )
-				handlerName = len( handlerName ) ? handlerName & "." & doc.name : doc.name
+				var root = arguments.rootsByMapping[ mapping ]
+				var relative = package.mid( mapping.len() + 2, package.len() )
+				var name = len( relative ) ? relative & "." & doc.name : doc.name
 
-				docs[ arguments.generator.handlerKey( arguments.modulesByMapping[ mapping ], handlerName ) ] = doc
+				docs[ generator.classKey( root.kind, root.module, name ) ] = doc
 				break
 			}
 		}
 
 		return docs
+	}
+
+	/**
+	 * Every WireBox mapping the app declares: its own binder first, then
+	 * each module's.
+	 *
+	 * @app A `ColdBoxAppScanner.scan()` result
+	 */
+	private array function collectMappings( required struct app ) {
+		var parser = new "models.build.ColdBoxWireBoxParser@bxsites"()
+		var scanner = new "models.build.ColdBoxAppScanner@bxsites"()
+		var mappings = parser.parse( arguments.app.wireBoxFile )
+
+		for ( var module in arguments.app.modules ) {
+			var moduleBinder = scanner.firstExisting( module.root & "/config/WireBox" )
+
+			if ( len( moduleBinder ) ) {
+				mappings.append( parser.parse( moduleBinder, module.name ), true )
+			}
+		}
+
+		return mappings
 	}
 
 	/**
@@ -277,7 +315,7 @@ class {
 
 		return isArray( arguments.settings.include ?: "" ) && arguments.settings.include.len()
 			? arguments.settings.include
-			: [ "routes", "handlers" ]
+			: [ "routes", "handlers", "models" ]
 	}
 
 	/**

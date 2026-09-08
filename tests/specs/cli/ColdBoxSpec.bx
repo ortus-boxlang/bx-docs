@@ -57,7 +57,31 @@ class {
 
 	private function helper() {}
 }" );
-					writeFile( dir & "/models/UserService.bx", "class singleton {}" );
+					writeFile( dir & "/models/UserService.bx", "/**
+ * Loads and stores users.
+ */
+class singleton {
+
+	/**
+	 * The configured user datasource
+	 */
+	property name=""datasource"" type=""string"" inject=""coldbox:setting:userDatasource"";
+
+	property name=""pageSize"" type=""numeric"" default=""25"";
+
+	/**
+	 * Find a user
+	 *
+	 * @id The user id
+	 */
+	function findById( required numeric id ) {}
+}" );
+					writeFile( dir & "/config/WireBox.bx", "class {
+	function configure() {
+		map( ""UserService"" ).to( ""models.UserService"" ).asSingleton()
+		map( ""Cart"" ).to( ""models.Cart"" ).into( this.SCOPES.SESSION )
+	}
+}" );
 					writeFile( dir & "/config/Router.bx", "class {
 	function configure() {
 		route( ""/home"" ).as( ""home"" ).to( ""main.index"" )
@@ -229,6 +253,68 @@ class {
 
 				expect( directoryExists( projectRoot & "/docs/api/coldbox/handlers" ) ).toBeFalse();
 				expect( fileExists( projectRoot & "/docs/api/coldbox/routes.md" ) ).toBeTrue();
+			} );
+
+			it( "writes a page per model, with the models index", function() {
+				var projectRoot = newProjectRoot();
+
+				verb.run( { projectRoot : projectRoot } );
+
+				expect( fileExists( projectRoot & "/docs/api/coldbox/models/UserService.md" ) ).toBeTrue();
+				expect( fileExists( projectRoot & "/docs/api/coldbox/models/index.md" ) ).toBeTrue();
+			} );
+
+			it( "reads a model's injections, properties and methods through DocBox", function() {
+				if ( !new "models.build.DocBoxRunner@bxsites"().isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/models/UserService.md" );
+
+				expect( page ).toInclude( "Loads and stores users." );
+				expect( page ).toInclude( "scope `singleton`" );
+				expect( page ).toInclude( "## Injected dependencies" );
+				expect( page ).toInclude( "coldbox:setting:userDatasource" );
+				expect( page ).toInclude( "| `pageSize` | `numeric` | `25` |" );
+				expect( page ).toInclude( "findById(" );
+			} );
+
+			it( "tabulates the app's own WireBox mappings", function() {
+				var projectRoot = newProjectRoot();
+
+				verb.run( { projectRoot : projectRoot } );
+
+				var index = fileRead( projectRoot & "/docs/api/coldbox/models/index.md" );
+
+				expect( index ).toInclude( "## WireBox mappings" );
+				expect( index ).toInclude( "| `UserService` | `models.UserService` | class | `singleton` |" );
+				expect( index ).toInclude( "| `Cart` | `models.Cart` | class | `session` |" );
+			} );
+
+			it( "attributes a module's own binder mappings to that module", function() {
+				var projectRoot = newProjectRoot();
+				addModule( projectRoot, "api", "v1" );
+				writeFile( projectRoot & "/modules_app/api/config/WireBox.bx", "class {
+	function configure() {
+		map( ""OrderService"" ).to( ""models.OrderService"" ).asSingleton()
+	}
+}" );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				expect( fileRead( projectRoot & "/docs/api/coldbox/models/index.md" ) ).toInclude( "| `OrderService` | `models.OrderService` | class | `singleton` | `api` |" );
+			} );
+
+			it( "skips model pages when --include leaves them out", function() {
+				var projectRoot = newProjectRoot();
+
+				verb.run( { projectRoot : projectRoot, include : "routes,handlers" } );
+
+				expect( directoryExists( projectRoot & "/docs/api/coldbox/models" ) ).toBeFalse();
+				expect( fileExists( projectRoot & "/docs/api/coldbox/handlers/index.md" ) ).toBeTrue();
 			} );
 
 			it( "reports a warning, without failing, for an app whose routes are all runtime-built", function() {
