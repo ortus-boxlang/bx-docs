@@ -41,7 +41,22 @@ class extends="testbox.system.BaseSpec" {
 				fileWrite( dir & "/bxsites.json", jsonSerialize( { "name" : "Demo" } ) );
 
 				if ( withApp ) {
-					writeFile( dir & "/handlers/Main.bx", "class { function index( event, rc, prc ) {} }" );
+					writeFile( dir & "/handlers/Main.bx", "/**
+ * The application's main handler.
+ */
+class {
+
+	/**
+	 * Render the home page
+	 *
+	 * @event The request context
+	 */
+	function index( event, rc, prc ) {}
+
+	function preHandler( event, rc, prc ) {}
+
+	private function helper() {}
+}" );
 					writeFile( dir & "/models/UserService.bx", "class singleton {}" );
 					writeFile( dir & "/config/Router.bx", "class {
 	function configure() {
@@ -162,6 +177,58 @@ class extends="testbox.system.BaseSpec" {
 				verb.run( { projectRoot : projectRoot } );
 
 				expect( fileRead( projectRoot & "/docs/api/app/routes.md" ) ).toInclude( "tags: [app]" );
+			} );
+
+			it( "writes a page per handler, with the handlers index", function() {
+				var projectRoot = newProjectRoot();
+
+				verb.run( { projectRoot : projectRoot } );
+
+				expect( fileExists( projectRoot & "/docs/api/coldbox/handlers/Main.md" ) ).toBeTrue();
+				expect( fileExists( projectRoot & "/docs/api/coldbox/handlers/index.md" ) ).toBeTrue();
+			} );
+
+			it( "reads a handler's actions and doc comments through DocBox", function() {
+				if ( !new "models.build.DocBoxRunner@bxsites"().isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/handlers/Main.md" );
+
+				expect( page ).toInclude( "The application's main handler." );
+				expect( page ).toInclude( "## Actions" );
+				expect( page ).toInclude( "Render the home page" );
+				expect( page ).toInclude( "The request context" );
+				expect( page ).toInclude( "## Lifecycle hooks" );
+				expect( page ).notToInclude( "helper(" );
+			} );
+
+			it( "keeps a module's handler metadata separate from the app's own", function() {
+				if ( !new "models.build.DocBoxRunner@bxsites"().isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+				addModule( projectRoot, "api", "v1" );
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/handlers/api/Utility.md" );
+
+				expect( page ).toInclude( "module `api`" );
+				expect( page ).toInclude( "ping(" );
+				expect( page ).toInclude( "`/v1/ping`" );
+			} );
+
+			it( "skips handler pages when --include asks only for routes", function() {
+				var projectRoot = newProjectRoot();
+
+				verb.run( { projectRoot : projectRoot, include : "routes" } );
+
+				expect( directoryExists( projectRoot & "/docs/api/coldbox/handlers" ) ).toBeFalse();
+				expect( fileExists( projectRoot & "/docs/api/coldbox/routes.md" ) ).toBeTrue();
 			} );
 
 			it( "reports a warning, without failing, for an app whose routes are all runtime-built", function() {

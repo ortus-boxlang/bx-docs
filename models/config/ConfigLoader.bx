@@ -103,7 +103,7 @@ class {
 			"appRoot"        : "",
 			"pagePathPrefix" : "api/coldbox",
 			"tags"           : [ "api", "coldbox" ],
-			"include"        : [ "routes" ]
+			"include"        : [ "routes", "handlers" ]
 		}
 	}
 

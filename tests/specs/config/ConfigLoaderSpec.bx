@@ -996,14 +996,14 @@ class extends="testbox.system.BaseSpec" {
 				expect( config.docbox.tags ).toBe( [ "reference" ] );
 			} );
 
-			it( "defaults [coldbox] to the api/coldbox page prefix and the routes page set", function() {
+			it( "defaults [coldbox] to the api/coldbox page prefix and the routes and handlers page sets", function() {
 				var dir = newProjectDir( '{"name":"My Docs"}' );
 				var config = loader.load( dir );
 
 				expect( config.coldbox.appRoot ).toBe( "" );
 				expect( config.coldbox.pagePathPrefix ).toBe( "api/coldbox" );
 				expect( config.coldbox.tags ).toBe( [ "api", "coldbox" ] );
-				expect( config.coldbox.include ).toBe( [ "routes" ] );
+				expect( config.coldbox.include ).toBe( [ "routes", "handlers" ] );
 			} );
 
 			it( "preserves a fully-configured [coldbox] block", function() {

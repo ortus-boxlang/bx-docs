@@ -12,6 +12,13 @@
  * served here - the pages are ordinary content, picked up by the next
  * `build`/`serve` like any other.
  *
+ * Class-level detail (a handler's actions, their arguments and doc
+ * comments) comes from DocBox, through the same `DocBoxRunner` the
+ * `docbox` verb uses - there is no second metadata reader in bx-sites.
+ * That makes bx-docbox an optional enhancement rather than a
+ * prerequisite: without it the pages still list handlers, routes and
+ * modules, and say plainly what's missing and how to get it.
+ *
  * Because it's static, a route or handler that only exists once the app
  * is running can't appear. That's the trade named in each of those
  * classes' own docblocks, and the reason this verb works on a CI runner
@@ -45,20 +52,131 @@ class {
 		}
 
 		var routes = collectRoutes( app )
+		var include = includeFor( settings, arguments.options )
+		var pagePathPrefix = pagePathPrefixFor( settings, arguments.options )
 
 		var generated = new "models.build.ColdBoxDocGenerator@bxsites"().generate(
 			app            = app,
 			routes         = routes,
 			contentDir     = contentDir,
-			pagePathPrefix = pagePathPrefixFor( settings, arguments.options ),
+			pagePathPrefix = pagePathPrefix,
 			tags           = tagsFor( settings, arguments.options ),
-			include        = includeFor( settings, arguments.options )
+			include        = include,
+			classDocs      = include.findNoCase( "handlers" ) ? handlerDocs( app ) : {}
 		)
 
 		return {
 			exitCode : 0,
-			message  : report( app, routes, generated, contentDir, pagePathPrefixFor( settings, arguments.options ) )
+			message  : report( app, routes, generated, contentDir, pagePathPrefix )
 		}
+	}
+
+	/**
+	 * DocBox metadata for every handler in the app and its modules,
+	 * keyed the way `ColdBoxDocGenerator` looks it up.
+	 *
+	 * Each handler root is documented under its own mapping so two
+	 * modules' identically-named handlers stay distinct, and the JSON is
+	 * written to a temp directory that goes away with the run - the pages
+	 * are the deliverable, not the metadata behind them.
+	 *
+	 * Returns an empty struct rather than throwing when bx-docbox isn't
+	 * installed: the generator says so on the page, and every other page
+	 * set is unaffected.
+	 *
+	 * @app A `ColdBoxAppScanner.scan()` result
+	 */
+	private struct function handlerDocs( required struct app ) {
+		var runner = new "models.build.DocBoxRunner@bxsites"()
+
+		if ( !runner.isAvailable() ) {
+			return {}
+		}
+
+		var generator = new "models.build.ColdBoxDocGenerator@bxsites"()
+		var sources = []
+		var modulesByMapping = {}
+
+		var appHandlers = arguments.app.appRoot & "/handlers"
+		if ( directoryExists( appHandlers ) ) {
+			sources.append( { "dir" : appHandlers, "mapping" : "handlers" } )
+			modulesByMapping[ "handlers" ] = ""
+		}
+
+		for ( var module in arguments.app.modules ) {
+			var moduleHandlers = module.root & "/handlers"
+
+			if ( !directoryExists( moduleHandlers ) ) {
+				continue
+			}
+
+			var mapping = "cbmodules." & module.name.reReplace( "[^a-zA-Z0-9_]", "_", "all" ) & ".handlers"
+			sources.append( { "dir" : moduleHandlers, "mapping" : mapping } )
+			modulesByMapping[ mapping ] = module.name
+		}
+
+		if ( !sources.len() ) {
+			return {}
+		}
+
+		var jsonDir = createTempDirectory( prefix = "bxsites-coldbox-" )
+
+		try {
+			runner.run( sources = sources, outputDir = jsonDir, projectTitle = "ColdBox Handlers" )
+
+			return indexClassDocs( jsonDir, modulesByMapping, generator )
+		} catch ( any e ) {
+			return {}
+		} finally {
+			if ( directoryExists( jsonDir ) ) {
+				directoryDelete( jsonDir, true )
+			}
+		}
+	}
+
+	/**
+	 * Turns a DocBox JSON tree into the `<module>:<handler name>` lookup
+	 * the generator wants, using each class' own recorded package to work
+	 * out which handler root - and so which module - it came from.
+	 *
+	 * @jsonDir The directory DocBox wrote to
+	 * @modulesByMapping Mapping name -> module name (with "" for the app's own handlers)
+	 * @generator The doc generator, for its own key-building rule
+	 */
+	private struct function indexClassDocs( required string jsonDir, required struct modulesByMapping, required any generator ) {
+		var overviewFile = arguments.jsonDir & "/overview-summary.json"
+
+		if ( !fileExists( overviewFile ) ) {
+			return {}
+		}
+
+		var overview = jsonDeserialize( fileRead( overviewFile ) )
+		var docs = {}
+
+		for ( var classEntry in ( overview.classes ?: [] ) ) {
+			var classFile = arguments.jsonDir & "/" & classEntry.path
+
+			if ( !fileExists( classFile ) ) {
+				continue
+			}
+
+			var doc = jsonDeserialize( fileRead( classFile ) )
+			var package = doc.package ?: ""
+
+			for ( var mapping in arguments.modulesByMapping ) {
+				if ( package != mapping && !package.startsWith( mapping & "." ) ) {
+					continue
+				}
+
+				var handlerName = package.mid( mapping.len() + 2, package.len() )
+				handlerName = len( handlerName ) ? handlerName & "." & doc.name : doc.name
+
+				docs[ arguments.generator.handlerKey( arguments.modulesByMapping[ mapping ], handlerName ) ] = doc
+				break
+			}
+		}
+
+		return docs
 	}
 
 	/**
@@ -159,7 +277,7 @@ class {
 
 		return isArray( arguments.settings.include ?: "" ) && arguments.settings.include.len()
 			? arguments.settings.include
-			: [ "routes" ]
+			: [ "routes", "handlers" ]
 	}
 
 	/**
@@ -187,8 +305,10 @@ class {
 		required string contentDir,
 		required string pagePathPrefix
 	) {
+		var handlerCount = arguments.app.handlers.len()
+			+ arguments.app.modules.reduce( ( total, module ) => total + module.handlers.len(), 0 )
 		var lines = [
-			"Documented #arguments.routes.len()# route(s), #arguments.app.handlers.len()# handler(s), #arguments.app.models.len()# model(s) and #arguments.app.modules.len()# module(s) into #arguments.generated.pageFiles.len()# page(s) under #arguments.contentDir#/#arguments.pagePathPrefix#"
+			"Documented #arguments.routes.len()# route(s), #handlerCount# handler(s), #arguments.app.models.len()# model(s) and #arguments.app.modules.len()# module(s) into #arguments.generated.pageFiles.len()# page(s) under #arguments.contentDir#/#arguments.pagePathPrefix#"
 		]
 
 		for ( var warning in arguments.generated.warnings ) {

@@ -1,7 +1,7 @@
 /**
  * Renders a scanned ColdBox application as bx-sites Markdown pages: an
- * app overview, and a routes table covering the app router plus every
- * module router.
+ * app overview, a routes table covering the app router plus every module
+ * router, and a page per event handler.
  *
  * The ColdBox-side counterpart of the Gradle/Maven plugins'
  * `bxSitesControllerScanDoc`, which does the same job for Spring MVC -
@@ -25,7 +25,22 @@ class {
 	 * named in `include` is skipped entirely.
 	 */
 	static {
-		sections = [ "routes" ]
+		sections = [ "routes", "handlers" ]
+
+		/**
+		 * ColdBox's own handler lifecycle methods - implicit hooks the
+		 * framework calls, not actions a URL can reach. Listed in their
+		 * own section so a reader isn't left wondering which of a
+		 * handler's public methods are actually routable.
+		 */
+		lifecycleActions = [
+			"preHandler",
+			"postHandler",
+			"aroundHandler",
+			"onMissingAction",
+			"onError",
+			"onInvalidHTTPMethod"
+		]
 	}
 
 	/**
@@ -46,25 +61,99 @@ class {
 		required string contentDir,
 		string pagePathPrefix = "api/coldbox",
 		array tags = [ "api", "coldbox" ],
-		array include = [ "routes" ]
+		array include = [ "routes", "handlers" ],
+		struct classDocs = {}
 	) {
 		var pagesRoot = arguments.contentDir & "/" & arguments.pagePathPrefix.reReplace( "^/+|/+$", "", "all" )
 		var pageFiles = []
 		var warnings = []
+		var sectionLinks = []
 
 		if ( arguments.include.findNoCase( "routes" ) ) {
 			if ( arguments.routes.len() ) {
 				var routesFile = pagesRoot & "/routes.md"
 				writePage( routesFile, renderRoutesPage( arguments.routes, arguments.tags ) )
 				pageFiles.append( routesFile )
+				sectionLinks.append( { "title" : "Routes", "link" : "routes.md" } )
 			} else {
 				warnings.append( "No routes found - the app declares no router, or every route is built at runtime" )
 			}
 		}
 
+		if ( arguments.include.findNoCase( "handlers" ) ) {
+			var handlerResult = writeHandlerPages( arguments.app, arguments.routes, pagesRoot, arguments.tags, arguments.classDocs )
+			pageFiles.append( handlerResult.pageFiles, true )
+			warnings.append( handlerResult.warnings, true )
+
+			if ( handlerResult.pageFiles.len() ) {
+				sectionLinks.append( { "title" : "Handlers", "link" : "handlers/index.md" } )
+			}
+		}
+
 		var indexFile = pagesRoot & "/index.md"
-		writePage( indexFile, renderIndexPage( arguments.app, arguments.routes, arguments.tags, pageFiles ) )
+		writePage( indexFile, renderIndexPage( arguments.app, arguments.routes, arguments.tags, sectionLinks ) )
 		pageFiles.append( indexFile )
+
+		return { "pageFiles" : pageFiles, "warnings" : warnings }
+	}
+
+	/**
+	 * Writes one page per handler, app and module alike, plus the index
+	 * that lists them.
+	 *
+	 * @app The scanned application
+	 * @routes Every parsed route
+	 * @pagesRoot Absolute path of this generator's page root
+	 * @tags Frontmatter tags
+	 * @classDocs DocBox class metadata, keyed as `<module>:<handler name>`
+	 *
+	 * @return `{ pageFiles, warnings }`
+	 */
+	private struct function writeHandlerPages(
+		required struct app,
+		required array routes,
+		required string pagesRoot,
+		required array tags,
+		required struct classDocs
+	) {
+		var handlers = arguments.app.handlers.duplicate()
+
+		for ( var module in arguments.app.modules ) {
+			handlers.append( module.handlers, true )
+		}
+
+		if ( !handlers.len() ) {
+			return { "pageFiles" : [], "warnings" : [] }
+		}
+
+		var pageFiles = []
+		var warnings = []
+		var undocumented = 0
+
+		for ( var handler in handlers ) {
+			var key = handlerKey( handler.module, handler.name )
+			var doc = arguments.classDocs[ key ] ?: {}
+
+			if ( doc.isEmpty() ) {
+				undocumented++
+			}
+
+			var pageFile = arguments.pagesRoot & "/handlers/" & handlerPagePath( handler.module, handler.name )
+			writePage( pageFile, renderHandlerPage( handler, doc, arguments.routes, arguments.tags ) )
+			pageFiles.append( pageFile )
+		}
+
+		var indexFile = arguments.pagesRoot & "/handlers/index.md"
+		writePage( indexFile, renderHandlersIndexPage( handlers, arguments.classDocs, arguments.routes, arguments.tags ) )
+		pageFiles.append( indexFile )
+
+		if ( undocumented == handlers.len() ) {
+			warnings.append(
+				"Handler pages list no actions - handler metadata comes from DocBox, so install the bx-docbox module to document each handler's actions"
+			)
+		} else if ( undocumented ) {
+			warnings.append( "#undocumented# handler(s) had no readable metadata and list no actions" )
+		}
 
 		return { "pageFiles" : pageFiles, "warnings" : warnings }
 	}
@@ -76,9 +165,9 @@ class {
 	 * @app The scanned application
 	 * @routes Every parsed route
 	 * @tags Frontmatter tags
-	 * @pageFiles The pages written so far, used to link only what exists
+	 * @sectionLinks `{ title, link }` per page set actually written
 	 */
-	private string function renderIndexPage( required struct app, required array routes, required array tags, required array pageFiles ) {
+	private string function renderIndexPage( required struct app, required array routes, required array tags, required array sectionLinks ) {
 		var moduleHandlers = arguments.app.modules.reduce( ( total, module ) => total + module.handlers.len(), 0 )
 		var lines = [
 			frontMatter( "ColdBox Application", "Routes, handlers, models and modules discovered from this application's conventions.", arguments.tags ),
@@ -96,12 +185,7 @@ class {
 			""
 		]
 
-		var links = arguments.pageFiles
-			.filter( ( file ) => file.listLast( "/" ) != "index.md" )
-			.map( ( file ) => {
-				var name = file.listLast( "/" )
-				return "- [" & titleize( name.reReplace( "\.md$", "" ) ) & "](" & name & ")"
-			} )
+		var links = arguments.sectionLinks.map( ( section ) => "- [" & section.title & "](" & section.link & ")" )
 
 		if ( links.len() ) {
 			lines.append( heading( 2, "Pages" ) )
@@ -161,6 +245,341 @@ class {
 		lines.append( legend( arguments.routes ), true )
 
 		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * The handlers index: every handler, what it belongs to, how many
+	 * actions it exposes, and how many routes reach it.
+	 *
+	 * @handlers Every handler, app and module alike
+	 * @classDocs DocBox class metadata keyed by handler key
+	 * @routes Every parsed route
+	 * @tags Frontmatter tags
+	 */
+	private string function renderHandlersIndexPage(
+		required array handlers,
+		required struct classDocs,
+		required array routes,
+		required array tags
+	) {
+		var lines = [
+			frontMatter( "Handlers", "Every event handler this application declares, and the actions each one exposes.", arguments.tags ),
+			heading( 1, "Handlers" ),
+			"",
+			"| Handler | Module | Actions | Routes |",
+			"|---|---|---|---|"
+		]
+
+		for ( var handler in arguments.handlers ) {
+			var doc = arguments.classDocs[ handlerKey( handler.module, handler.name ) ] ?: {}
+			var actions = actionsOf( doc ).len()
+			var routeCount = routesForHandler( arguments.routes, handler ).len()
+			var link = handlerPagePath( handler.module, handler.name )
+
+			lines.append( "| [`#cell( handler.name )#`](#link#) | #nameCell( handler.module )# | #actions# | #routeCount# |" )
+		}
+
+		lines.append( "" )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * One handler page: what it is, the routes that reach it, its
+	 * routable actions, and ColdBox's own lifecycle hooks kept separate
+	 * from them.
+	 *
+	 * @handler One scanned handler
+	 * @doc Its DocBox class metadata, or an empty struct when there is none
+	 * @routes Every parsed route
+	 * @tags Frontmatter tags
+	 */
+	private string function renderHandlerPage(
+		required struct handler,
+		required struct doc,
+		required array routes,
+		required array tags
+	) {
+		var hint = trim( arguments.doc.hint ?: "" )
+		var lines = [
+			frontMatter( arguments.handler.name, firstSentence( hint ), arguments.tags ),
+			heading( 1, arguments.handler.name ),
+			"",
+			handlerIdentityLine( arguments.handler, arguments.doc ),
+			""
+		]
+
+		if ( len( hint ) ) {
+			lines.append( hint )
+			lines.append( "" )
+		}
+
+		lines.append( handlerRoutesSection( arguments.routes, arguments.handler ), true )
+
+		var actions = actionsOf( arguments.doc )
+		var lifecycle = lifecycleOf( arguments.doc )
+
+		if ( !actions.len() && !lifecycle.len() ) {
+			lines.append(
+				arguments.doc.isEmpty()
+					? "No metadata was readable for this handler, so its actions aren't listed. Install the `bx-docbox` module and re-run to document them."
+					: "This handler declares no public actions."
+			)
+			lines.append( "" )
+
+			return lines.toList( variables.newline )
+		}
+
+		if ( actions.len() ) {
+			lines.append( heading( 2, "Actions" ) )
+			lines.append( "" )
+
+			for ( var action in actions ) {
+				lines.append( renderAction( action, arguments.handler, arguments.routes ), true )
+			}
+		}
+
+		if ( lifecycle.len() ) {
+			lines.append( heading( 2, "Lifecycle hooks" ) )
+			lines.append( "" )
+			lines.append( "ColdBox calls these itself around the handler's actions - they aren't reachable as events of their own." )
+			lines.append( "" )
+
+			for ( var hook in lifecycle ) {
+				lines.append( renderAction( hook, arguments.handler, [] ), true )
+			}
+		}
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * The `handlers.admin.Users` / module line under a handler's H1.
+	 *
+	 * @handler One scanned handler
+	 * @doc Its DocBox class metadata
+	 */
+	private string function handlerIdentityLine( required struct handler, required struct doc ) {
+		var parts = [ "`handlers.#arguments.handler.name#`" ]
+
+		if ( len( trim( arguments.handler.module ) ) ) {
+			parts.append( "module `#arguments.handler.module#`" )
+		}
+
+		if ( len( trim( arguments.doc[ "extends" ] ?: "" ) ) ) {
+			parts.append( "extends `#arguments.doc[ "extends" ]#`" )
+		}
+
+		return parts.toList( " &middot; " )
+	}
+
+	/**
+	 * The routes that reach a handler, as its own section - the thing a
+	 * reader opening a handler page most wants to know.
+	 *
+	 * @routes Every parsed route
+	 * @handler One scanned handler
+	 */
+	private array function handlerRoutesSection( required array routes, required struct handler ) {
+		var matched = routesForHandler( arguments.routes, arguments.handler )
+
+		if ( !matched.len() ) {
+			return []
+		}
+
+		var lines = [ heading( 2, "Routes" ), "", "| Verbs | Pattern | Action |", "|---|---|---|" ]
+
+		for ( var match in matched ) {
+			lines.append( "| #cell( verbLabel( match.route.verbs ) )# | `#cell( match.route.pattern )#` | #nameCell( match.action )# |" )
+		}
+
+		lines.append( "" )
+
+		return lines
+	}
+
+	/**
+	 * One action or lifecycle hook: signature, hint, parameters, and the
+	 * routes that reach it.
+	 *
+	 * @member One entry of the handler's `functions` array
+	 * @handler The handler it belongs to
+	 * @routes Every parsed route, or an empty array to skip route linking
+	 */
+	private array function renderAction( required struct member, required struct handler, required array routes ) {
+		var name = arguments.member.name ?: ""
+		var lines = [ heading( 3, "`" & signatureOf( arguments.member ) & "`" ), "" ]
+
+		var hint = trim( arguments.member.hint ?: "" )
+		if ( len( hint ) ) {
+			lines.append( hint )
+			lines.append( "" )
+		}
+
+		var patterns = routesForHandler( arguments.routes, arguments.handler )
+			.filter( ( match ) => compareNoCase( match.action, name ) == 0 )
+			.map( ( match ) => "`" & match.route.pattern & "`" )
+
+		if ( patterns.len() ) {
+			lines.append( "Reached by " & patterns.toList( ", " ) )
+			lines.append( "" )
+		}
+
+		var parameters = arguments.member.parameters ?: []
+		if ( isArray( parameters ) && parameters.len() ) {
+			lines.append( "| Parameter | Type | Required | Description |" )
+			lines.append( "|---|---|---|---|" )
+
+			for ( var parameter in parameters ) {
+				var description = isStruct( parameter.documentation ?: "" ) ? ( parameter.documentation.hint ?: "" ) : ""
+				var requiredCell = ( parameter.required ?: false ) ? "yes" : "no"
+
+				lines.append( "| `#cell( parameter.name ?: "" )#` | `#cell( parameter.type ?: "any" )#` | #requiredCell# | #cell( description )# |" )
+			}
+
+			lines.append( "" )
+		}
+
+		var returns = isStruct( arguments.member.documentation ?: "" ) ? trim( arguments.member.documentation[ "return" ] ?: "" ) : ""
+		if ( len( returns ) ) {
+			lines.append( "- **Returns** " & returns )
+			lines.append( "" )
+		}
+
+		return lines
+	}
+
+	/**
+	 * A handler's routable actions: its public functions, minus `init`
+	 * and minus ColdBox's own lifecycle hooks.
+	 *
+	 * @doc A handler's DocBox class metadata
+	 */
+	private array function actionsOf( required struct doc ) {
+		return publicFunctions( arguments.doc ).filter( ( member ) => {
+			return !static.lifecycleActions.findNoCase( member.name ?: "" );
+		} )
+	}
+
+	/**
+	 * A handler's lifecycle hooks, in the order ColdBox documents them.
+	 *
+	 * @doc A handler's DocBox class metadata
+	 */
+	private array function lifecycleOf( required struct doc ) {
+		return publicFunctions( arguments.doc ).filter( ( member ) => {
+			return static.lifecycleActions.findNoCase( member.name ?: "" ) > 0;
+		} )
+	}
+
+	/**
+	 * Every public function a class declares, except its constructor.
+	 *
+	 * @doc A DocBox class metadata struct
+	 */
+	private array function publicFunctions( required struct doc ) {
+		var functions = arguments.doc.functions ?: []
+
+		if ( !isArray( functions ) ) {
+			return []
+		}
+
+		return functions.filter( ( member ) => {
+			return lCase( trim( member.access ?: "public" ) ) == "public" && ( member.name ?: "" ) != "init";
+		} )
+	}
+
+	/**
+	 * The routes that reach a handler, each paired with the action it
+	 * resolves to. Matching is case-insensitive because ColdBox's own
+	 * event names are.
+	 *
+	 * @routes Every parsed route
+	 * @handler One scanned handler
+	 *
+	 * @return Array of `{ route, action }` structs
+	 */
+	private array function routesForHandler( required array routes, required struct handler ) {
+		var name = arguments.handler.name
+		var module = arguments.handler.module
+		var matched = []
+
+		for ( var route in arguments.routes ) {
+			if ( compareNoCase( route.module, module ) != 0 ) {
+				continue
+			}
+
+			if ( route.targetType == "handler" && compareNoCase( route.target, name ) == 0 ) {
+				matched.append( { "route" : route, "action" : "" } )
+				continue
+			}
+
+			if ( route.targetType != "event" ) {
+				continue
+			}
+
+			var prefix = name & "."
+
+			if ( route.target.len() > prefix.len() && compareNoCase( route.target.left( prefix.len() ), prefix ) == 0 ) {
+				matched.append( { "route" : route, "action" : route.target.mid( prefix.len() + 1, route.target.len() ) } )
+			}
+		}
+
+		return matched
+	}
+
+	/**
+	 * A function's rendered signature, e.g. `any index( event, rc, prc )`.
+	 *
+	 * @member One entry of a class' `functions` array
+	 */
+	private string function signatureOf( required struct member ) {
+		var parameters = ( isArray( arguments.member.parameters ?: "" ) ? arguments.member.parameters : [] )
+			.map( ( parameter ) => parameter.name ?: "" )
+
+		return "#arguments.member.returnType ?: "any"# #arguments.member.name ?: ""#( #parameters.toList( ", " )# )"
+	}
+
+	/**
+	 * The key a handler's metadata is looked up under - its module and
+	 * name together, since two modules can each declare a `Main`.
+	 *
+	 * @module The owning module, or "" for the app's own
+	 * @name The handler's dotted name
+	 */
+	string function handlerKey( required string module, required string name ) {
+		return lCase( arguments.module & ":" & arguments.name )
+	}
+
+	/**
+	 * Where a handler's page lives, relative to the handlers directory -
+	 * module handlers nest under their module so two `Main` handlers
+	 * never collide.
+	 *
+	 * @module The owning module, or "" for the app's own
+	 * @name The handler's dotted name
+	 */
+	private string function handlerPagePath( required string module, required string name ) {
+		var path = arguments.name.replace( ".", "/", "all" ) & ".md"
+
+		return len( trim( arguments.module ) ) ? arguments.module & "/" & path : path
+	}
+
+	/**
+	 * The first sentence of a docblock hint, for frontmatter `summary`.
+	 *
+	 * @hint The full hint text
+	 */
+	private string function firstSentence( required string hint ) {
+		var flattened = trim( arguments.hint.reReplace( "\s+", " ", "all" ) )
+
+		if ( !len( flattened ) ) {
+			return ""
+		}
+
+		var terminator = flattened.reFind( "\. " )
+
+		return terminator > 0 ? flattened.left( terminator ) : flattened
 	}
 
 	/**
@@ -277,15 +696,6 @@ class {
 	 */
 	private string function heading( required numeric level, required string text ) {
 		return repeatString( variables.hash, arguments.level ) & " " & arguments.text
-	}
-
-	/**
-	 * A file name turned into a page title, e.g. `routes` -> `Routes`.
-	 *
-	 * @value The raw name
-	 */
-	private string function titleize( required string value ) {
-		return uCase( arguments.value.left( 1 ) ) & arguments.value.mid( 2, arguments.value.len() )
 	}
 
 	/**
