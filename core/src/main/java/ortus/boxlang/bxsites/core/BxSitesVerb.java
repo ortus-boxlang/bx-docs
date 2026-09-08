@@ -45,8 +45,7 @@ public enum BxSitesVerb {
     BLOG_DRAFTS("blog:drafts"),
     BLOG_FIND("blog:find"),
     SEARCH_QUERY("search:query"),
-    DOCBOX("docbox"),
-    COLDBOX("coldbox");
+    DOCBOX("docbox");
 
     private final String verbId;
 

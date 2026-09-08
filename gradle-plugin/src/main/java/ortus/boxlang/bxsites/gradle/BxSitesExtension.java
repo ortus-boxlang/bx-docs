@@ -43,7 +43,7 @@ public abstract class BxSitesExtension {
         action.execute(springBoot);
     }
 
-    /** The {@code boxlang { }} nested block - BoxLang doc generators (DocBox, ColdBox). */
+    /** The {@code boxlang { }} nested block - the DocBox API reference generator. */
     public BxSitesBoxLangExtension getBoxlang() {
         return boxlang;
     }

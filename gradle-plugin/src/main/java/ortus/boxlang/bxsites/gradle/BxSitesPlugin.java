@@ -17,7 +17,6 @@ import ortus.boxlang.bxsites.core.SiteDirResolver;
 import ortus.boxlang.bxsites.core.provisioning.ArtifactCoordinates;
 import ortus.boxlang.bxsites.gradle.tasks.AbstractBxSitesVerbTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesBuildTask;
-import ortus.boxlang.bxsites.gradle.tasks.BxSitesColdBoxDocTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesControllerScanDocTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesDocBoxDocTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesDeployTask;
@@ -190,11 +189,15 @@ public class BxSitesPlugin implements Plugin<Project> {
             task.onlyIf(t -> controllerScan.getEnabled().get());
         });
 
-        // BoxLang doc generators - verb wrappers, unlike the Spring Boot
-        // three above, because the generators themselves live on the
-        // BoxLang side. Neither is wired into a lifecycle by default: a
-        // docs pass over an application's own source is a deliberate step,
-        // not something a build should start doing on its own.
+        // The BoxLang doc generator - a verb wrapper, unlike the Spring Boot
+        // three above, because the generator itself lives on the BoxLang
+        // side. Not wired into a lifecycle by default: a docs pass over a
+        // project's own source is a deliberate step, not something a build
+        // should start doing on its own.
+        //
+        // There is deliberately no ColdBox counterpart here. A ColdBox
+        // application is built and run through CommandBox, never Gradle, so
+        // the `coldbox` verb stays a bx-sites CLI concern.
         project.getTasks().register("bxSitesDocBoxDoc", BxSitesDocBoxDocTask.class, task -> {
             task.setGroup("bx-sites");
             task.setDescription("Generates a BoxLang/CFML API reference from DocBox into the bx-sites content dir.");
@@ -204,14 +207,6 @@ public class BxSitesPlugin implements Plugin<Project> {
             task.onlyIf(t -> docbox.getEnabled().get());
         });
 
-        project.getTasks().register("bxSitesColdBoxDoc", BxSitesColdBoxDocTask.class, task -> {
-            task.setGroup("bx-sites");
-            task.setDescription("Documents a ColdBox application's routes, handlers, models and modules from its conventions.");
-            var coldbox = extension.getBoxlang().getColdbox();
-            wireCommonProperties(task, extension, provision.get());
-            task.getExtraArgs().set(project.provider(coldbox::toVerbArguments));
-            task.onlyIf(t -> coldbox.getEnabled().get());
-        });
 
         project.getTasks().named("assemble", task -> {
             if (extension.getHookIntoAssemble().get()) {

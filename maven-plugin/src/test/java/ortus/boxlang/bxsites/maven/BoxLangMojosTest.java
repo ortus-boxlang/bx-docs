@@ -12,21 +12,20 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.bxsites.core.BxSitesVerb;
 
 /**
- * Covers the two BoxLang doc-generation goals - which verb each wraps, and
- * how their typed parameters turn into verb flags. Unlike the Spring Boot
- * goals these are verb wrappers, so the interesting behavior is entirely
- * in the arguments they build.
+ * Covers the BoxLang doc-generation goal - which verb it wraps, and how
+ * its typed parameters turn into verb flags. Unlike the Spring Boot goals
+ * this is a verb wrapper, so the interesting behavior is entirely in the
+ * arguments it builds.
+ *
+ * <p>There is no ColdBox goal to cover: a ColdBox application is built and
+ * run through CommandBox, never Maven, so that verb stays a bx-sites CLI
+ * concern.
  */
 class BoxLangMojosTest {
 
     @Test
     void docBoxMojo_wrapsTheDocBoxVerb() {
         assertEquals(BxSitesVerb.DOCBOX, new DocBoxMojo().verb());
-    }
-
-    @Test
-    void coldBoxMojo_wrapsTheColdBoxVerb() {
-        assertEquals(BxSitesVerb.COLDBOX, new ColdBoxMojo().verb());
     }
 
     @Test
@@ -67,30 +66,9 @@ class BoxLangMojosTest {
     }
 
     @Test
-    void coldBoxMojo_passesNothingWhenNothingIsConfigured() {
-        assertTrue(new ColdBoxMojo().verbArguments().isEmpty());
-    }
-
-    @Test
-    void coldBoxMojo_turnsItsParametersIntoVerbFlags() {
-        ColdBoxMojo mojo = new ColdBoxMojo();
-        mojo.appRoot = "app";
-        mojo.include = List.of("routes", "handlers");
-        mojo.tags = List.of("api", "coldbox");
-
-        List<String> args = mojo.verbArguments();
-
-        assertTrue(args.contains("--appRoot=app"));
-        assertTrue(args.contains("--include=routes,handlers"));
-        assertTrue(args.contains("--tags=api,coldbox"));
-        assertFalse(args.stream().anyMatch(arg -> arg.startsWith("--pagePathPrefix")));
-    }
-
-    @Test
-    void bothMojos_haveNoExpectedOutputFile() {
+    void docBoxMojo_hasNoExpectedOutputFile() {
         // Where pages land depends on the project's own config, so there is
         // no single file whose existence would prove the run succeeded.
         assertEquals(null, new DocBoxMojo().expectedOutputFile());
-        assertEquals(null, new ColdBoxMojo().expectedOutputFile());
     }
 }

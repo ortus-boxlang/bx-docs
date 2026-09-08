@@ -71,7 +71,7 @@ public class DocBoxMojo extends AbstractBxSitesMojo {
         return args;
     }
 
-    static void addIfSet(List<String> args, String flag, String value) {
+    private static void addIfSet(List<String> args, String flag, String value) {
         if (value != null && !value.isBlank()) {
             args.add(flag + "=" + value);
         }

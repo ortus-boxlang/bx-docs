@@ -86,7 +86,7 @@ public abstract class BxSitesDocBoxExtension {
         return args;
     }
 
-    static void addIfPresent(List<String> args, String flag, Property<String> property) {
+    private static void addIfPresent(List<String> args, String flag, Property<String> property) {
         if (property.isPresent() && !property.get().isBlank()) {
             args.add(flag + "=" + property.get());
         }

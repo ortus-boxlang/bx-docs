@@ -3,6 +3,7 @@ package ortus.boxlang.bxsites.gradle;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -227,11 +228,19 @@ class BxSitesPluginTest {
     }
 
     @Test
-    void apply_registersTheBoxLangDocGeneratorTasks(@TempDir Path projectDir) {
+    void apply_registersTheDocBoxDocTask(@TempDir Path projectDir) {
         Project project = newProject(projectDir);
 
         assertNotNull(project.getTasks().findByName("bxSitesDocBoxDoc"));
-        assertNotNull(project.getTasks().findByName("bxSitesColdBoxDoc"));
+    }
+
+    @Test
+    void apply_registersNoColdBoxTask(@TempDir Path projectDir) {
+        // A ColdBox application is built through CommandBox, never Gradle -
+        // the `coldbox` verb is a bx-sites CLI concern only.
+        Project project = newProject(projectDir);
+
+        assertNull(project.getTasks().findByName("bxSitesColdBoxDoc"));
     }
 
     @Test
@@ -267,42 +276,14 @@ class BxSitesPluginTest {
     }
 
     @Test
-    void boxlangColdBoxExtension_hasSensibleDefaults(@TempDir Path projectDir) {
+    void docBoxTask_carriesItsExtensionOptionsAsVerbArguments(@TempDir Path projectDir) {
         Project project = newProject(projectDir);
-
-        var coldbox = project.getExtensions().getByType(BxSitesExtension.class).getBoxlang().getColdbox();
-
-        assertFalse(coldbox.getEnabled().get());
-        assertTrue(coldbox.toVerbArguments().isEmpty());
-    }
-
-    @Test
-    void boxlangColdBoxExtension_turnsItsOptionsIntoVerbFlags(@TempDir Path projectDir) {
-        Project project = newProject(projectDir);
-
-        var coldbox = project.getExtensions().getByType(BxSitesExtension.class).getBoxlang().getColdbox();
-        coldbox.getAppRoot().set("app");
-        coldbox.getInclude().set(java.util.List.of("routes", "handlers"));
-
-        var args = coldbox.toVerbArguments();
-
-        assertTrue(args.contains("--appRoot=app"));
-        assertTrue(args.contains("--include=routes,handlers"));
-        assertFalse(args.stream().anyMatch(arg -> arg.startsWith("--pagePathPrefix")));
-    }
-
-    @Test
-    void boxlangTasks_carryTheirExtensionOptionsAsVerbArguments(@TempDir Path projectDir) {
-        Project project = newProject(projectDir);
-        var boxlang = project.getExtensions().getByType(BxSitesExtension.class).getBoxlang();
-        boxlang.getDocbox().getProjectTitle().set("Bookshelf API");
-        boxlang.getColdbox().getAppRoot().set("app");
+        project.getExtensions().getByType(BxSitesExtension.class).getBoxlang().getDocbox()
+                .getProjectTitle().set("Bookshelf API");
 
         var docboxTask = (AbstractBxSitesVerbTask) project.getTasks().getByName("bxSitesDocBoxDoc");
-        var coldboxTask = (AbstractBxSitesVerbTask) project.getTasks().getByName("bxSitesColdBoxDoc");
 
         assertTrue(docboxTask.getExtraArgs().get().contains("--projectTitle=Bookshelf API"));
-        assertTrue(coldboxTask.getExtraArgs().get().contains("--appRoot=app"));
     }
 
     @Test
