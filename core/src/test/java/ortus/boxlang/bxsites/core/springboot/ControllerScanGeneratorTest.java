@@ -54,9 +54,23 @@ class ControllerScanGeneratorTest {
         String page = Files.readString(bookControllerPage);
         assertTrue(page.contains("title: \"BookController\""));
         assertTrue(page.contains("tags: [api, controllers]"));
-        assertTrue(page.contains("| GET | `/api/books` |"), "expected the bare @GetMapping combined with the class-level base path");
-        assertTrue(page.contains("| GET | `/api/books/{id}` |"), "expected the @GetMapping(\"/{id}\") combined with the base path");
-        assertTrue(page.contains("| POST | `/api/books` |"), "expected the @PostMapping endpoint");
+
+        // The filter toolbar - one chip per HTTP method actually present.
+        assertTrue(page.contains("x-data=\"{ q: '', k: 'all' }\""), "expected the Alpine filter toolbar");
+        assertTrue(page.contains("@click=\"k='get'\">GET</button>"), "expected a GET chip");
+        assertTrue(page.contains("@click=\"k='post'\">POST</button>"), "expected a POST chip");
+        assertFalse(page.contains("@click=\"k='delete'\""), "no DELETE endpoint exists on this fixture - no DELETE chip");
+
+        // Each row carries its own kind/search-name for the toolbar to filter on -
+        // the bare @GetMapping combined with the class-level base path.
+        assertTrue(page.contains("data-k=\"get\" data-n=\"/api/books String list()\""));
+        assertTrue(page.contains("<td>GET</td><td><code>/api/books</code></td><td><code>String list()</code></td>"));
+        // @GetMapping("/{id}") combined with the base path.
+        assertTrue(page.contains("data-k=\"get\" data-n=\"/api/books/{id} String getOne(String)\""));
+        assertTrue(page.contains("<td>GET</td><td><code>/api/books/{id}</code></td><td><code>String getOne(String)</code></td>"));
+        // @PostMapping endpoint.
+        assertTrue(page.contains("data-k=\"post\" data-n=\"/api/books String create(String)\""));
+        assertTrue(page.contains("<td>POST</td><td><code>/api/books</code></td><td><code>String create(String)</code></td>"));
 
         Path plainControllerPage = contentDir.resolve("api/controllers")
                 .resolve("ortus/boxlang/bxsites/core/springboot/fixtures/PlainController.md");

@@ -310,7 +310,8 @@ class BxSitesPluginFunctionalTest {
                 .resolve("com").resolve("example").resolve("BookController.md");
         String content = Files.readString(page);
         assertTrue(content.contains("title: \"BookController\""));
-        assertTrue(content.contains("| GET | `/api/books` |"));
+        assertTrue(content.contains("data-k=\"get\""));
+        assertTrue(content.contains("<td><code>/api/books</code></td>"));
     }
 
     private static void deleteRecursively(Path root) {

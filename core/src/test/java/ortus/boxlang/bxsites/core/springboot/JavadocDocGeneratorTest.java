@@ -71,6 +71,12 @@ class JavadocDocGeneratorTest {
                     // package-private - must not be documented
                     void internalOnly() {
                     }
+
+                    /** The maximum allowed name length. */
+                    public static final int MAX_NAME_LENGTH = 64;
+
+                    // package-private field - must not be documented
+                    int internalCounter;
                 }
                 """);
         Path contentDir = Files.createDirectory(dir.resolve("docs"));
@@ -103,6 +109,36 @@ class JavadocDocGeneratorTest {
         assertTrue(page.contains("**Deprecated.**"));
 
         assertFalse(page.contains("internalOnly"), "package-private members must never be documented");
+
+        // The new field section + its member.
+        assertTrue(page.contains("## Fields\n\n"), "expected a Fields section for the documented public field");
+        assertTrue(page.contains("### `public static final int MAX_NAME_LENGTH`"), "expected the field's modifiers+type+name signature");
+        assertTrue(page.contains("The maximum allowed name length."));
+        assertFalse(page.contains("internalCounter"), "package-private fields must never be documented");
+
+        // The filter toolbar - one chip per kind actually present on this page.
+        assertTrue(page.contains("x-data=\"{ q: '', k: 'all' }\""), "expected the Alpine filter toolbar");
+        assertTrue(page.contains("@click=\"k='constructor'\">Constructors</button>"));
+        assertTrue(page.contains("@click=\"k='method'\">Methods</button>"));
+        assertTrue(page.contains("@click=\"k='field'\">Fields</button>"));
+        assertTrue(page.contains("var(--bxsites-accent)"), "expected the inline stylesheet driven by bx-sites' own theme variables");
+    }
+
+    @Test
+    void generate_omitsTheFilterUiEntirelyWhenThereAreNoMembers(@TempDir Path dir) throws IOException {
+        Path sourceFile = writeSource(dir, "com/example/Empty.java", """
+                package com.example;
+
+                /** A marker type with no members. */
+                public interface Empty {
+                }
+                """);
+        Path contentDir = Files.createDirectory(dir.resolve("docs"));
+
+        JavadocDocGenerator.generate(new JavadocDocGenerator.Request(List.of(sourceFile), contentDir, "api/javadoc", List.of()));
+
+        String page = Files.readString(contentDir.resolve("api/javadoc/com/example/Empty.md"));
+        assertFalse(page.contains("x-data"), "a type with no documentable members should get no filter toolbar at all");
     }
 
     @Test
