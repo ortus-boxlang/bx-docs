@@ -19,6 +19,14 @@ import java.util.Set;
  * off" (this class doesn't enforce that policy itself; each plugin's
  * wiring does).
  *
+ * <p>Each page's endpoint table is wrapped in the same small,
+ * self-contained filter toolbar {@link JavadocDocGenerator} uses
+ * ({@link MemberFilterUi}) - a search box plus one chip per HTTP method
+ * actually present - built from plain Alpine.js attributes and a
+ * {@code var(--bxsites-*)}-driven inline stylesheet emitted directly into
+ * the generated Markdown, so it works in every bx-sites theme with no
+ * bx-sites core changes.
+ *
  * <p><b>Must run in a JVM whose classpath already includes both this
  * class and the target project's own compiled classes/dependencies</b>
  * (Spring included) - see {@code ControllerScanMain}, the forked-JVM entry
@@ -242,14 +250,7 @@ public final class ControllerScanGenerator {
         if (endpoints.isEmpty()) {
             md.append("_No mapped endpoints found._\n");
         } else {
-            md.append("| Method | Path | Handler |\n");
-            md.append("|---|---|---|\n");
-            for (Endpoint endpoint : endpoints) {
-                for (String path : endpoint.paths()) {
-                    md.append("| ").append(String.join(", ", endpoint.methods()))
-                            .append(" | `").append(path).append("` | `").append(endpoint.signature()).append("` |\n");
-                }
-            }
+            appendFilterableTable(md, endpoints);
         }
 
         Path pageFile = request.contentDir()
@@ -258,5 +259,46 @@ public final class ControllerScanGenerator {
         Files.createDirectories(pageFile.getParent());
         Files.writeString(pageFile, md.toString());
         return pageFile;
+    }
+
+    /**
+     * One row per (endpoint x path x method) - an endpoint mapped to
+     * multiple HTTP methods gets one row per method rather than a combined
+     * "GET, POST" cell, so each row can be filtered by a single kind. Uses
+     * raw {@code <table>} markup (matching the exact structure/classes
+     * bx-sites' own Markdown-table conversion already produces, confirmed
+     * by inspecting a real build) rather than pipe-syntax Markdown, since
+     * pipe tables have no way to carry a per-row filter attribute.
+     */
+    private static void appendFilterableTable(StringBuilder md, List<Endpoint> endpoints) {
+        Map<String, String> chips = new LinkedHashMap<>();
+        for (Endpoint endpoint : endpoints) {
+            for (String method : endpoint.methods()) {
+                chips.putIfAbsent(method.toLowerCase(java.util.Locale.ROOT), method);
+            }
+        }
+
+        md.append(MemberFilterUi.styles());
+        md.append(MemberFilterUi.toolbarOpen(chips));
+
+        md.append("<div class=\"bxsites-table-wrap\"><table class=\"table\">\n");
+        md.append("<thead><tr><th>Method</th><th>Path</th><th>Handler</th></tr></thead>\n");
+        md.append("<tbody>\n");
+        for (Endpoint endpoint : endpoints) {
+            for (String path : endpoint.paths()) {
+                for (String method : endpoint.methods()) {
+                    String kind = method.toLowerCase(java.util.Locale.ROOT);
+                    String searchable = path + " " + endpoint.signature();
+                    md.append("<tr ").append(MemberFilterUi.rowAttributes(kind, searchable)).append(">")
+                            .append("<td>").append(MemberFilterUi.escapeHtml(method)).append("</td>")
+                            .append("<td><code>").append(MemberFilterUi.escapeHtml(path)).append("</code></td>")
+                            .append("<td><code>").append(MemberFilterUi.escapeHtml(endpoint.signature())).append("</code></td>")
+                            .append("</tr>\n");
+                }
+            }
+        }
+        md.append("</tbody>\n</table></div>\n\n");
+
+        md.append(MemberFilterUi.toolbarClose());
     }
 }

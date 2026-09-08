@@ -18,16 +18,23 @@ import javax.tools.ToolProvider;
  * subprocess needed) against a project's public Java API, emitting one
  * bx-sites-frontmattered Markdown page per public top-level type.
  *
+ * <p>Each page's constructors/methods/fields listing is wrapped in a
+ * small, self-contained filter toolbar ({@link MemberFilterUi}) - a
+ * search box plus one chip per kind actually present - built from plain
+ * Alpine.js attributes and a {@code var(--bxsites-*)}-driven inline
+ * stylesheet emitted directly into the generated Markdown, so it works in
+ * every bx-sites theme with no bx-sites core changes.
+ *
  * <p><b>Deliberately scoped down, not a complete Javadoc-to-Markdown
  * converter</b> (the plan itself flags this as the heaviest of the three
  * Spring Boot generators - "budget accordingly"). What v1 covers:
- * public/protected constructors and methods of public top-level types,
- * their own doc comments' first-sentence/full-body text, and
+ * public/protected constructors, methods, and fields of public top-level
+ * types, their own doc comments' first-sentence/full-body text, and
  * {@code @param}/{@code @return}/{@code @throws}/{@code @deprecated} block
  * tags. What it deliberately does <b>not</b> do, so a fast-follow can close
  * these gaps without redesigning the API:
  * <ul>
- *   <li>Nested/package-private types, and fields, are skipped entirely.
+ *   <li>Nested and package-private types are skipped entirely.
  *   <li>Inherited members are never walked - only members declared
  *       directly on the type itself.
  *   <li>Inline HTML in doc comments (e.g. {@code <p>}, {@code <ul>}) is

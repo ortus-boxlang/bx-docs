@@ -3,12 +3,15 @@ package ortus.boxlang.bxsites.core.springboot;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
@@ -114,18 +117,49 @@ public final class BxSitesJavadocDoclet implements Doclet {
                 .filter(BxSitesJavadocDoclet::isDocumentable).toList();
         List<ExecutableElement> methods = ElementFilter.methodsIn(type.getEnclosedElements()).stream()
                 .filter(BxSitesJavadocDoclet::isDocumentable).toList();
+        List<VariableElement> fields = ElementFilter.fieldsIn(type.getEnclosedElements()).stream()
+                .filter(BxSitesJavadocDoclet::isDocumentable).toList();
 
-        if (!constructors.isEmpty()) {
-            md.append("## Constructors\n\n");
-            for (ExecutableElement ctor : constructors) {
-                appendMember(md, ctor, docTrees);
+        if (!constructors.isEmpty() || !methods.isEmpty() || !fields.isEmpty()) {
+            Map<String, String> chips = new LinkedHashMap<>();
+            if (!constructors.isEmpty()) {
+                chips.put("constructor", "Constructors");
             }
-        }
-        if (!methods.isEmpty()) {
-            md.append("## Methods\n\n");
-            for (ExecutableElement method : methods) {
-                appendMember(md, method, docTrees);
+            if (!methods.isEmpty()) {
+                chips.put("method", "Methods");
             }
+            if (!fields.isEmpty()) {
+                chips.put("field", "Fields");
+            }
+            md.append(MemberFilterUi.styles());
+            md.append(MemberFilterUi.toolbarOpen(chips));
+
+            if (!constructors.isEmpty()) {
+                md.append(MemberFilterUi.sectionOpen("constructor"));
+                md.append("## Constructors\n\n");
+                for (ExecutableElement ctor : constructors) {
+                    appendMember(md, ctor, docTrees, signatureOf(ctor));
+                }
+                md.append(MemberFilterUi.sectionClose());
+            }
+            if (!methods.isEmpty()) {
+                md.append(MemberFilterUi.sectionOpen("method"));
+                md.append("## Methods\n\n");
+                for (ExecutableElement method : methods) {
+                    appendMember(md, method, docTrees, signatureOf(method));
+                }
+                md.append(MemberFilterUi.sectionClose());
+            }
+            if (!fields.isEmpty()) {
+                md.append(MemberFilterUi.sectionOpen("field"));
+                md.append("## Fields\n\n");
+                for (VariableElement field : fields) {
+                    appendMember(md, field, docTrees, fieldSignature(field));
+                }
+                md.append(MemberFilterUi.sectionClose());
+            }
+
+            md.append(MemberFilterUi.toolbarClose());
         }
 
         Path pageFile = config.contentDir()
@@ -136,28 +170,31 @@ public final class BxSitesJavadocDoclet implements Doclet {
         return pageFile;
     }
 
-    private static boolean isDocumentable(ExecutableElement member) {
+    private static boolean isDocumentable(Element member) {
         return member.getModifiers().contains(Modifier.PUBLIC) || member.getModifiers().contains(Modifier.PROTECTED);
     }
 
-    private static void appendMember(StringBuilder md, ExecutableElement member, DocTrees docTrees) {
-        md.append("### `").append(signatureOf(member)).append("`\n\n");
+    private static void appendMember(StringBuilder md, Element member, DocTrees docTrees, String signature) {
+        md.append(MemberFilterUi.itemOpen(signature));
+
+        md.append("### `").append(signature).append("`\n\n");
 
         DocCommentTree doc = docTrees.getDocCommentTree(member);
-        if (doc == null) {
-            return;
+        if (doc != null) {
+            if (hasDeprecatedTag(doc)) {
+                md.append("**Deprecated.**\n\n");
+            }
+            String description = renderBody(doc.getFullBody());
+            if (!description.isBlank()) {
+                md.append(description).append("\n\n");
+            }
+            String tagLines = renderBlockTags(doc);
+            if (!tagLines.isBlank()) {
+                md.append(tagLines).append('\n');
+            }
         }
-        if (hasDeprecatedTag(doc)) {
-            md.append("**Deprecated.**\n\n");
-        }
-        String description = renderBody(doc.getFullBody());
-        if (!description.isBlank()) {
-            md.append(description).append("\n\n");
-        }
-        String tagLines = renderBlockTags(doc);
-        if (!tagLines.isBlank()) {
-            md.append(tagLines).append('\n');
-        }
+
+        md.append(MemberFilterUi.itemClose());
     }
 
     private static boolean hasDeprecatedTag(DocCommentTree doc) {
@@ -190,6 +227,11 @@ public final class BxSitesJavadocDoclet implements Doclet {
 
     private static String parameterSignature(VariableElement parameter) {
         return parameter.asType() + " " + parameter.getSimpleName();
+    }
+
+    private static String fieldSignature(VariableElement field) {
+        String modifiers = field.getModifiers().stream().map(Modifier::toString).collect(Collectors.joining(" "));
+        return (modifiers.isEmpty() ? "" : modifiers + " ") + field.asType() + " " + field.getSimpleName();
     }
 
     /**
