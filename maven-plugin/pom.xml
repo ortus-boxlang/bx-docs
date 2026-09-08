@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    io.boxlang - the Sonatype-verified namespace BoxLang's own runtime jars
+    already publish under (io.boxlang:boxlang, :boxlang-miniserver). Reusing
+    it here means no separate domain-verification step for a new namespace.
+  -->
+  <groupId>io.boxlang</groupId>
+  <artifactId>bxsites-maven-plugin</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>maven-plugin</packaging>
+
+  <name>BX Sites Maven Plugin</name>
+  <description>Generate a bx-sites documentation site from a Maven build, with zero prerequisite installs beyond a JDK.</description>
+  <url>https://github.com/ortus-boxlang/bx-sites</url>
+
+  <!-- Required by Maven Central for a valid publication. -->
+  <licenses>
+    <license>
+      <name>The Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+  <scm>
+    <connection>scm:git:https://github.com/ortus-boxlang/bx-sites.git</connection>
+    <developerConnection>scm:git:ssh://github.com/ortus-boxlang/bx-sites.git</developerConnection>
+    <url>https://github.com/ortus-boxlang/bx-sites</url>
+  </scm>
+  <developers>
+    <developer>
+      <id>lmajano</id>
+      <name>Luis Majano</name>
+      <email>lmajano@ortussolutions.com</email>
+      <organization>Ortus Solutions, Corp</organization>
+      <organizationUrl>https://www.ortussolutions.com</organizationUrl>
+    </developer>
+  </developers>
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!--
+      core/ is never published to Maven Central itself - see the plan. During
+      development this plugin resolves it from the local Maven repository;
+      run `./gradlew publishToMavenLocal` in core/ first. At release time,
+      the `central-release` profile below shades core's classes into this
+      plugin's own final jar instead, via maven-shade-plugin, so a consumer
+      never resolves io.boxlang:bxsites-core directly.
+    -->
+    <bxsites.core.version>0.1.0-SNAPSHOT</bxsites.core.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.boxlang</groupId>
+      <artifactId>bxsites-core</artifactId>
+      <version>${bxsites.core.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-plugin-api</artifactId>
+      <version>3.9.9</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-core</artifactId>
+      <version>3.9.9</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.plugin-tools</groupId>
+      <artifactId>maven-plugin-annotations</artifactId>
+      <version>3.13.1</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.10.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-plugin-plugin</artifactId>
+        <version>3.13.1</version>
+        <configuration>
+          <goalPrefix>bxsites</goalPrefix>
+        </configuration>
+        <executions>
+          <execution>
+            <id>default-descriptor</id>
+            <phase>process-classes</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
+      <!--
+        Functional/integration tier - the Maven-side mirror of the Gradle
+        plugin's TestKit functional tests. Runs a real `mvn bxsites:build`
+        against the fixture under src/it/plain-docs-project and asserts a
+        real site/index.html comes out. Needs `mvn install` to have already
+        put this plugin's own jar (and core's) into the local repo first -
+        run via `mvn verify` or `mvn invoker:install invoker:run`.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-invoker-plugin</artifactId>
+        <version>3.7.0</version>
+        <configuration>
+          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+          <!--
+            Isolated from the real ~/.m2 - without this, `invoker:install`
+            installs this plugin's own jar into the developer's/CI runner's
+            actual local repository, which can silently overwrite an
+            already-installed build of the same SNAPSHOT version (observed
+            during review: a plain `mvn verify` clobbered a previously
+            shaded, release-profile install with an unshaded one).
+          -->
+          <localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
+          <goals>
+            <goal>io.boxlang:bxsites-maven-plugin:${project.version}:build</goal>
+          </goals>
+        </configuration>
+        <executions>
+          <execution>
+            <id>integration-test</id>
+            <goals>
+              <goal>install</goal>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <!--
+    Real Maven Central publishing - only active with `-Pcentral-release`
+    (the release workflow passes this explicitly), so an ordinary local
+    `mvn verify`/`install` never attempts signing or shading. Mirrors the
+    boxlang runtime repo's own approach (maven-publish + signing, in-memory
+    GPG key from CI env vars, Sonatype Central Portal) as closely as this
+    project's Maven tooling allows - see MAVEN_USERNAME/MAVEN_PASSWORD/
+    GPG_KEY/GPG_PASSWORD in .github/workflows/maven-plugin-release.yml.
+  -->
+  <profiles>
+    <profile>
+      <id>central-release</id>
+      <build>
+        <plugins>
+          <!-- Shades bxsites-core's classes into this plugin's own jar - see the plan's "never published standalone" decision. -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>3.6.0</version>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <configuration>
+                  <artifactSet>
+                    <includes>
+                      <include>io.boxlang:bxsites-core</include>
+                    </includes>
+                  </artifactSet>
+                  <createDependencyReducedPom>true</createDependencyReducedPom>
+                  <!--
+                    core has no runtime dependencies of its own today, so
+                    this is a no-op right now - but without it, the day core
+                    gains one, that dependency would silently vanish from
+                    both the shaded jar (only bxsites-core itself is in
+                    artifactSet.includes above) and the reduced POM (dropped
+                    along with bxsites-core, the default shade behavior),
+                    with no build-time warning - just a NoClassDefFoundError
+                    for whoever consumes the published plugin. This promotes
+                    such a dependency back to a normal, resolvable direct
+                    dependency of the reduced POM instead.
+                  -->
+                  <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.3.1</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>3.6.3</version>
+            <configuration>
+              <doclint>none</doclint>
+            </configuration>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- Signs every attached artifact - requires a GPG key imported into the runner's keyring first, see the release workflow. -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>3.2.4</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- Uploads the signed bundle to the Sonatype Central Portal. Docs: https://central.sonatype.org/publish/publish-portal-maven/ -->
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>0.7.0</version>
+            <extensions>true</extensions>
+            <configuration>
+              <!-- Matches the <server> id actions/setup-java writes settings.xml under, from MAVEN_USERNAME/MAVEN_PASSWORD - see the release workflow. -->
+              <publishingServerId>central</publishingServerId>
+              <autoPublish>true</autoPublish>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

@@ -1,0 +1,48 @@
+name: Gradle Plugin CI
+
+on:
+  push:
+    branches: [development, main, master]
+    paths:
+      - "core/**"
+      - "gradle-plugin/**"
+      - ".github/workflows/gradle-plugin-ci.yml"
+  pull_request:
+    paths:
+      - "core/**"
+      - "gradle-plugin/**"
+      - ".github/workflows/gradle-plugin-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # core/ is never published anywhere - gradle-plugin resolves it as a
+      # composite build (see gradle-plugin/settings.gradle.kts) for the jar
+      # it needs, but that substitution never runs core's own `check` - so
+      # without this step, core's 20+ unit tests (checksum verification,
+      # zip-slip handling, command construction, success evaluation) never
+      # gated this workflow at all despite core/** being in its path filter.
+      - name: Build & Test core (unit)
+        working-directory: core
+        run: ./gradlew check --stacktrace
+
+      - name: Build & Test gradle-plugin (unit + functional)
+        working-directory: gradle-plugin
+        run: ./gradlew check --stacktrace

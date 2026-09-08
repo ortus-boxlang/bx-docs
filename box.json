@@ -52,7 +52,10 @@
         "/tests/**",
         "/examples/**",
         "/apidocs/**",
-        "/site/**"
+        "/site/**",
+        "/core/**",
+        "/gradle-plugin/**",
+        "/maven-plugin/**"
     ],
     "installPaths":{
         "testbox":"testbox/",

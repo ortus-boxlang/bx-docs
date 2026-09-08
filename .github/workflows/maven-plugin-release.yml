@@ -1,0 +1,97 @@
+# Publishes the bx-sites Maven plugin (and shades in core/) to Maven
+# Central via the Sonatype Central Portal, mirroring how the boxlang
+# runtime repo (ortus-boxlang/boxlang) does the same thing with Gradle's
+# maven-publish + signing + com.gradleup.nmcp.aggregation - see
+# .github/workflows/release.yml there for the reference implementation
+# this one is adapted from. Same four secrets, same Central Portal account:
+#   MAVEN_USERNAME / MAVEN_PASSWORD - the Central Portal user token
+#     (generate one at https://central.sonatype.com/account under
+#     "Generate User Token" - it gives you this username/password pair,
+#     it is not your login password).
+#   GPG_KEY / GPG_PASSWORD - the ASCII-armored private signing key
+#     (`gpg --armor --export-secret-keys KEYID`) and its passphrase.
+# If these already exist as org-level or boxlang-repo secrets and this repo
+# can see them, nothing further to add; otherwise copy them into this
+# repo's own Settings -> Secrets.
+name: Maven Plugin Release
+
+on:
+  push:
+    tags:
+      - "maven-plugin-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish to Maven Central
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          # Writes ~/.m2/settings.xml's <server id="central"> block from
+          # these two env vars - matches <publishingServerId>central</...>
+          # in maven-plugin/pom.xml's central-release profile.
+          server-id: central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Publish core/ to the local Maven repository
+        working-directory: core
+        run: ./gradlew publishToMavenLocal --stacktrace
+
+      - name: Import GPG signing key
+        run: |
+          echo "${GPG_KEY}" | gpg --batch --import
+        env:
+          GPG_KEY: ${{ secrets.GPG_KEY }}
+
+      - name: Test before publishing
+        working-directory: maven-plugin
+        run: mvn --batch-mode verify
+
+      # Strips the "maven-plugin-v" tag prefix down to a real version (e.g.
+      # "maven-plugin-v0.1.0" -> "0.1.0"). Not strictly required the way it
+      # is for the Gradle Plugin Portal (Maven Central does allow
+      # "-SNAPSHOT", via a separate snapshot repository) - but this project
+      # deliberately never publishes snapshots to Maven Central at all
+      # (matching the boxlang runtime repo's own convention, which gates
+      # its Central Portal publish step behind the same non-snapshot check),
+      # so every tagged release still needs a real version set here.
+      #
+      # Pinned to a specific versions-maven-plugin release (fully-qualified
+      # goal, not the bare `versions:set` prefix) so a release build never
+      # silently resolves whatever that plugin's latest happens to be on
+      # the day the tag is pushed.
+      - name: Set the release version from the tag
+        working-directory: maven-plugin
+        run: mvn --batch-mode org.codehaus.mojo:versions-maven-plugin:2.21.0:set -DnewVersion="${GITHUB_REF_NAME#maven-plugin-v}" -DgenerateBackupPoms=false
+
+      # -Dinvoker.skip=true: -DskipTests only skips the surefire unit tests -
+      # maven-invoker-plugin's own install/run goals (bound to
+      # integration-test, which `deploy` triggers as an earlier lifecycle
+      # phase) are a separate switch, and without this the release build ran
+      # the full network-backed invoker IT a second time (verify already ran
+      # it above), needlessly widening the release's failure surface.
+      #
+      # MAVEN_GPG_PASSPHRASE: maven-gpg-plugin reads this automatically
+      # (passphraseEnvName defaults to it since 3.2.0) - preferred over
+      # -Dgpg.passphrase, which the plugin itself documents as deprecated
+      # because it can leak the passphrase into process listings/logs.
+      - name: Publish to Maven Central
+        working-directory: maven-plugin
+        run: mvn --batch-mode -Pcentral-release -DskipTests -Dinvoker.skip=true deploy
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSWORD }}

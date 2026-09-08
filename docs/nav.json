@@ -66,6 +66,16 @@
 		]
 	},
 	{
+		"title": "Java Integration",
+		"children": [
+			"guides/gradle-plugin.md",
+			"guides/maven-plugin.md",
+			"guides/java-openapi-example.md",
+			"guides/java-javadoc-example.md",
+			"guides/java-controller-scan-example.md"
+		]
+	},
+	{
 		"title": "Help",
 		"children": [
 			"troubleshooting.md",
