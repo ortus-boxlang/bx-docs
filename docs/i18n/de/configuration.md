@@ -1171,3 +1171,80 @@ eine Version existiert. Siehe [Versionierung](guides/versioning.md) für
 das vollständige Bild - eine neue Version mit `version:new` anlegen, wie
 Versionen sortieren und bauen, und was außen vor bleibt (Suche pro Baum
 begrenzt, kein Deprecated-/EOL-Flag).
+
+
+## `docbox`
+
+Einstellungen für [`bxSites docbox`](cli-reference.md#docbox), das aus
+DocBox eine BoxLang-/CFML-API-Referenz erzeugt - siehe
+[DocBox-API-Referenz](guides/docbox.md). Alle Schlüssel sind optional; ohne
+`docbox`-Block werden die üblichen Quellordner dokumentiert (`models`,
+`handlers`, `bifs`, `components`, `interceptors`).
+
+- `projectTitle` - Titel der Überblicksseite. Standard: der `name` der Site
+  plus `" API"`.
+- `mappings` - Mapping-Name zu Quellverzeichnis. Der Name erscheint als
+  Package auf den erzeugten Seiten.
+- `excludes` - Regex für Pfade, die DocBox überspringt.
+- `pagePathPrefix` - Wohin die Seiten geschrieben werden. Standard:
+  `api/docbox`.
+- `tags` - Frontmatter-Tags jeder erzeugten Seite. Standard:
+  `[ "api", "docbox" ]`.
+
+=== "YAML"
+    ```yaml title="bxsites.yaml"
+    docbox:
+      projectTitle: "Meine API"
+      mappings:
+        models: models
+      pagePathPrefix: api/docbox
+      tags: [ api, docbox ]
+    ```
+
+=== "JSON"
+    ```json title="bxsites.json"
+    {
+    	"docbox": {
+    		"projectTitle": "Meine API",
+    		"mappings": { "models": "models" },
+    		"pagePathPrefix": "api/docbox",
+    		"tags": [ "api", "docbox" ]
+    	}
+    }
+    ```
+
+## `coldbox`
+
+Einstellungen für [`bxSites coldbox`](cli-reference.md#coldbox), das eine
+ColdBox-Anwendung anhand ihrer Konventionen dokumentiert - siehe
+[ColdBox-Anwendungen](guides/coldbox.md). Alle Schlüssel sind optional.
+
+- `appRoot` - wo die ColdBox-Anwendung liegt, relativ zum Projektstamm.
+  Standard ist der Projektstamm selbst.
+- `pagePathPrefix` - Wohin die Seiten geschrieben werden. Standard:
+  `api/coldbox`.
+- `tags` - Frontmatter-Tags jeder erzeugten Seite. Standard:
+  `[ "api", "coldbox" ]`.
+- `include` - welche Seitengruppen erzeugt werden: `routes`, `handlers`,
+  `models`, `modules`, `interceptors`, `scheduler`. Standardmäßig alle.
+
+=== "YAML"
+    ```yaml title="bxsites.yaml"
+    coldbox:
+      appRoot: "."
+      pagePathPrefix: api/coldbox
+      tags: [ api, coldbox ]
+      include: [ routes, handlers, models, modules, interceptors, scheduler ]
+    ```
+
+=== "JSON"
+    ```json title="bxsites.json"
+    {
+    	"coldbox": {
+    		"appRoot": ".",
+    		"pagePathPrefix": "api/coldbox",
+    		"tags": [ "api", "coldbox" ],
+    		"include": [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
+    	}
+    }
+    ```
