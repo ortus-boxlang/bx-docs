@@ -41,6 +41,42 @@ class extends="testbox.system.BaseSpec" {
 				expect( metadata.version ).toBe( "1.2.0" );
 			} );
 
+			it( "returns no interceptors for a config file that doesn't exist", function() {
+				expect( parser.interceptorDeclarations( "/no/such/ColdBox.bx" ) ).toBeEmpty();
+			} );
+
+			it( "reads the interceptors an app registers, skipping any whose class is computed", function() {
+				var dir = createTempDirectory( prefix = "bxsites-cbconfig-int-" );
+				tempDirs.append( dir );
+				fileWrite( dir & "/ColdBox.bx", "class {
+	function configure() {
+		coldbox = { appName : ""Demo"" }
+
+		interceptors = [
+			{ class : ""interceptors.Tracker"", name : ""tracker"" },
+			{ class : ""interceptors.Audit"", properties : { enabled : true } },
+			{ class : someVariable }
+		]
+	}
+}" );
+
+				var declared = parser.interceptorDeclarations( dir & "/ColdBox.bx" );
+
+				expect( declared.len() ).toBe( 2 );
+				expect( declared[ 1 ].class ).toBe( "interceptors.Tracker" );
+				expect( declared[ 1 ].name ).toBe( "tracker" );
+				expect( declared[ 2 ].class ).toBe( "interceptors.Audit" );
+				expect( declared[ 2 ].name ).toBe( "" );
+			} );
+
+			it( "returns no interceptors for a config that registers none", function() {
+				var dir = createTempDirectory( prefix = "bxsites-cbconfig-noint-" );
+				tempDirs.append( dir );
+				fileWrite( dir & "/ColdBox.bx", "class { function configure() { coldbox = {} } }" );
+
+				expect( parser.interceptorDeclarations( dir & "/ColdBox.bx" ) ).toBeEmpty();
+			} );
+
 			it( "reads string, boolean, numeric and array literals in their own types", function() {
 				var properties = parser.thisProperties( "class {
 	this.title = ""API""

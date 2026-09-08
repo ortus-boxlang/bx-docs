@@ -1003,7 +1003,7 @@ class extends="testbox.system.BaseSpec" {
 				expect( config.coldbox.appRoot ).toBe( "" );
 				expect( config.coldbox.pagePathPrefix ).toBe( "api/coldbox" );
 				expect( config.coldbox.tags ).toBe( [ "api", "coldbox" ] );
-				expect( config.coldbox.include ).toBe( [ "routes", "handlers", "models" ] );
+				expect( config.coldbox.include ).toBe( [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ] );
 			} );
 
 			it( "preserves a fully-configured [coldbox] block", function() {

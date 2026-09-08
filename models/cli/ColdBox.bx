@@ -51,8 +51,17 @@ class {
 			)
 		}
 
-		var routes = collectRoutes( app )
 		var include = includeFor( settings, arguments.options )
+		var configParser = new "models.build.ColdBoxConfigParser@bxsites"()
+
+		// Each module's own declarations are needed twice - to mount its
+		// routes at the entry point it declares, and to describe it on its
+		// own page - so read them once and carry them on the module.
+		for ( var module in app.modules ) {
+			module[ "metadata" ] = configParser.moduleMetadata( module.configFile )
+		}
+
+		var routes = collectRoutes( app )
 		var pagePathPrefix = pagePathPrefixFor( settings, arguments.options )
 
 		var generated = new "models.build.ColdBoxDocGenerator@bxsites"().generate(
@@ -63,7 +72,9 @@ class {
 			tags           = tagsFor( settings, arguments.options ),
 			include        = include,
 			classDocs      = classDocs( app, include ),
-			mappings       = include.findNoCase( "models" ) ? collectMappings( app ) : []
+			mappings       = include.findNoCase( "models" ) || include.findNoCase( "modules" ) ? collectMappings( app ) : [],
+			interceptors   = include.findNoCase( "interceptors" ) ? configParser.interceptorDeclarations( app.configFile ) : [],
+			tasks          = include.findNoCase( "scheduler" ) ? collectTasks( app ) : []
 		)
 
 		return {
@@ -93,7 +104,7 @@ class {
 		// Captured first: an arrow closure has its own `arguments` scope,
 		// so `arguments.include` inside the filter would not be this one.
 		var requested = arguments.include
-		var kinds = [ "handler", "model" ].filter( ( kind ) => requested.findNoCase( kind & "s" ) > 0 )
+		var kinds = [ "handler", "model", "interceptor" ].filter( ( kind ) => requested.findNoCase( kind & "s" ) > 0 )
 
 		if ( !kinds.len() ) {
 			return {}
@@ -226,7 +237,6 @@ class {
 	 */
 	private array function collectRoutes( required struct app ) {
 		var parser = new "models.build.ColdBoxRouterParser@bxsites"()
-		var configParser = new "models.build.ColdBoxConfigParser@bxsites"()
 		var routes = parser.parse( arguments.app.routerFile )
 
 		for ( var module in arguments.app.modules ) {
@@ -234,19 +244,39 @@ class {
 				continue
 			}
 
-			var metadata = configParser.moduleMetadata( module.configFile )
-
 			routes.append(
 				parser.parse(
 					routerFile = module.routerFile,
 					module     = module.name,
-					prefix     = metadata.entryPoint ?: module.name
+					prefix     = ( module.metadata ?: {} ).entryPoint ?: module.name
 				),
 				true
 			)
 		}
 
 		return routes
+	}
+
+	/**
+	 * Every scheduled task the app registers: its own scheduler first,
+	 * then each module's.
+	 *
+	 * @app A `ColdBoxAppScanner.scan()` result
+	 */
+	private array function collectTasks( required struct app ) {
+		var parser = new "models.build.ColdBoxSchedulerParser@bxsites"()
+		var scanner = new "models.build.ColdBoxAppScanner@bxsites"()
+		var tasks = parser.parse( arguments.app.schedulerFile )
+
+		for ( var module in arguments.app.modules ) {
+			var moduleScheduler = scanner.firstExisting( module.root & "/config/Scheduler" )
+
+			if ( len( moduleScheduler ) ) {
+				tasks.append( parser.parse( moduleScheduler, module.name ), true )
+			}
+		}
+
+		return tasks
 	}
 
 	/**
@@ -315,7 +345,7 @@ class {
 
 		return isArray( arguments.settings.include ?: "" ) && arguments.settings.include.len()
 			? arguments.settings.include
-			: [ "routes", "handlers", "models" ]
+			: [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
 	}
 
 	/**

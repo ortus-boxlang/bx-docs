@@ -1,0 +1,254 @@
+/**
+ * Reads a ColdBox `Scheduler` (app or module) as text and returns the
+ * tasks it registers.
+ *
+ * The third DSL in this family, and the same shape as the other two - a
+ * fluent chain off `task( "name" )` - so it shares `BoxLangSourceReader`
+ * with `ColdBoxRouterParser` and `ColdBoxWireBoxParser` and only adds the
+ * scheduling meaning: how often a task runs, what it runs, and the
+ * constraints around it.
+ *
+ * ## What a task's "runs" column can and can't say
+ *
+ * A task's work is almost always a closure - `.call( () => runEvent(
+ * "main.heartbeat" ) )` - which is code, not a literal, so there is
+ * nothing here to resolve. Rather than drop the most interesting column
+ * on the page, the closure's own source text is carried through as
+ * written and rendered as code. That is honest (it is exactly what the
+ * scheduler will run) and useful (it names the event or service method),
+ * without pretending to have evaluated anything.
+ *
+ * A task whose name is built at runtime is skipped, like every other
+ * non-literal declaration these parsers meet.
+ */
+class {
+
+	/**
+	 * The shared source-scanning primitives.
+	 */
+	variables.reader = new "models.build.BoxLangSourceReader@bxsites"()
+
+	static {
+		/**
+		 * The frequency calls a task can carry, and how each one reads on
+		 * a page. `{args}` is replaced by the call's own arguments.
+		 *
+		 * Ordered longest-name-first within each family so `everyDay`
+		 * can never shadow `everyDayAt`.
+		 */
+		frequencies = [
+			{ "call" : "everyMonthOn", "label" : "every month on day {args}" },
+			{ "call" : "everyYearOn",  "label" : "every year on {args}" },
+			{ "call" : "everyWeekOn",  "label" : "every week on day {args}" },
+			{ "call" : "everyHourAt",  "label" : "every hour at minute {args}" },
+			{ "call" : "everyDayAt",   "label" : "every day at {args}" },
+			{ "call" : "everyMinute",  "label" : "every minute" },
+			{ "call" : "everyMonth",   "label" : "every month" },
+			{ "call" : "everyWeek",    "label" : "every week" },
+			{ "call" : "everyYear",    "label" : "every year" },
+			{ "call" : "everyHour",    "label" : "every hour" },
+			{ "call" : "everyDay",     "label" : "every day" },
+			{ "call" : "cron",         "label" : "cron {args}" },
+			{ "call" : "every",        "label" : "every {args}" }
+		]
+
+		/**
+		 * Constraint calls worth surfacing, and the label each gets.
+		 */
+		modifiers = [
+			{ "call" : "onOneServer",     "label" : "one server only" },
+			{ "call" : "withNoOverlaps",  "label" : "no overlapping runs" },
+			{ "call" : "disable",         "label" : "disabled" },
+			{ "call" : "startOn",         "label" : "starts {args}" },
+			{ "call" : "endOn",           "label" : "ends {args}" },
+			{ "call" : "delay",           "label" : "delayed {args}" }
+		]
+
+		/**
+		 * How much of a task's closure body to carry onto the page before
+		 * truncating - long enough for the event or service call it makes,
+		 * short enough to stay a table cell.
+		 */
+		maxTargetLength = 120
+	}
+
+	/**
+	 * Parses one scheduler file.
+	 *
+	 * @schedulerFile Absolute path to a `Scheduler.bx`/`Scheduler.cfc`
+	 * @module The module these tasks belong to, or "" for the app's own
+	 *
+	 * @return Array of task structs; empty when the file doesn't exist
+	 */
+	array function parse( required string schedulerFile, string module = "" ) {
+		if ( !fileExists( arguments.schedulerFile ) ) {
+			return []
+		}
+
+		return parseSource( source = fileRead( arguments.schedulerFile ), module = arguments.module )
+	}
+
+	/**
+	 * Parses scheduler source directly.
+	 *
+	 * @source The scheduler's source code
+	 * @module The module these tasks belong to
+	 *
+	 * @return Array of `{ name, schedule, target, constraints, module }` structs
+	 */
+	array function parseSource( required string source, string module = "" ) {
+		var tasks = []
+
+		for ( var statement in variables.reader.statements( variables.reader.stripComments( arguments.source ) ) ) {
+			var task = parseStatement( statement, arguments.module )
+
+			if ( !isNull( task ) ) {
+				tasks.append( task )
+			}
+		}
+
+		return tasks
+	}
+
+	/**
+	 * One statement, as the task it registers - or null when it isn't one.
+	 *
+	 * @statement A single scheduler statement
+	 * @module The module context
+	 */
+	private any function parseStatement( required string statement, required string module ) {
+		if ( lCase( variables.reader.initiatorOf( arguments.statement ) ) != "task" ) {
+			return javacast( "null", "" )
+		}
+
+		var trimmed = variables.reader.withoutReceiver( arguments.statement )
+		var call = variables.reader.callArguments( trimmed )
+
+		if ( !call.closed ) {
+			return javacast( "null", "" )
+		}
+
+		var name = variables.reader.literalArgument( variables.reader.parseArguments( call.content ), "name", 1 )
+
+		if ( !len( name ) ) {
+			return javacast( "null", "" )
+		}
+
+		return {
+			"name"        : name,
+			"schedule"    : scheduleOf( trimmed ),
+			"target"      : targetOf( trimmed ),
+			"constraints" : constraintsOf( trimmed ),
+			"module"      : arguments.module
+		}
+	}
+
+	/**
+	 * How often a task runs, in words.
+	 *
+	 * @statement The task's whole statement
+	 */
+	private string function scheduleOf( required string statement ) {
+		for ( var frequency in static.frequencies ) {
+			if ( variables.reader.hasCall( arguments.statement, frequency.call ) ) {
+				return frequency.label.replace( "{args}", readableArguments( arguments.statement, frequency.call ) )
+			}
+		}
+
+		return ""
+	}
+
+	/**
+	 * What a task runs: the source text of its `call()` argument, flattened
+	 * to one line and truncated - see this class' own docblock on why the
+	 * raw text is the honest answer here.
+	 *
+	 * @statement The task's whole statement
+	 */
+	private string function targetOf( required string statement ) {
+		if ( !variables.reader.hasCall( arguments.statement, "call" ) ) {
+			return ""
+		}
+
+		var body = flatten( callBody( arguments.statement, "call" ) )
+
+		// An arrow or anonymous function is scaffolding around the work,
+		// not the work - drop it so the cell reads as what actually runs.
+		body = body
+			.reReplace( "^\(\s*\)\s*=>\s*", "" )
+			.reReplace( "^function\s*\(\s*\)\s*\{", "" )
+			.reReplace( "\}$", "" )
+			.trim()
+
+		return body.len() > static.maxTargetLength
+			? body.left( static.maxTargetLength - 1 ) & "…"
+			: body
+	}
+
+	/**
+	 * The constraints a task declares, in the order they're worth reading.
+	 *
+	 * @statement The task's whole statement
+	 */
+	private array function constraintsOf( required string statement ) {
+		var found = []
+
+		for ( var modifier in static.modifiers ) {
+			if ( variables.reader.hasCall( arguments.statement, modifier.call ) ) {
+				found.append( modifier.label.replace( "{args}", readableArguments( arguments.statement, modifier.call ) ) )
+			}
+		}
+
+		return found
+	}
+
+	/**
+	 * A chained call's arguments as readable text: literals unquoted, and
+	 * a comma-separated list joined with spaces, so `every( 5, "minutes" )`
+	 * reads as `5 minutes`.
+	 *
+	 * @statement The statement to search
+	 * @call The chained method name
+	 */
+	private string function readableArguments( required string statement, required string call ) {
+		var parts = variables.reader
+			.splitTopLevel( callBody( arguments.statement, arguments.call ), "," )
+			.map( ( part ) => {
+				var raw = trim( part )
+				var literal = variables.reader.unquote( raw )
+
+				return len( literal ) ? literal : raw;
+			} )
+			.filter( ( part ) => len( part ) )
+
+		return parts.toList( " " )
+	}
+
+	/**
+	 * The raw argument text of a chained call.
+	 *
+	 * @statement The statement to search
+	 * @call The chained method name
+	 */
+	private string function callBody( required string statement, required string call ) {
+		var position = reFindNoCase( "\.\s*#arguments.call#\s*\(", arguments.statement )
+
+		if ( !position ) {
+			return ""
+		}
+
+		var open = find( "(", arguments.statement, position )
+
+		return variables.reader.balancedBlock( arguments.statement, open, "(", ")" ).content
+	}
+
+	/**
+	 * Collapses whitespace so a multi-line closure body fits one cell.
+	 *
+	 * @text The raw text
+	 */
+	private string function flatten( required string text ) {
+		return trim( arguments.text.reReplace( "\s+", " ", "all" ) )
+	}
+
+}

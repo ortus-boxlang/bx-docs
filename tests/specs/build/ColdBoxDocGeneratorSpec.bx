@@ -44,7 +44,15 @@ class extends="testbox.system.BaseSpec" {
 						"configFile" : "/app/modules_app/api/ModuleConfig.bx",
 						"routerFile" : "/app/modules_app/api/config/Router.bx",
 						"handlers"   : [ { "name" : "Orders", "file" : "/app/modules_app/api/handlers/Orders.bx", "module" : "api" } ],
-						"models"     : []
+						"models"     : [],
+						"metadata"   : {
+							"title"        : "API Module",
+							"author"       : "Ortus",
+							"version"      : "1.2.0",
+							"entryPoint"   : "api",
+							"description"  : "Everything the public API needs.",
+							"dependencies" : [ "cbsecurity" ]
+						}
 					} ]
 				};
 			}
@@ -585,6 +593,185 @@ class extends="testbox.system.BaseSpec" {
 				);
 
 				expect( directoryExists( contentDir & "/api/coldbox/models" ) ).toBeFalse();
+			} );
+
+			private array function fixtureTasks() {
+				return [
+					{
+						"name"        : "Heartbeat",
+						"schedule"    : "every 5 minutes",
+						"target"      : 'runEvent( "main.heartbeat" )',
+						"constraints" : [ "one server only" ],
+						"module"      : ""
+					},
+					{
+						"name"        : "Nightly sync",
+						"schedule"    : "every day at 02:00",
+						"target"      : "",
+						"constraints" : [],
+						"module"      : "api"
+					}
+				];
+			}
+
+			it( "writes a page per module plus a modules index", function() {
+				var contentDir = newTempDir();
+
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileExists( contentDir & "/api/coldbox/modules/api.md" ) ).toBeTrue();
+				expect( fileExists( contentDir & "/api/coldbox/modules/index.md" ) ).toBeTrue();
+			} );
+
+			it( "renders a module's declared metadata, and where it mounts", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				var page = fileRead( contentDir & "/api/coldbox/modules/api.md" );
+
+				expect( page ).toInclude( 'title: "API Module"' );
+				expect( page ).toInclude( "mounted at `/api`" );
+				expect( page ).toInclude( "| Author | Ortus |" );
+				expect( page ).toInclude( "| Version | 1.2.0 |" );
+				expect( page ).toInclude( "| Depends on | `cbsecurity` |" );
+				expect( page ).toInclude( "Everything the public API needs." );
+			} );
+
+			it( "lists only that module's routes, handlers and mappings on its page", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, mappings = fixtureMappings() );
+
+				var page = fileRead( contentDir & "/api/coldbox/modules/api.md" );
+
+				expect( page ).toInclude( "`/api/orders`" );
+				expect( page ).notToInclude( "/home" );
+				expect( page ).toInclude( "[`Orders`](../handlers/api/Orders.md)" );
+				expect( page ).toInclude( "| `OrderService` | `models.OrderService` | `session` |" );
+			} );
+
+			it( "counts what each module contributes on the modules index", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/modules/index.md" ) ).toInclude( "| [`api`](api.md) | `api` | `1.2.0` | 1 | 0 | 1 |" );
+			} );
+
+			it( "leaves the metadata table off a module that declares nothing about itself", function() {
+				var contentDir = newTempDir();
+				var app = fixtureApp();
+				app.modules[ 1 ].metadata = {};
+
+				generator.generate( app = app, routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/modules/api.md" ) ).notToInclude( "| Author |" );
+			} );
+
+			it( "writes an interceptors page covering both config and the interceptors folder", function() {
+				var contentDir = newTempDir();
+				var app = fixtureApp();
+				app.interceptors = [ { "name" : "Tracker", "file" : "/app/interceptors/Tracker.bx" } ];
+				var docs = {
+					"interceptor::tracker" : {
+						"name"      : "Tracker",
+						"hint"      : "Tracks page views.",
+						"functions" : [
+							{ "name" : "preEvent", "access" : "public", "returnType" : "Any", "hint" : "", "documentation" : {}, "parameters" : [] },
+							{ "name" : "postEvent", "access" : "public", "returnType" : "Any", "hint" : "", "documentation" : {}, "parameters" : [] }
+						]
+					}
+				};
+
+				generator.generate(
+					app          = app,
+					routes       = fixtureRoutes(),
+					contentDir   = contentDir,
+					classDocs    = docs,
+					interceptors = [ { "class" : "interceptors.Tracker", "name" : "tracker" } ]
+				);
+
+				var page = fileRead( contentDir & "/api/coldbox/interceptors.md" );
+
+				expect( page ).toInclude( "| `interceptors.Tracker` | `tracker` |" );
+				expect( page ).toInclude( "Tracks page views." );
+				expect( page ).toInclude( "Listens for `preEvent`, `postEvent`" );
+			} );
+
+			it( "says how to read interception points when there's no metadata for a class", function() {
+				var contentDir = newTempDir();
+				var app = fixtureApp();
+				app.interceptors = [ { "name" : "Tracker", "file" : "/app/interceptors/Tracker.bx" } ];
+
+				generator.generate( app = app, routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/interceptors.md" ) ).toInclude( "install the `bx-docbox` module" );
+			} );
+
+			it( "writes no interceptors page for an app that has none", function() {
+				var contentDir = newTempDir();
+
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileExists( contentDir & "/api/coldbox/interceptors.md" ) ).toBeFalse();
+			} );
+
+			it( "writes a scheduled tasks page with each task's schedule, work and constraints", function() {
+				var contentDir = newTempDir();
+
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, tasks = fixtureTasks() );
+
+				var page = fileRead( contentDir & "/api/coldbox/scheduled-tasks.md" );
+
+				expect( page ).toInclude( '| Heartbeat | `every 5 minutes` | `runEvent( "main.heartbeat" )` | one server only | &mdash; |' );
+				expect( page ).toInclude( "| Nightly sync | `every day at 02:00` | &mdash; | &mdash; | `api` |" );
+			} );
+
+			it( "writes no scheduled tasks page for an app that schedules nothing", function() {
+				var contentDir = newTempDir();
+
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileExists( contentDir & "/api/coldbox/scheduled-tasks.md" ) ).toBeFalse();
+			} );
+
+			it( "links every page set it wrote from the app index", function() {
+				var contentDir = newTempDir();
+				var app = fixtureApp();
+				app.interceptors = [ { "name" : "Tracker", "file" : "/app/interceptors/Tracker.bx" } ];
+
+				generator.generate(
+					app          = app,
+					routes       = fixtureRoutes(),
+					contentDir   = contentDir,
+					classDocs    = handlerDocs(),
+					mappings     = fixtureMappings(),
+					interceptors = [ { "class" : "interceptors.Tracker", "name" : "tracker" } ],
+					tasks        = fixtureTasks()
+				);
+
+				var index = fileRead( contentDir & "/api/coldbox/index.md" );
+
+				for ( var link in [ "routes.md", "handlers/index.md", "models/index.md", "modules/index.md", "interceptors.md", "scheduled-tasks.md" ] ) {
+					expect( index ).toInclude( "(" & link & ")" );
+				}
+			} );
+
+			it( "skips the module, interceptor and scheduler page sets when include leaves them out", function() {
+				var contentDir = newTempDir();
+				var app = fixtureApp();
+				app.interceptors = [ { "name" : "Tracker", "file" : "/app/interceptors/Tracker.bx" } ];
+
+				generator.generate(
+					app          = app,
+					routes       = fixtureRoutes(),
+					contentDir   = contentDir,
+					include      = [ "routes" ],
+					interceptors = [ { "class" : "interceptors.Tracker", "name" : "tracker" } ],
+					tasks        = fixtureTasks()
+				);
+
+				expect( directoryExists( contentDir & "/api/coldbox/modules" ) ).toBeFalse();
+				expect( fileExists( contentDir & "/api/coldbox/interceptors.md" ) ).toBeFalse();
+				expect( fileExists( contentDir & "/api/coldbox/scheduled-tasks.md" ) ).toBeFalse();
 			} );
 
 			it( "escapes a pipe in a pattern so it can't break the table", function() {

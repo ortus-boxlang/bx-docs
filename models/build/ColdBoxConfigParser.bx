@@ -1,8 +1,9 @@
 /**
- * Reads the literal declarations out of a ColdBox configuration class -
- * a `ModuleConfig`'s `this.*` properties today, with the app's own
- * `config/ColdBox`, `config/WireBox` and `config/Scheduler` following in
- * the milestones that document them.
+ * Reads the literal declarations out of a ColdBox configuration class:
+ * a `ModuleConfig`'s `this.*` properties, and the interceptors an app's
+ * `config/ColdBox` registers. (`config/WireBox` and `config/Scheduler`
+ * have their own parsers, since both are fluent DSLs rather than plain
+ * declarations.)
  *
  * Same static-only contract as `ColdBoxAppScanner` and
  * `ColdBoxRouterParser`: nothing is executed, so only literal values are
@@ -46,6 +47,72 @@ class {
 		}
 
 		return thisProperties( fileRead( arguments.configFile ) )
+	}
+
+	/**
+	 * The interceptors an application registers in its `config/ColdBox`.
+	 *
+	 * ColdBox takes these as an array of structs - `{ class : "...",
+	 * name : "...", properties : {} }` - which is a data literal rather
+	 * than a fluent chain, so it's read as one: the `interceptors` array
+	 * is located, then each entry's own `class`/`name` literal is read
+	 * out of it. An entry whose class is computed has nothing literal to
+	 * read and is skipped, as everywhere else here.
+	 *
+	 * @configFile Absolute path to a `ColdBox.bx`/`.cfc`
+	 *
+	 * @return Array of `{ class, name }` structs
+	 */
+	array function interceptorDeclarations( required string configFile ) {
+		if ( !fileExists( arguments.configFile ) ) {
+			return []
+		}
+
+		var reader = new "models.build.BoxLangSourceReader@bxsites"()
+		var source = reader.stripComments( fileRead( arguments.configFile ) )
+		var position = reFindNoCase( "interceptors[ #char( 9 )#]*=[ #char( 9 )#]*\[", source )
+
+		if ( !position ) {
+			return []
+		}
+
+		var open = find( "[", source, position )
+		var block = reader.balancedBlock( source, open, "[", "]" )
+
+		if ( !block.closed ) {
+			return []
+		}
+
+		var declarations = []
+
+		for ( var entry in reader.splitTopLevel( block.content, "," ) ) {
+			var className = literalKey( entry, "class" )
+
+			if ( !len( className ) ) {
+				continue
+			}
+
+			declarations.append( { "class" : className, "name" : literalKey( entry, "name" ) } )
+		}
+
+		return declarations
+	}
+
+	/**
+	 * A `key : "value"` literal inside a struct literal's text.
+	 *
+	 * @text The struct literal's text
+	 * @key The key to read
+	 */
+	private string function literalKey( required string text, required string key ) {
+		var match = reFindNoCase(
+			"#arguments.key#[ #char( 9 )#]*[:=][ #char( 9 )#]*([""'])([^""']*)\1",
+			arguments.text,
+			1,
+			true
+		)
+
+		return match.pos[ 1 ] > 0 ? arguments.text.mid( match.pos[ 3 ], match.len[ 3 ] ) : ""
 	}
 
 	/**

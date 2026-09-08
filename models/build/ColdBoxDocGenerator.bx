@@ -1,8 +1,9 @@
 /**
  * Renders a scanned ColdBox application as bx-sites Markdown pages: an
  * app overview, a routes table covering the app router plus every module
- * router, a page per event handler, and a page per model alongside the
- * WireBox mappings that wire them together.
+ * router, a page per event handler, a page per model alongside the
+ * WireBox mappings that wire them together, a page per module, and the
+ * app's interceptors and scheduled tasks.
  *
  * The ColdBox-side counterpart of the Gradle/Maven plugins'
  * `bxSitesControllerScanDoc`, which does the same job for Spring MVC -
@@ -26,7 +27,7 @@ class {
 	 * named in `include` is skipped entirely.
 	 */
 	static {
-		sections = [ "routes", "handlers", "models" ]
+		sections = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
 
 		/**
 		 * ColdBox's own handler lifecycle methods - implicit hooks the
@@ -62,9 +63,11 @@ class {
 		required string contentDir,
 		string pagePathPrefix = "api/coldbox",
 		array tags = [ "api", "coldbox" ],
-		array include = [ "routes", "handlers", "models" ],
+		array include = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ],
 		struct classDocs = {},
-		array mappings = []
+		array mappings = [],
+		array interceptors = [],
+		array tasks = []
 	) {
 		var pagesRoot = arguments.contentDir & "/" & arguments.pagePathPrefix.reReplace( "^/+|/+$", "", "all" )
 		var pageFiles = []
@@ -100,6 +103,26 @@ class {
 			if ( modelResult.pageFiles.len() ) {
 				sectionLinks.append( { "title" : "Models", "link" : "models/index.md" } )
 			}
+		}
+
+		if ( arguments.include.findNoCase( "modules" ) && arguments.app.modules.len() ) {
+			var moduleResult = writeModulePages( arguments.app, arguments.routes, arguments.mappings, pagesRoot, arguments.tags )
+			pageFiles.append( moduleResult.pageFiles, true )
+			sectionLinks.append( { "title" : "Modules", "link" : "modules/index.md" } )
+		}
+
+		if ( arguments.include.findNoCase( "interceptors" ) && ( arguments.interceptors.len() || arguments.app.interceptors.len() ) ) {
+			var interceptorsFile = pagesRoot & "/interceptors.md"
+			writePage( interceptorsFile, renderInterceptorsPage( arguments.app, arguments.interceptors, arguments.classDocs, arguments.tags ) )
+			pageFiles.append( interceptorsFile )
+			sectionLinks.append( { "title" : "Interceptors", "link" : "interceptors.md" } )
+		}
+
+		if ( arguments.include.findNoCase( "scheduler" ) && arguments.tasks.len() ) {
+			var tasksFile = pagesRoot & "/scheduled-tasks.md"
+			writePage( tasksFile, renderTasksPage( arguments.tasks, arguments.tags ) )
+			pageFiles.append( tasksFile )
+			sectionLinks.append( { "title" : "Scheduled tasks", "link" : "scheduled-tasks.md" } )
 		}
 
 		var indexFile = pagesRoot & "/index.md"
@@ -255,6 +278,291 @@ class {
 
 		lines.append( "" )
 		lines.append( legend( arguments.routes ), true )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * Writes one page per module, plus the index that lists them.
+	 *
+	 * @app The scanned application
+	 * @routes Every parsed route
+	 * @mappings Every parsed WireBox mapping
+	 * @pagesRoot Absolute path of this generator's page root
+	 * @tags Frontmatter tags
+	 *
+	 * @return `{ pageFiles }`
+	 */
+	private struct function writeModulePages(
+		required struct app,
+		required array routes,
+		required array mappings,
+		required string pagesRoot,
+		required array tags
+	) {
+		var pageFiles = []
+
+		for ( var module in arguments.app.modules ) {
+			var pageFile = arguments.pagesRoot & "/modules/" & module.name & ".md"
+			writePage( pageFile, renderModulePage( module, arguments.routes, arguments.mappings, arguments.tags ) )
+			pageFiles.append( pageFile )
+		}
+
+		var indexFile = arguments.pagesRoot & "/modules/index.md"
+		writePage( indexFile, renderModulesIndexPage( arguments.app.modules, arguments.routes, arguments.tags ) )
+		pageFiles.append( indexFile )
+
+		return { "pageFiles" : pageFiles }
+	}
+
+	/**
+	 * The modules index: every module with its entry point and what it
+	 * contributes to the app.
+	 *
+	 * @modules Every scanned module
+	 * @routes Every parsed route
+	 * @tags Frontmatter tags
+	 */
+	private string function renderModulesIndexPage( required array modules, required array routes, required array tags ) {
+		var lines = [
+			frontMatter( "Modules", "Every module this application declares, and what each one contributes.", arguments.tags ),
+			heading( 1, "Modules" ),
+			"",
+			"| Module | Entry point | Version | Handlers | Models | Routes |",
+			"|---|---|---|---|---|---|"
+		]
+
+		for ( var module in arguments.modules ) {
+			var metadata = module.metadata ?: {}
+			var moduleName = module.name
+			var routeCount = arguments.routes.filter( ( route ) => compareNoCase( route.module, moduleName ) == 0 ).len()
+
+			lines.append(
+				"| [`#cell( module.name )#`](#module.name#.md) | #nameCell( metadata.entryPoint ?: "" )# | #nameCell( metadata.version ?: "" )# | #module.handlers.len()# | #module.models.len()# | #routeCount# |"
+			)
+		}
+
+		lines.append( "" )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * One module page: what it declares about itself, then the routes,
+	 * handlers, models and mappings it brings to the application.
+	 *
+	 * @module One scanned module
+	 * @routes Every parsed route
+	 * @mappings Every parsed WireBox mapping
+	 * @tags Frontmatter tags
+	 */
+	private string function renderModulePage( required struct module, required array routes, required array mappings, required array tags ) {
+		var metadata = arguments.module.metadata ?: {}
+		var moduleName = arguments.module.name
+		var description = trim( metadata.description ?: "" )
+		var lines = [
+			frontMatter( metadata.title ?: arguments.module.name, description, arguments.tags ),
+			heading( 1, metadata.title ?: arguments.module.name ),
+			"",
+			"`#arguments.module.name#`" & ( len( trim( metadata.entryPoint ?: "" ) ) ? " &middot; mounted at `/#metadata.entryPoint#`" : "" ),
+			""
+		]
+
+		if ( len( description ) ) {
+			lines.append( description )
+			lines.append( "" )
+		}
+
+		lines.append( moduleMetadataSection( metadata ), true )
+
+		var moduleRoutes = arguments.routes.filter( ( route ) => compareNoCase( route.module, moduleName ) == 0 )
+		if ( moduleRoutes.len() ) {
+			lines.append( heading( 2, "Routes" ) )
+			lines.append( "" )
+			lines.append( "| Verbs | Pattern | Target |" )
+			lines.append( "|---|---|---|" )
+
+			for ( var route in moduleRoutes ) {
+				lines.append( "| #cell( verbLabel( route.verbs ) )# | `#cell( route.pattern )#` | #targetCell( route )# |" )
+			}
+
+			lines.append( "" )
+		}
+
+		if ( arguments.module.handlers.len() ) {
+			lines.append( heading( 2, "Handlers" ) )
+			lines.append( "" )
+
+			for ( var handler in arguments.module.handlers ) {
+				lines.append( "- [`#cell( handler.name )#`](../handlers/#handlerPagePath( arguments.module.name, handler.name )#)" )
+			}
+
+			lines.append( "" )
+		}
+
+		if ( arguments.module.models.len() ) {
+			lines.append( heading( 2, "Models" ) )
+			lines.append( "" )
+
+			for ( var model in arguments.module.models ) {
+				lines.append( "- [`#cell( model.name )#`](../models/#handlerPagePath( arguments.module.name, model.name )#)" )
+			}
+
+			lines.append( "" )
+		}
+
+		var moduleMappings = arguments.mappings.filter( ( mapping ) => compareNoCase( mapping.module, moduleName ) == 0 )
+		if ( moduleMappings.len() ) {
+			lines.append( heading( 2, "WireBox mappings" ) )
+			lines.append( "" )
+			lines.append( "| Alias | Maps to | Scope |" )
+			lines.append( "|---|---|---|" )
+
+			for ( var mapping in moduleMappings ) {
+				lines.append( "| `#cell( mapping.alias )#` | #nameCell( mapping.target )# | #nameCell( mapping.scope )# |" )
+			}
+
+			lines.append( "" )
+		}
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * A module's own declared metadata, as a table - only the keys it
+	 * actually sets, so a terse ModuleConfig doesn't produce a table full
+	 * of blanks.
+	 *
+	 * @metadata The module's `this.*` declarations
+	 */
+	private array function moduleMetadataSection( required struct metadata ) {
+		var labels = {
+			"author"         : "Author",
+			"version"        : "Version",
+			"entryPoint"     : "Entry point",
+			"webURL"         : "Web URL",
+			"modelNamespace" : "Model namespace",
+			"cfmapping"      : "Mapping",
+			"autoMapModels"  : "Auto-maps models",
+			"dependencies"   : "Depends on",
+			"disabled"       : "Disabled"
+		}
+		var rows = []
+
+		for ( var key in [ "author", "version", "entryPoint", "webURL", "modelNamespace", "cfmapping", "autoMapModels", "dependencies", "disabled" ] ) {
+			if ( !arguments.metadata.keyExists( key ) ) {
+				continue
+			}
+
+			var value = arguments.metadata[ key ]
+			var rendered = isArray( value ) ? value.map( ( entry ) => "`" & entry & "`" ).toList( ", " ) : cell( toDisplay( value ) )
+
+			if ( !len( rendered ) ) {
+				continue
+			}
+
+			rows.append( "| #labels[ key ]# | #rendered# |" )
+		}
+
+		if ( !rows.len() ) {
+			return []
+		}
+
+		var lines = [ "| | |", "|---|---|" ]
+		lines.append( rows, true )
+		lines.append( "" )
+
+		return lines
+	}
+
+	/**
+	 * The interceptors page: what the config registers, and what each
+	 * interceptor class listens for.
+	 *
+	 * An interceptor's public methods are its interception points - that
+	 * is how ColdBox itself decides what to call - so the methods a class
+	 * declares are exactly the list worth showing.
+	 *
+	 * @app The scanned application
+	 * @declared Interceptors registered in `config/ColdBox`
+	 * @classDocs DocBox class metadata keyed by `classKey()`
+	 * @tags Frontmatter tags
+	 */
+	private string function renderInterceptorsPage(
+		required struct app,
+		required array declared,
+		required struct classDocs,
+		required array tags
+	) {
+		var lines = [
+			frontMatter( "Interceptors", "The interceptors this application registers, and the interception points each one listens for.", arguments.tags ),
+			heading( 1, "Interceptors" ),
+			""
+		]
+
+		if ( arguments.declared.len() ) {
+			lines.append( heading( 2, "Registered in config" ) )
+			lines.append( "" )
+			lines.append( "| Class | Name |" )
+			lines.append( "|---|---|" )
+
+			for ( var interceptor in arguments.declared ) {
+				lines.append( "| `#cell( interceptor.class )#` | #nameCell( interceptor.name )# |" )
+			}
+
+			lines.append( "" )
+		}
+
+		if ( arguments.app.interceptors.len() ) {
+			lines.append( heading( 2, "Declared in interceptors/" ) )
+			lines.append( "" )
+
+			for ( var interceptor in arguments.app.interceptors ) {
+				var doc = arguments.classDocs[ classKey( "interceptor", "", interceptor.name ) ] ?: {}
+				var points = publicFunctions( doc ).map( ( member ) => "`" & ( member.name ?: "" ) & "`" )
+
+				lines.append( heading( 3, interceptor.name ) )
+				lines.append( "" )
+
+				var hint = trim( doc.hint ?: "" )
+				if ( len( hint ) ) {
+					lines.append( hint )
+					lines.append( "" )
+				}
+
+				lines.append( points.len() ? "Listens for " & points.toList( ", " ) : "No interception points found - install the `bx-docbox` module to read them." )
+				lines.append( "" )
+			}
+		}
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * The scheduled tasks page.
+	 *
+	 * @tasks Every parsed scheduled task
+	 * @tags Frontmatter tags
+	 */
+	private string function renderTasksPage( required array tasks, required array tags ) {
+		var lines = [
+			frontMatter( "Scheduled tasks", "The tasks this application schedules, how often each runs, and what it runs.", arguments.tags ),
+			heading( 1, "Scheduled tasks" ),
+			"",
+			"| Task | Schedule | Runs | Constraints | Module |",
+			"|---|---|---|---|---|"
+		]
+
+		for ( var task in arguments.tasks ) {
+			var constraints = task.constraints.len() ? cell( task.constraints.toList( ", " ) ) : "&mdash;"
+			var target = len( trim( task.target ) ) ? "`" & cell( task.target ) & "`" : "&mdash;"
+
+			lines.append(
+				"| #cell( task.name )# | #nameCell( task.schedule )# | #target# | #constraints# | #nameCell( task.module )# |"
+			)
+		}
+
+		lines.append( "" )
 
 		return lines.toList( variables.newline )
 	}

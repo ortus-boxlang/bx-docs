@@ -317,6 +317,108 @@ class singleton {
 				expect( fileExists( projectRoot & "/docs/api/coldbox/handlers/index.md" ) ).toBeTrue();
 			} );
 
+			it( "writes a page per module, with the modules index", function() {
+				var projectRoot = newProjectRoot();
+				addModule( projectRoot, "api", "v1" );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/modules/api.md" );
+
+				expect( fileExists( projectRoot & "/docs/api/coldbox/modules/index.md" ) ).toBeTrue();
+				expect( page ).toInclude( "API Module" );
+				expect( page ).toInclude( "mounted at `/v1`" );
+				expect( page ).toInclude( "`/v1/ping`" );
+			} );
+
+			it( "documents the interceptors the app registers and declares", function() {
+				var projectRoot = newProjectRoot();
+				writeFile( projectRoot & "/config/ColdBox.bx", "class {
+	function configure() {
+		interceptors = [ { class : ""interceptors.Tracker"", name : ""tracker"" } ]
+	}
+}" );
+				writeFile( projectRoot & "/interceptors/Tracker.bx", "/**
+ * Tracks page views.
+ */
+class {
+	function preEvent( event, interceptData, rc, prc ) {}
+	function postEvent( event, interceptData, rc, prc ) {}
+}" );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/interceptors.md" );
+
+				expect( page ).toInclude( "| `interceptors.Tracker` | `tracker` |" );
+				expect( page ).toInclude( "Tracker" );
+			} );
+
+			it( "reads an interceptor's interception points through DocBox", function() {
+				if ( !new "models.build.DocBoxRunner@bxsites"().isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+				writeFile( projectRoot & "/interceptors/Tracker.bx", "/**
+ * Tracks page views.
+ */
+class {
+	function preEvent( event, interceptData, rc, prc ) {}
+	function postEvent( event, interceptData, rc, prc ) {}
+}" );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/interceptors.md" );
+
+				expect( page ).toInclude( "Tracks page views." );
+				expect( page ).toInclude( "Listens for `preEvent`, `postEvent`" );
+			} );
+
+			it( "documents the app's scheduled tasks", function() {
+				var projectRoot = newProjectRoot();
+				writeFile( projectRoot & "/config/Scheduler.bx", "class {
+	function configure() {
+		task( ""Heartbeat"" )
+			.call( () => runEvent( ""main.heartbeat"" ) )
+			.every( 5, ""minutes"" )
+			.onOneServer();
+	}
+}" );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/scheduled-tasks.md" );
+
+				expect( page ).toInclude( "Heartbeat" );
+				expect( page ).toInclude( "every 5 minutes" );
+				expect( page ).toInclude( "one server only" );
+			} );
+
+			it( "attributes a module's own scheduled tasks to that module", function() {
+				var projectRoot = newProjectRoot();
+				addModule( projectRoot, "api", "v1" );
+				writeFile( projectRoot & "/modules_app/api/config/Scheduler.bx", "class {
+	function configure() {
+		task( ""Sync orders"" ).call( () => runEvent( ""orders.sync"" ) ).everyHour();
+	}
+}" );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				expect( fileRead( projectRoot & "/docs/api/coldbox/scheduled-tasks.md" ) ).toInclude( "| Sync orders | `every hour` | `runEvent( ""orders.sync"" )` | &mdash; | `api` |" );
+			} );
+
+			it( "writes no interceptor or scheduler page for an app that has neither", function() {
+				var projectRoot = newProjectRoot();
+
+				verb.run( { projectRoot : projectRoot } );
+
+				expect( fileExists( projectRoot & "/docs/api/coldbox/interceptors.md" ) ).toBeFalse();
+				expect( fileExists( projectRoot & "/docs/api/coldbox/scheduled-tasks.md" ) ).toBeFalse();
+			} );
+
 			it( "reports a warning, without failing, for an app whose routes are all runtime-built", function() {
 				var projectRoot = newProjectRoot( withApp = false );
 				writeFile( projectRoot & "/handlers/Main.bx", "class { function index( event, rc, prc ) {} }" );
