@@ -18,8 +18,8 @@ import ortus.boxlang.bxsites.core.provisioning.ArtifactCoordinates;
 import ortus.boxlang.bxsites.gradle.tasks.AbstractBxSitesVerbTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesBuildTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesControllerScanDocTask;
-import ortus.boxlang.bxsites.gradle.tasks.BxSitesDocBoxDocTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesDeployTask;
+import ortus.boxlang.bxsites.gradle.tasks.BxSitesDocBoxDocTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesDoctorTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesJavadocDocTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesLintTask;
@@ -206,7 +206,6 @@ public class BxSitesPlugin implements Plugin<Project> {
             task.getExtraArgs().set(project.provider(docbox::toVerbArguments));
             task.onlyIf(t -> docbox.getEnabled().get());
         });
-
 
         project.getTasks().named("assemble", task -> {
             if (extension.getHookIntoAssemble().get()) {

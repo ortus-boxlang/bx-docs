@@ -140,7 +140,7 @@ class {
 	 * @routes Every parsed route
 	 * @pagesRoot Absolute path of this generator's page root
 	 * @tags Frontmatter tags
-	 * @classDocs DocBox class metadata, keyed as `<module>:<handler name>`
+	 * @classDocs DocBox class metadata, keyed by `classKey()`
 	 *
 	 * @return `{ pageFiles, warnings }`
 	 */
@@ -912,7 +912,7 @@ class {
 	 * actions it exposes, and how many routes reach it.
 	 *
 	 * @handlers Every handler, app and module alike
-	 * @classDocs DocBox class metadata keyed by handler key
+	 * @classDocs DocBox class metadata, keyed by `classKey()`
 	 * @routes Every parsed route
 	 * @tags Frontmatter tags
 	 */
@@ -1208,7 +1208,7 @@ class {
 	 * name together, since two modules can each declare a `Main`, and a
 	 * handler and a model can share a name too.
 	 *
-	 * @kind `handler` or `model`
+	 * @kind `handler`, `model` or `interceptor`
 	 * @module The owning module, or "" for the app's own
 	 * @name The class' dotted name
 	 */

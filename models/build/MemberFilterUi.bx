@@ -17,13 +17,13 @@
  * emit byte-identical markup on purpose - a Javadoc page and a DocBox
  * page sitting in the same site must not look subtly different.
  *
- * One thing the Java twin has and this deliberately doesn't: a
- * `rowAttributes()` helper for filtering individual `<tr>` elements.
- * Per-row filtering doesn't survive this pipeline - `TableWrapProcessor`
- * injects its own `x-show` into every row of a table with ten or more of
- * them, and a `<tr>`'s own attribute values get entity-escaped on the way
- * through - so a table here uses bx-sites' own built-in table filter
- * instead. Only the block-level wrappers below pass through untouched.
+ * There is deliberately no per-row equivalent for filtering individual
+ * `<tr>` elements, in either twin: that doesn't survive this pipeline -
+ * `TableWrapProcessor` injects its own `x-show` into every row of a table
+ * with ten or more of them, and a `<tr>`'s own attribute values get
+ * entity-escaped on the way through - so a table uses bx-sites' own
+ * built-in table filter instead. Only the block-level wrappers below pass
+ * through untouched.
  */
 class {
 
@@ -129,16 +129,6 @@ class {
 	 */
 	string function escapeAttr( required string value ) {
 		return arguments.value.replace( "&", "&amp;", "all" ).replace( """", "&quot;", "all" )
-	}
-
-	/**
-	 * Escapes a value for use as HTML text content.
-	 */
-	string function escapeHtml( required string value ) {
-		return arguments.value
-			.replace( "&", "&amp;", "all" )
-			.replace( "<", "&lt;", "all" )
-			.replace( ">", "&gt;", "all" )
 	}
 
 }

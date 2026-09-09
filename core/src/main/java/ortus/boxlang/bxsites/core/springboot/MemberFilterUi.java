@@ -96,8 +96,4 @@ final class MemberFilterUi {
     static String escapeAttr(String value) {
         return value.replace("&", "&amp;").replace("\"", "&quot;");
     }
-
-    static String escapeHtml(String value) {
-        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-    }
 }
