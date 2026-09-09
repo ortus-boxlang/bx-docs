@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* First release
 * `docbox` verb - generates a BoxLang/CFML API reference into the content
   directory from DocBox's own JSON output, with the class metadata DocBox's
   JSON strategy drops (declared properties, implemented interfaces,
@@ -35,5 +36,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   or more rows and the Markdown renderer entity-escapes a `<tr>`'s
   attribute values. Those pages now use a plain pipe table, which picks up
   bx-sites' own table filter.
-
-* First release

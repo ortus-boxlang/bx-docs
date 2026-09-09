@@ -1137,6 +1137,17 @@ convenzionali (`models`, `handlers`, `bifs`, `components`,
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    [docbox]
+    projectTitle = "La mia API"
+    pagePathPrefix = "api/docbox"
+    tags = [ "api", "docbox" ]
+
+    [docbox.mappings]
+    models = "models"
+    ```
+
 ## `coldbox`
 
 Impostazioni per [`bxSites coldbox`](cli-reference.md#coldbox), che
@@ -1171,4 +1182,13 @@ documenta un'applicazione ColdBox dalle sue convenzioni - vedi
     		"include": [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
     	}
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    [coldbox]
+    appRoot = "."
+    pagePathPrefix = "api/coldbox"
+    tags = [ "api", "coldbox" ]
+    include = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
     ```

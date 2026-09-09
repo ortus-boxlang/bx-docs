@@ -156,7 +156,7 @@ class {
 			"search:query" : "Query a built search-index.json and rank results (--query, required; [--limit])",
 			"lint"         : "Pre-build content checks: heading level skips, blog posts missing a valid date",
 			"docbox"       : "Generate a BoxLang/CFML API reference from DocBox into the content dir; needs the bx-docbox module ([--mappings:<name>=<path>], [--projectTitle], [--excludes], [--pagePathPrefix], [--tags], [--jsonDir])",
-			"coldbox"      : "Document a ColdBox application from its conventions on disk: routes, handlers, models, modules ([--appRoot], [--pagePathPrefix], [--tags], [--include])"
+			"coldbox"      : "Document a ColdBox application from its conventions on disk: routes, handlers, models, modules, interceptors, scheduled tasks ([--appRoot], [--pagePathPrefix], [--tags], [--include])"
 		}
 	}
 

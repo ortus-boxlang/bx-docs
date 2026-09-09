@@ -74,15 +74,27 @@ suite di test del plugin:
 | Method | Path | Handler |
 |---|---|---|
 | GET | `/api/books` | `String list()` |
-| GET | `/api/books/{id}` | `String getOne(String)` |
 | POST | `/api/books` | `String create(String)` |
+| GET | `/api/books/{id}` | `String getOne(String)` |
 
 ---
 
 Nota come il percorso base a livello di classe `@RequestMapping("/api/books")`
 venga combinato con il mapping proprio di ciascun metodo per produrre il
 percorso completo in ogni riga - vera composizione dei percorsi, non una
-concatenazione di stringhe indovinata.
+concatenazione di stringhe indovinata. L'ordine delle righe arriva
+direttamente dalla reflection della JVM sulla classe compilata (non
+necessariamente l'ordine del sorgente - comportamento reale, non sistemato
+per questo esempio).
+
+Gli endpoint sono resi come una semplice tabella pipe Markdown, di
+proposito. bx-sites dà a ogni tabella da dieci righe in su un proprio
+campo di filtro dal vivo, così un controller con una lunga lista di
+endpoint ottiene ricerca e filtro gratis, mentre una tabella pipe resta
+leggibile nel Markdown grezzo, viene tematizzata ovunque ed entra per
+intero nell'indice di ricerca. Le pagine [Javadoc](java-javadoc-example.md),
+i cui membri sono sezioni e non righe di tabella, portano invece la barra
+di chip Alpine.js del generatore stesso.
 
 ## Cosa non copre
 
