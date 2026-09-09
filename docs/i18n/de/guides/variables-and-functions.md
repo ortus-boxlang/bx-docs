@@ -48,6 +48,17 @@ oder verschachtelt:
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [variables]
+    company = "Ortus Solutions"
+
+    [variables.product]
+    name = "BoxLang"
+    supportEmail = "support@example.com"
+    ```
+
 Referenziere davon dann alles, per Punktpfad, von jeder Markdown-Seite aus:
 
 ```markdown title="docs/index.md"

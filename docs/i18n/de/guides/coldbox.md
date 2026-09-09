@@ -59,6 +59,16 @@ Alles ist optional; das vollständige Schema steht unter
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [coldbox]
+    appRoot = "."
+    pagePathPrefix = "api/coldbox"
+    tags = [ "api", "coldbox" ]
+    include = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
+    ```
+
 `include` bestimmt, welche Seitengruppen erzeugt werden; ein weggelassener
 Eintrag wird komplett übersprungen. Zu jedem Schlüssel gibt es ein Flag:
 

@@ -377,6 +377,11 @@ println( user.getFullName() )
     { "mermaid": true }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    mermaid = true
+    ```
+
 有効にすると、` ```mermaid ` フェンスコードブロックはコードリストの代わりに
 [Mermaid](https://mermaid.js.org/) のライブダイアグラムとしてレンダリング
 されます:
@@ -405,6 +410,11 @@ Mermaid はフローチャート、シーケンス図、クラス図、ガント
 === "JSON"
     ```json title="bxsites.json"
     { "math": true }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    math = true
     ```
 
 有効にすると、[KaTeX](https://katex.org/) がインライン数式には `$...$`、
