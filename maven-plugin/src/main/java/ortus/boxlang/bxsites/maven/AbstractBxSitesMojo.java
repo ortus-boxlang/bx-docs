@@ -48,6 +48,16 @@ public abstract class AbstractBxSitesMojo extends AbstractMojo {
 
     protected abstract BxSitesVerb verb();
 
+    /**
+     * The arguments passed to the verb after {@code --projectRoot}. Defaults
+     * to whatever {@code bxsites.extraArgs} supplies; a goal with its own
+     * typed parameters overrides this to turn them into flags, keeping
+     * {@code extraArgs} available as an escape hatch alongside them.
+     */
+    protected List<String> verbArguments() {
+        return extraArgs;
+    }
+
     /** The file whose existence/non-emptiness proves this verb succeeded, or {@code null} if none is defined. */
     protected File expectedOutputFile() {
         return null;
@@ -82,7 +92,7 @@ public abstract class AbstractBxSitesMojo extends AbstractMojo {
             result = invoker.invoke(
                     verb(),
                     projectRoot.toPath(),
-                    extraArgs,
+                    verbArguments(),
                     expectedOutput == null ? null : expectedOutput.toPath());
         } catch (UncheckedIOException | IllegalStateException e) {
             // Provisioner/BxSitesInvoker throw these as plain unchecked

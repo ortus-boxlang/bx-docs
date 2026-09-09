@@ -1,0 +1,229 @@
+/**
+ * `docbox` CLI verb - generates a BoxLang/CFML API reference into a
+ * project's own content tree, from [DocBox](https://docbox.ortusbooks.com)'
+ * JSON output. The BoxLang-side counterpart of the Gradle/Maven plugins'
+ * `bxSitesJavadocDoc`: same idea, same page shape, same in-page member
+ * filter, for classes instead of Java types.
+ *
+ * Two steps, each with its own class: `DocBoxRunner` drives DocBox over
+ * the configured source mappings into a JSON tree, then
+ * `DocBoxDocGenerator` turns that tree into Markdown pages under
+ * `docbox.pagePathPrefix`. Nothing is built or served here - the pages
+ * become ordinary content, so the next `build`/`serve` picks them up,
+ * indexes them for search, and themes them like any other page.
+ *
+ * The JSON tree itself is scratch by default (a temp directory, removed
+ * on the way out) - pass `--jsonDir=<path>` to keep it, e.g. to feed the
+ * same metadata to something else.
+ *
+ * Needs the `bx-docbox` module installed in the runtime; the verb fails
+ * with an actionable message rather than a stack trace when it isn't.
+ */
+class {
+
+	/**
+	 * The conventional BoxLang source folders a project gets documented
+	 * automatically when its config declares no `docbox.mappings` of its
+	 * own - the same set this repo's own `runDocs.sh` passes to DocBox.
+	 */
+	static {
+		defaultMappingNames = [ "models", "handlers", "bifs", "components", "interceptors" ]
+	}
+
+	/**
+	 * @options { projectRoot (required, absolute path), projectTitle, excludes, pagePathPrefix, tags (comma list), jsonDir, mappings:<name>=<path> (repeatable) }
+	 */
+	struct function run( struct options = {} ) {
+		var projectRoot = trim( arguments.options.projectRoot ?: "" )
+		if ( !len( projectRoot ) ) {
+			throw( type = "BxSites.MissingProjectRoot", message = "`docbox` requires a project root" )
+		}
+		var root = projectRoot.reReplace( "[\/]+$", "" )
+
+		var config = new "models.config.ConfigLoader@bxsites"().load( root )
+		var settings = config.docbox ?: {}
+		var contentDir = new "models.config.SourceDirResolver@bxsites"().resolve( root )
+
+		var sources = resolveSources( root, settings, arguments.options )
+		if ( !sources.len() ) {
+			throw(
+				type    = "BxSites.NoDocBoxSources",
+				message = "Nothing to document - add a [docbox.mappings] block to #root#/bxsites.yaml, or pass --mappings:<name>=<path>. Looked for the conventional folders: #static.defaultMappingNames.toList( ", " )#"
+			)
+		}
+
+		var keepJson = len( trim( arguments.options.jsonDir ?: "" ) )
+		var jsonDir = keepJson
+			? resolvePath( root, trim( arguments.options.jsonDir ) )
+			: createTempDirectory( prefix = "bxsites-docbox-" )
+
+		var pagePathPrefix = pagePathPrefixFor( settings, arguments.options )
+
+		try {
+			var runner = new "models.build.DocBoxRunner@bxsites"()
+			var runResult = runner.run(
+				sources      = sources,
+				outputDir    = jsonDir,
+				projectTitle = projectTitleFor( config, settings, arguments.options ),
+				excludes     = trim( arguments.options.excludes ?: settings.excludes ?: "" )
+			)
+
+			var generated = new "models.build.DocBoxDocGenerator@bxsites"().generate(
+				jsonDir        = jsonDir,
+				contentDir     = contentDir,
+				pagePathPrefix = pagePathPrefix,
+				tags           = tagsFor( settings, arguments.options )
+			)
+
+			return {
+				exitCode : 0,
+				message  : report( runResult, generated, contentDir, pagePathPrefix, keepJson ? jsonDir : "" )
+			}
+		} finally {
+			if ( !keepJson && directoryExists( jsonDir ) ) {
+				directoryDelete( jsonDir, true )
+			}
+		}
+	}
+
+	/**
+	 * The source trees to document: every `--mappings:<name>=<path>` flag
+	 * if any were given, else the config's own `docbox.mappings`, else
+	 * whichever conventional folders actually exist in the project.
+	 *
+	 * @projectRoot Absolute path to the project root
+	 * @settings The config's `docbox` block
+	 * @options The parsed CLI options
+	 *
+	 * @return Array of `{ dir, mapping }` structs, only for directories that exist
+	 */
+	private array function resolveSources( required string projectRoot, required struct settings, required struct options ) {
+		var mappings = {}
+
+		for ( var key in arguments.options ) {
+			if ( reFindNoCase( "^mappings:", key ) ) {
+				mappings[ key.listRest( ":" ) ] = arguments.options[ key ]
+			}
+		}
+
+		if ( mappings.isEmpty() && isStruct( arguments.settings.mappings ?: "" ) ) {
+			mappings = arguments.settings.mappings
+		}
+
+		if ( mappings.isEmpty() ) {
+			for ( var name in static.defaultMappingNames ) {
+				if ( directoryExists( arguments.projectRoot & "/" & name ) ) {
+					mappings[ name ] = name
+				}
+			}
+		}
+
+		var sources = []
+
+		for ( var name in mappings.keyArray().sort( "textnocase" ) ) {
+			var dir = resolvePath( arguments.projectRoot, trim( mappings[ name ] ) )
+
+			if ( directoryExists( dir ) ) {
+				sources.append( { "dir" : dir, "mapping" : name } )
+			}
+		}
+
+		return sources
+	}
+
+	/**
+	 * The title DocBox records in its overview, and the generated index
+	 * page carries: `--projectTitle`, else `docbox.projectTitle`, else the
+	 * site's own name with " API" appended.
+	 *
+	 * @config The full site config
+	 * @settings The config's `docbox` block
+	 * @options The parsed CLI options
+	 */
+	private string function projectTitleFor( required struct config, required struct settings, required struct options ) {
+		var explicit = trim( arguments.options.projectTitle ?: arguments.settings.projectTitle ?: "" )
+
+		return len( explicit ) ? explicit : trim( arguments.config.name ?: "" ) & " API"
+	}
+
+	/**
+	 * Where pages land, relative to the content directory.
+	 *
+	 * @settings The config's `docbox` block
+	 * @options The parsed CLI options
+	 */
+	private string function pagePathPrefixFor( required struct settings, required struct options ) {
+		var prefix = trim( arguments.options.pagePathPrefix ?: arguments.settings.pagePathPrefix ?: "" )
+
+		return len( prefix ) ? prefix : "api/docbox"
+	}
+
+	/**
+	 * The frontmatter tags every generated page carries - `--tags` as a
+	 * comma list wins over the config's own array.
+	 *
+	 * @settings The config's `docbox` block
+	 * @options The parsed CLI options
+	 */
+	private array function tagsFor( required struct settings, required struct options ) {
+		var flag = trim( arguments.options.tags ?: "" )
+
+		if ( len( flag ) ) {
+			return flag.listToArray( "," ).map( ( tag ) => trim( tag ) ).filter( ( tag ) => len( tag ) )
+		}
+
+		return isArray( arguments.settings.tags ?: "" ) ? arguments.settings.tags : [ "api", "docbox" ]
+	}
+
+	/**
+	 * Resolves a configured path: absolute values as-is, relative ones
+	 * against the project root (never this file's own location - see
+	 * AGENTS.md's page-relative-path gotcha).
+	 *
+	 * @projectRoot Absolute path to the project root
+	 * @path The raw configured path
+	 */
+	private string function resolvePath( required string projectRoot, required string path ) {
+		if ( arguments.path.startsWith( "/" ) || reFind( "^[A-Za-z]:[\/]", arguments.path ) ) {
+			return arguments.path.reReplace( "[\/]+$", "" )
+		}
+
+		return ( arguments.projectRoot & "/" & arguments.path.reReplace( "^\./", "" ) ).reReplace( "[\/]+$", "" )
+	}
+
+	/**
+	 * The verb's own stdout report.
+	 *
+	 * @runResult DocBoxRunner's result struct
+	 * @generated DocBoxDocGenerator's result struct
+	 * @contentDir The project's content directory
+	 * @pagePathPrefix Where pages were written, relative to `contentDir`
+	 * @jsonDir The kept JSON directory, or "" when it was scratch
+	 */
+	private string function report(
+		required struct runResult,
+		required struct generated,
+		required string contentDir,
+		required string pagePathPrefix,
+		required string jsonDir
+	) {
+		var lines = [
+			"Documented #arguments.runResult.classCount# class(es) into #arguments.generated.pageFiles.len()# page(s) under #arguments.contentDir#/#arguments.pagePathPrefix#"
+		]
+
+		if ( len( arguments.jsonDir ) ) {
+			lines.append( "DocBox JSON kept at #arguments.jsonDir#" )
+		}
+
+		for ( var warning in arguments.runResult.warnings ) {
+			lines.append( "  - " & warning )
+		}
+
+		for ( var warning in arguments.generated.warnings ) {
+			lines.append( "  - " & warning )
+		}
+
+		return lines.toList( char( 10 ) )
+	}
+
+}

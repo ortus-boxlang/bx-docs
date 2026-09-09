@@ -1,0 +1,287 @@
+/**
+ * Runs [DocBox](https://docbox.ortusbooks.com)' own JSON strategy over a
+ * project's BoxLang/CFML source and hands back the directory it wrote,
+ * ready for `DocBoxDocGenerator` to turn into Markdown pages.
+ *
+ * bx-sites never parses BoxLang source itself - DocBox already owns that
+ * (metadata collection, package traversal, excludes), exactly like the
+ * Spring Boot side leans on springdoc for OpenAPI rather than reading
+ * annotations on its own. This class is only the adapter: resolve
+ * mappings, drive DocBox, then top the emitted JSON back up with the
+ * metadata DocBox's JSON strategy drops on the floor.
+ *
+ * ## The enrichment pass, and why it exists
+ *
+ * DocBox builds its documentation from BoxLang's own `getClassMetadata()`,
+ * but its JSON strategy only serializes a subset of it: a class' `name`,
+ * `package`, `type`, `extends`, `fullextends`, `hint` and `functions`.
+ * Three things a BoxLang API reference genuinely needs never make it into
+ * the JSON at all - declared `property` blocks (the whole public surface
+ * of an `accessors=true` class, and every WireBox `inject` on a ColdBox
+ * model), the interfaces a class implements, and class-level annotations
+ * like `@singleton`. Per-function `@return` text is dropped the same way.
+ *
+ * So after DocBox finishes, this class re-reads each emitted class file
+ * and merges those four things back in from `getClassMetadata()` - the
+ * same source DocBox itself used, already resolved and cached by the
+ * runtime, so nothing is parsed twice. A class whose metadata can't be
+ * re-resolved is simply left as DocBox wrote it; enrichment is additive
+ * and never the reason a run fails.
+ */
+class {
+
+	/**
+	 * The extra keys this class merges into each of DocBox's class JSON
+	 * files. Kept as one list so `DocBoxDocGenerator`'s own docs and the
+	 * specs have a single place to point at.
+	 */
+	static {
+		enrichedKeys = [ "properties", "implements", "annotations", "documentation" ]
+	}
+
+	/**
+	 * Generates DocBox JSON documentation for one or more source trees.
+	 *
+	 * @sources Array of `{ dir : <absolute path>, mapping : <dotted mapping name> }` structs
+	 * @outputDir Absolute path DocBox writes its JSON tree into (created if missing)
+	 * @projectTitle Title recorded in `overview-summary.json`
+	 * @excludes A regex of paths to skip, passed straight through to DocBox
+	 *
+	 * @throws BxSites.DocBoxNotInstalled When the bx-docbox module isn't available to the runtime
+	 * @throws BxSites.NoDocBoxSources When `sources` is empty, or none of its directories exist
+	 *
+	 * @return `{ outputDir, classCount, enrichedCount, warnings }`
+	 */
+	struct function run(
+		required array sources,
+		required string outputDir,
+		string projectTitle = "API Reference",
+		string excludes = ""
+	) {
+		var warnings = []
+		var usableSources = []
+
+		for ( var source in arguments.sources ) {
+			if ( !directoryExists( source.dir ) ) {
+				warnings.append( "Source directory [#source.dir#] does not exist - skipped" )
+				continue
+			}
+			usableSources.append( { "dir" : source.dir, "mapping" : source.mapping } )
+		}
+
+		if ( !usableSources.len() ) {
+			throw(
+				type    = "BxSites.NoDocBoxSources",
+				message = "No usable DocBox sources - configure at least one existing directory under `docbox.mappings` in bxsites.yaml, or pass --mappings:<name>=<path>"
+			)
+		}
+
+		if ( !directoryExists( arguments.outputDir ) ) {
+			directoryCreate( arguments.outputDir, true, true )
+		}
+
+		registerMappings( usableSources )
+
+		var docbox = newDocBox()
+		docbox.addStrategy( "JSON", { "projectTitle" : arguments.projectTitle, "outputDir" : arguments.outputDir } )
+		docbox.generate( source = usableSources, excludes = arguments.excludes )
+
+		var enrichedCount = enrich( arguments.outputDir )
+
+		return {
+			"outputDir"     : arguments.outputDir,
+			"classCount"    : classCount( arguments.outputDir ),
+			"enrichedCount" : enrichedCount,
+			"warnings"      : warnings
+		}
+	}
+
+	/**
+	 * Whether the bx-docbox module is available to this runtime - the one
+	 * prerequisite the `docbox` verb can't provision for a project itself.
+	 */
+	boolean function isAvailable() {
+		try {
+			newDocBox()
+			return true
+		} catch ( BxSites.DocBoxNotInstalled e ) {
+			return false
+		}
+	}
+
+	/**
+	 * Instantiates DocBox itself. bx-docbox registers a global `docbox`
+	 * mapping of its own (its ModuleConfig sets `this.mapping` with
+	 * `usePrefix : false`), so an installed module needs no path
+	 * resolution here - it either resolves or it isn't installed.
+	 *
+	 * @throws BxSites.DocBoxNotInstalled
+	 */
+	private any function newDocBox() {
+		try {
+			return new docbox.DocBox()
+		} catch ( any e ) {
+			throw(
+				type    = "BxSites.DocBoxNotInstalled",
+				message = "DocBox is not available to this BoxLang runtime - install it with `install-bx-module bx-docbox` (OS binary) or `box install bx-docbox` (CommandBox), then run this verb again",
+				detail  = e.message
+			)
+		}
+	}
+
+	/**
+	 * Registers one application mapping per source tree, so DocBox can
+	 * resolve `<mapping>.<ClassName>` when it asks the runtime for a
+	 * class' metadata. Without this every class fails to resolve and
+	 * DocBox emits an empty documentation set rather than an error.
+	 *
+	 * @sources Array of `{ dir, mapping }` structs
+	 */
+	private void function registerMappings( required array sources ) {
+		var appMappings = getApplicationMetadata().mappings ?: {}
+
+		for ( var source in arguments.sources ) {
+			appMappings[ "/" & source.mapping.replace( ".", "/", "all" ) ] = source.dir
+		}
+
+		bx:application action="update" mappings=appMappings;
+	}
+
+	/**
+	 * Merges `properties`, `implements`, `annotations` and per-function
+	 * `documentation` back into every class JSON file DocBox emitted -
+	 * see this class' own docblock for why any of that is missing.
+	 *
+	 * @outputDir The directory DocBox wrote its JSON tree into
+	 *
+	 * @return How many class files were successfully enriched
+	 */
+	private numeric function enrich( required string outputDir ) {
+		var enriched = 0
+
+		for ( var jsonFile in classFiles( arguments.outputDir ) ) {
+			var doc = ""
+
+			try {
+				doc = jsonDeserialize( fileRead( jsonFile ) )
+			} catch ( any e ) {
+				continue
+			}
+
+			if ( !isStruct( doc ) || !doc.keyExists( "name" ) ) {
+				continue
+			}
+
+			var className = len( doc.package ?: "" ) ? doc.package & "." & doc.name : doc.name
+			var meta = ""
+
+			try {
+				meta = getClassMetadata( className )
+			} catch ( any e ) {
+				continue
+			}
+
+			doc[ "properties" ]    = normalizeProperties( meta.properties ?: [] )
+			doc[ "implements" ]    = isStruct( meta.implements ?: "" ) ? meta.implements.keyArray().sort( "textnocase" ) : []
+			doc[ "annotations" ]   = isStruct( meta.annotations ?: "" ) ? meta.annotations : {}
+			doc[ "documentation" ] = isStruct( meta.documentation ?: "" ) ? meta.documentation : {}
+
+			mergeFunctionDocumentation( doc, meta )
+
+			fileWrite( jsonFile, jsonSerialize( doc ) )
+			enriched++
+		}
+
+		return enriched
+	}
+
+	/**
+	 * Copies each function's own `documentation` struct (the raw docblock
+	 * tags - `@return` and any project-specific ones) from the class
+	 * metadata onto the matching entry in DocBox's `functions` array.
+	 *
+	 * @doc The deserialized DocBox class JSON, mutated in place
+	 * @meta The class' `getClassMetadata()` result
+	 */
+	private void function mergeFunctionDocumentation( required struct doc, required struct meta ) {
+		if ( !isArray( arguments.doc.functions ?: "" ) || !isArray( arguments.meta.functions ?: "" ) ) {
+			return
+		}
+
+		var docsByName = {}
+		for ( var metaFunction in arguments.meta.functions ) {
+			if ( isStruct( metaFunction.documentation ?: "" ) ) {
+				docsByName[ metaFunction.name ] = metaFunction.documentation
+			}
+		}
+
+		for ( var docFunction in arguments.doc.functions ) {
+			if ( docsByName.keyExists( docFunction.name ?: "" ) ) {
+				docFunction[ "documentation" ] = docsByName[ docFunction.name ]
+			}
+		}
+	}
+
+	/**
+	 * Flattens `getClassMetadata()`'s property metadata into the shape the
+	 * generator renders: one row per declared `property`, with its
+	 * annotations kept intact so ColdBox/WireBox ones (`inject`, `delegate`,
+	 * ...) survive into the page.
+	 *
+	 * @properties The raw `properties` array from class metadata
+	 */
+	private array function normalizeProperties( required any properties ) {
+		if ( !isArray( arguments.properties ) ) {
+			return []
+		}
+
+		return arguments.properties.map( ( property ) => {
+			return {
+				"name"        : property.name ?: "",
+				"type"        : property.type ?: "any",
+				"default"     : isNull( property.defaultValue ) ? "" : property.defaultValue,
+				"hint"        : ( isStruct( property.documentation ?: "" ) ? ( property.documentation.hint ?: "" ) : "" ),
+				"annotations" : isStruct( property.annotations ?: "" ) ? property.annotations : {}
+			}
+		} )
+	}
+
+	/**
+	 * Every per-class JSON file DocBox wrote - i.e. everything except its
+	 * own `overview-summary.json`/`package-summary.json` index files.
+	 *
+	 * @outputDir The directory DocBox wrote its JSON tree into
+	 */
+	private array function classFiles( required string outputDir ) {
+		if ( !directoryExists( arguments.outputDir ) ) {
+			return []
+		}
+
+		var indexFiles = [ "overview-summary.json", "package-summary.json" ]
+
+		return directoryList( arguments.outputDir, true, "path", "*.json" )
+			.filter( ( path ) => !directoryExists( path ) && !indexFiles.findNoCase( path.listLast( "/" ) ) )
+			.sort( "textnocase" )
+	}
+
+	/**
+	 * How many classes DocBox recorded in its overview index.
+	 *
+	 * @outputDir The directory DocBox wrote its JSON tree into
+	 */
+	private numeric function classCount( required string outputDir ) {
+		var overviewFile = arguments.outputDir & "/overview-summary.json"
+
+		if ( !fileExists( overviewFile ) ) {
+			return 0
+		}
+
+		try {
+			var overview = jsonDeserialize( fileRead( overviewFile ) )
+			return isArray( overview.classes ?: "" ) ? overview.classes.len() : 0
+		} catch ( any e ) {
+			return 0
+		}
+	}
+
+}

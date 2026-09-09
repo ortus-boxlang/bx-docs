@@ -8,6 +8,7 @@ import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.Property;
 
 import ortus.boxlang.bxsites.core.BxSitesConfig;
+import ortus.boxlang.bxsites.gradle.boxlang.BxSitesBoxLangExtension;
 import ortus.boxlang.bxsites.gradle.springboot.BxSitesSpringBootExtension;
 
 /**
@@ -19,6 +20,7 @@ import ortus.boxlang.bxsites.gradle.springboot.BxSitesSpringBootExtension;
 public abstract class BxSitesExtension {
 
     private final BxSitesSpringBootExtension springBoot;
+    private final BxSitesBoxLangExtension boxlang;
 
     @Inject
     public BxSitesExtension(Project project) {
@@ -29,6 +31,7 @@ public abstract class BxSitesExtension {
         getHookIntoAssemble().convention(false);
         getHookIntoCheck().convention(true);
         springBoot = project.getObjects().newInstance(BxSitesSpringBootExtension.class, project);
+        boxlang = project.getObjects().newInstance(BxSitesBoxLangExtension.class, project);
     }
 
     /** The {@code springBoot { }} nested block - Spring Boot doc generators (OpenAPI, Javadoc, controller-scan). */
@@ -38,6 +41,15 @@ public abstract class BxSitesExtension {
 
     public void springBoot(Action<? super BxSitesSpringBootExtension> action) {
         action.execute(springBoot);
+    }
+
+    /** The {@code boxlang { }} nested block - the DocBox API reference generator. */
+    public BxSitesBoxLangExtension getBoxlang() {
+        return boxlang;
+    }
+
+    public void boxlang(Action<? super BxSitesBoxLangExtension> action) {
+        action.execute(boxlang);
     }
 
     /** The bx-sites project root; defaults to this Gradle project's own directory. */

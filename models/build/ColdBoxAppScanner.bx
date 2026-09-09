@@ -1,0 +1,214 @@
+/**
+ * Discovers a ColdBox application's conventions on disk - handlers,
+ * models, interceptors, modules, and the config files that describe them -
+ * without booting a single line of it.
+ *
+ * ## Why static, not live
+ *
+ * A booted app would give a perfect answer: ColdBox's own routing service
+ * knows every route it registered, WireBox knows every binding. But
+ * booting means the app's datasources, environment variables and startup
+ * side effects all have to be present, which is exactly what a docs build
+ * on a CI runner (or a contributor's laptop) can't promise. So this reads
+ * the conventions instead: always available, never has side effects, and
+ * degrades to "found nothing" rather than to a stack trace.
+ *
+ * The cost is honest to state: anything a ColdBox app decides at runtime
+ * is invisible here. A route registered from a variable, a handler
+ * generated dynamically, a module installed at boot - none of it is on
+ * disk to be found, so none of it is documented.
+ *
+ * This class only *finds* things. Reading what's inside those files is
+ * `ColdBoxRouterParser`'s job (routes) and `DocBoxRunner`'s (class
+ * metadata), so each stays independently testable.
+ */
+class {
+
+	/**
+	 * Both class file extensions a ColdBox app can use - a BoxLang app
+	 * writes `.bx`, a CFML one `.cfc`, and a migrating app has both.
+	 */
+	static {
+		classExtensions = [ "bx", "cfc" ]
+		conventionDirs = {
+			"handlers"     : "handlers",
+			"models"       : "models",
+			"interceptors" : "interceptors",
+			"modules"      : "modules_app",
+			"config"       : "config"
+		}
+	}
+
+	/**
+	 * Scans an application root for everything the ColdBox doc generator
+	 * can describe.
+	 *
+	 * @appRoot Absolute path to the ColdBox application root (the folder holding `handlers/`, `config/`, ...)
+	 *
+	 * @return `{ appRoot, isColdBoxApp, configFile, routerFile, wireBoxFile, schedulerFile, handlers, models, interceptors, modules }`
+	 */
+	struct function scan( required string appRoot ) {
+		var root = arguments.appRoot.reReplace( "[\/]+$", "" )
+		var configDir = root & "/" & static.conventionDirs.config
+
+		var app = {
+			"appRoot"       : root,
+			"configFile"    : firstExisting( configDir & "/ColdBox" ),
+			"routerFile"    : firstExisting( configDir & "/Router" ),
+			"wireBoxFile"   : firstExisting( configDir & "/WireBox" ),
+			"schedulerFile" : firstExisting( configDir & "/Scheduler" ),
+			"handlers"      : scanHandlers( root & "/" & static.conventionDirs.handlers, "" ),
+			"models"        : scanClasses( root & "/" & static.conventionDirs.models ),
+			"interceptors"  : scanClasses( root & "/" & static.conventionDirs.interceptors ),
+			"modules"       : scanModules( root & "/" & static.conventionDirs.modules )
+		}
+
+		// A folder is a ColdBox app if it carries any of the conventions
+		// that only a ColdBox app has. Deliberately generous: an app whose
+		// handlers all live in modules still counts.
+		app[ "isColdBoxApp" ] = len( app.configFile )
+			|| len( app.routerFile )
+			|| app.handlers.len() > 0
+			|| app.modules.len() > 0
+
+		return app
+	}
+
+	/**
+	 * Every handler under a directory, named the way ColdBox itself names
+	 * them: the path below the handlers root, dot-delimited, without the
+	 * file extension (`handlers/api/Users.bx` -> `api.Users`).
+	 *
+	 * @handlersDir Absolute path to a `handlers/` directory
+	 * @module The module this handler set belongs to, or "" for the app's own
+	 *
+	 * @return Array of `{ name, file, module }` structs, sorted by name
+	 */
+	array function scanHandlers( required string handlersDir, string module = "" ) {
+		var handlers = []
+
+		for ( var file in classFilesIn( arguments.handlersDir ) ) {
+			handlers.append( {
+				"name"   : relativeClassName( arguments.handlersDir, file ),
+				"file"   : file,
+				"module" : arguments.module
+			} )
+		}
+
+		return handlers.sort( ( a, b ) => compareNoCase( a.name, b.name ) )
+	}
+
+	/**
+	 * Every class under a directory, named relative to it - the same
+	 * shape as `scanHandlers()` minus the module.
+	 *
+	 * @classDir Absolute path to a directory of classes
+	 *
+	 * @return Array of `{ name, file }` structs, sorted by name
+	 */
+	array function scanClasses( required string classDir ) {
+		var classes = []
+
+		for ( var file in classFilesIn( arguments.classDir ) ) {
+			classes.append( {
+				"name" : relativeClassName( arguments.classDir, file ),
+				"file" : file
+			} )
+		}
+
+		return classes.sort( ( a, b ) => compareNoCase( a.name, b.name ) )
+	}
+
+	/**
+	 * Every app module: a direct child directory of `modules_app/` that
+	 * carries a `ModuleConfig`. Each is scanned for its own router,
+	 * handlers and models, since a module is a self-contained app slice.
+	 *
+	 * @modulesDir Absolute path to `modules_app/`
+	 *
+	 * @return Array of module structs, sorted by name
+	 */
+	array function scanModules( required string modulesDir ) {
+		if ( !directoryExists( arguments.modulesDir ) ) {
+			return []
+		}
+
+		var modules = []
+
+		for ( var path in directoryList( arguments.modulesDir, false, "path" ) ) {
+			if ( !directoryExists( path ) ) {
+				continue
+			}
+
+			var configFile = firstExisting( path & "/ModuleConfig" )
+			if ( !len( configFile ) ) {
+				continue
+			}
+
+			var name = path.listLast( "/" )
+
+			modules.append( {
+				"name"       : name,
+				"root"       : path,
+				"configFile" : configFile,
+				"routerFile" : firstExisting( path & "/config/Router" ),
+				"handlers"   : scanHandlers( path & "/handlers", name ),
+				"models"     : scanClasses( path & "/models" )
+			} )
+		}
+
+		return modules.sort( ( a, b ) => compareNoCase( a.name, b.name ) )
+	}
+
+	/**
+	 * The first of `<basePath>.bx` / `<basePath>.cfc` that exists, or ""
+	 * when neither does - the one place this class encodes the
+	 * BoxLang-or-CFML question.
+	 *
+	 * @basePath An absolute path with no file extension
+	 */
+	string function firstExisting( required string basePath ) {
+		for ( var extension in static.classExtensions ) {
+			var candidate = arguments.basePath & "." & extension
+
+			if ( fileExists( candidate ) ) {
+				return candidate
+			}
+		}
+
+		return ""
+	}
+
+	/**
+	 * Every `.bx`/`.cfc` file under a directory, recursively.
+	 *
+	 * @dir Absolute path to search
+	 */
+	private array function classFilesIn( required string dir ) {
+		if ( !directoryExists( arguments.dir ) ) {
+			return []
+		}
+
+		return directoryList( arguments.dir, true, "path" )
+			.filter( ( path ) => {
+				return !directoryExists( path )
+					&& static.classExtensions.findNoCase( path.listLast( "." ) ) > 0
+			} )
+			.sort( "textnocase" )
+	}
+
+	/**
+	 * A class file's dotted name relative to the directory it was found
+	 * under, extension stripped.
+	 *
+	 * @baseDir The directory the name is relative to
+	 * @file The absolute file path
+	 */
+	private string function relativeClassName( required string baseDir, required string file ) {
+		return arguments.file
+			.replace( arguments.baseDir.reReplace( "[\/]+$", "" ) & "/", "" )
+			.reReplace( "\.(bx|cfc)$", "" )
+			.replace( "/", ".", "all" )
+	}
+
+}

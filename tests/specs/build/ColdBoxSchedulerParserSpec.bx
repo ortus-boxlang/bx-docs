@@ -1,0 +1,162 @@
+/**
+ * Exercises ColdBoxSchedulerParser against real ColdBox scheduler DSL -
+ * every frequency and constraint the framework documents, plus the
+ * runtime-built task names it deliberately can't read.
+ */
+class extends="testbox.system.BaseSpec" {
+
+	function run() {
+		describe( "build.ColdBoxSchedulerParser", function() {
+
+			beforeEach( function() {
+				variables.parser = new "models.build.ColdBoxSchedulerParser@bxsites"();
+				variables.tempDirs = [];
+			} );
+
+			afterEach( function() {
+				for ( var dir in tempDirs ) {
+					if ( directoryExists( dir ) ) {
+						directoryDelete( dir, true );
+					}
+				}
+			} );
+
+			private array function parseBody( required string body, string module = "" ) {
+				return parser.parseSource(
+					source = "class {" & char( 10 ) & "function configure() {" & char( 10 ) & body & char( 10 ) & "}" & char( 10 ) & "}",
+					module = module
+				);
+			}
+
+			private struct function firstTask( required string body ) {
+				var tasks = parseBody( body );
+				expect( tasks.len() ).toBeGTE( 1 );
+				return tasks[ 1 ];
+			}
+
+			it( "returns nothing for a scheduler file that doesn't exist", function() {
+				expect( parser.parse( "/no/such/Scheduler.bx" ) ).toBeEmpty();
+			} );
+
+			it( "parses a task's name, schedule and what it runs", function() {
+				var task = firstTask( 'task( "Heartbeat" ).call( () => runEvent( "main.heartbeat" ) ).every( 5, "minutes" )' );
+
+				expect( task.name ).toBe( "Heartbeat" );
+				expect( task.schedule ).toBe( "every 5 minutes" );
+				expect( task.target ).toBe( 'runEvent( "main.heartbeat" )' );
+			} );
+
+			it( "parses a task declared across several lines", function() {
+				var task = firstTask(
+					'task( "Clear Unregistered Users" )' & char( 10 ) &
+					'    .call( () => getInstance( "UserService" ).clearRecentUsers() )' & char( 10 ) &
+					'    .everyDayAt( "09:00" );'
+				);
+
+				expect( task.name ).toBe( "Clear Unregistered Users" );
+				expect( task.schedule ).toBe( "every day at 09:00" );
+				expect( task.target ).toBe( 'getInstance( "UserService" ).clearRecentUsers()' );
+			} );
+
+			it( "reads every frequency shape, never letting a shorter name shadow a longer one", function() {
+				var tasks = parseBody(
+					'task( "a" ).call( () => x() ).everyMinute()' & char( 10 ) &
+					'task( "b" ).call( () => x() ).everyHour()' & char( 10 ) &
+					'task( "c" ).call( () => x() ).everyHourAt( 30 )' & char( 10 ) &
+					'task( "d" ).call( () => x() ).everyDay()' & char( 10 ) &
+					'task( "e" ).call( () => x() ).everyDayAt( "09:00" )' & char( 10 ) &
+					'task( "f" ).call( () => x() ).everyWeek()' & char( 10 ) &
+					'task( "g" ).call( () => x() ).everyMonth()' & char( 10 ) &
+					'task( "h" ).call( () => x() ).everyYear()'
+				);
+
+				expect( tasks.map( ( task ) => task.schedule ) ).toBe( [
+					"every minute",
+					"every hour",
+					"every hour at minute 30",
+					"every day",
+					"every day at 09:00",
+					"every week",
+					"every month",
+					"every year"
+				] );
+			} );
+
+			it( "reads the constraints a task declares", function() {
+				var task = firstTask( 'task( "Heartbeat" ).call( () => x() ).everyHour().onOneServer().withNoOverlaps()' );
+
+				expect( task.constraints ).toInclude( "one server only" );
+				expect( task.constraints ).toInclude( "no overlapping runs" );
+			} );
+
+			it( "marks a disabled task as disabled", function() {
+				expect( firstTask( 'task( "Nightly" ).call( () => x() ).everyDay().disable()' ).constraints ).toInclude( "disabled" );
+			} );
+
+			it( "unwraps an anonymous function body the same as an arrow closure", function() {
+				var task = firstTask( 'task( "Heartbeat" ).call( function() { runEvent( "main.heartbeat" ) } ).everyHour()' );
+
+				expect( task.target ).toBe( 'runEvent( "main.heartbeat" )' );
+			} );
+
+			it( "truncates a very long task body rather than blowing out the table", function() {
+				var body = 'task( "Long" ).call( () => someService.doSomethingWith( "' & repeatString( "x", 200 ) & '" ) ).everyHour()';
+
+				expect( firstTask( body ).target.len() ).toBeLTE( 120 );
+				expect( firstTask( body ).target ).toEndWith( "…" );
+			} );
+
+			it( "leaves the schedule empty for a task that declares none", function() {
+				expect( firstTask( 'task( "Manual" ).call( () => x() )' ).schedule ).toBe( "" );
+			} );
+
+			it( "attributes a module's tasks to that module", function() {
+				expect( parseBody( 'task( "Sync" ).call( () => x() ).everyHour()', "api" )[ 1 ].module ).toBe( "api" );
+			} );
+
+			it( "ignores commented-out tasks", function() {
+				var tasks = parseBody(
+					'// task( "Nope" ).call( () => x() ).everyHour()' & char( 10 ) &
+					'task( "Real" ).call( () => x() ).everyHour()'
+				);
+
+				expect( tasks.len() ).toBe( 1 );
+				expect( tasks[ 1 ].name ).toBe( "Real" );
+			} );
+
+			it( "skips a task whose name is built at runtime rather than guessing at it", function() {
+				var tasks = parseBody(
+					'var dynamic = getProperty( "name" )' & char( 10 ) &
+					'task( dynamic ).call( () => x() ).everyHour()' & char( 10 ) &
+					'task( "Real" ).call( () => x() ).everyHour()'
+				);
+
+				expect( tasks.len() ).toBe( 1 );
+				expect( tasks[ 1 ].name ).toBe( "Real" );
+			} );
+
+			it( "ignores non-task scheduler calls", function() {
+				var tasks = parseBody(
+					'setTimezone( "UTC" )' & char( 10 ) &
+					'setServerFixation( true )' & char( 10 ) &
+					'task( "Real" ).call( () => x() ).everyHour()'
+				);
+
+				expect( tasks.len() ).toBe( 1 );
+			} );
+
+			it( "parses a scheduler file from disk", function() {
+				var dir = createTempDirectory( prefix = "bxsites-schedulerparser-" );
+				tempDirs.append( dir );
+				fileWrite( dir & "/Scheduler.bx", "class {" & char( 10 ) & "function configure() {" & char( 10 ) & 'task( "Heartbeat" ).call( () => x() ).everyHour()' & char( 10 ) & "}" & char( 10 ) & "}" );
+
+				var tasks = parser.parse( dir & "/Scheduler.bx" );
+
+				expect( tasks.len() ).toBe( 1 );
+				expect( tasks[ 1 ].name ).toBe( "Heartbeat" );
+			} );
+
+		} );
+	}
+
+}

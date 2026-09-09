@@ -1,0 +1,146 @@
+/**
+ * Exercises ColdBoxAppScanner against real conventions trees on disk -
+ * app and module handlers, models, interceptors, and the `.bx`/`.cfc`
+ * question every ColdBox app answers one way or the other.
+ */
+class extends="testbox.system.BaseSpec" {
+
+	function run() {
+		describe( "build.ColdBoxAppScanner", function() {
+
+			beforeEach( function() {
+				variables.scanner = new "models.build.ColdBoxAppScanner@bxsites"();
+				variables.tempDirs = [];
+			} );
+
+			afterEach( function() {
+				for ( var dir in tempDirs ) {
+					if ( directoryExists( dir ) ) {
+						directoryDelete( dir, true );
+					}
+				}
+			} );
+
+			private string function newAppRoot() {
+				var dir = createTempDirectory( prefix = "bxsites-cbscanner-" );
+				tempDirs.append( dir );
+				return dir;
+			}
+
+			private void function writeClass( required string path, string body = "class {}" ) {
+				var parent = path.reReplace( "/[^/]+$", "" );
+				if ( !directoryExists( parent ) ) {
+					directoryCreate( parent, true, true );
+				}
+				fileWrite( path, body );
+			}
+
+			it( "reports a folder with none of the conventions as not a ColdBox app", function() {
+				var app = scanner.scan( newAppRoot() );
+
+				expect( app.isColdBoxApp ).toBeFalse();
+				expect( app.handlers ).toBeEmpty();
+				expect( app.modules ).toBeEmpty();
+				expect( app.routerFile ).toBe( "" );
+			} );
+
+			it( "recognizes an app by its handlers folder alone", function() {
+				var root = newAppRoot();
+				writeClass( root & "/handlers/Main.bx" );
+
+				expect( scanner.scan( root ).isColdBoxApp ).toBeTrue();
+			} );
+
+			it( "finds the config files it knows, in either class extension", function() {
+				var root = newAppRoot();
+				writeClass( root & "/config/ColdBox.cfc", "component {}" );
+				writeClass( root & "/config/Router.bx" );
+				writeClass( root & "/config/WireBox.bx" );
+				writeClass( root & "/config/Scheduler.cfc", "component {}" );
+
+				var app = scanner.scan( root );
+
+				expect( app.configFile ).toBe( root & "/config/ColdBox.cfc" );
+				expect( app.routerFile ).toBe( root & "/config/Router.bx" );
+				expect( app.wireBoxFile ).toBe( root & "/config/WireBox.bx" );
+				expect( app.schedulerFile ).toBe( root & "/config/Scheduler.cfc" );
+			} );
+
+			it( "names handlers the way ColdBox does, dotted and folder-qualified", function() {
+				var root = newAppRoot();
+				writeClass( root & "/handlers/Main.bx" );
+				writeClass( root & "/handlers/api/Users.cfc", "component {}" );
+				writeClass( root & "/handlers/api/v2/Orders.bx" );
+
+				var names = scanner.scan( root ).handlers.map( ( handler ) => handler.name );
+
+				expect( names ).toBe( [ "api.Users", "api.v2.Orders", "Main" ] );
+			} );
+
+			it( "ignores files that aren't classes", function() {
+				var root = newAppRoot();
+				writeClass( root & "/handlers/Main.bx" );
+				writeClass( root & "/handlers/notes.txt", "not a class" );
+				writeClass( root & "/handlers/main.cfm", "<p>a view</p>" );
+
+				expect( scanner.scan( root ).handlers.len() ).toBe( 1 );
+			} );
+
+			it( "finds models and interceptors", function() {
+				var root = newAppRoot();
+				writeClass( root & "/models/UserService.bx" );
+				writeClass( root & "/models/security/Auth.bx" );
+				writeClass( root & "/interceptors/Tracker.bx" );
+
+				var app = scanner.scan( root );
+
+				expect( app.models.map( ( model ) => model.name ) ).toBe( [ "security.Auth", "UserService" ] );
+				expect( app.interceptors.map( ( interceptor ) => interceptor.name ) ).toBe( [ "Tracker" ] );
+			} );
+
+			it( "finds each module with its own router, handlers and models", function() {
+				var root = newAppRoot();
+				writeClass( root & "/modules_app/api/ModuleConfig.bx" );
+				writeClass( root & "/modules_app/api/config/Router.bx" );
+				writeClass( root & "/modules_app/api/handlers/Orders.bx" );
+				writeClass( root & "/modules_app/api/models/OrderService.bx" );
+
+				var app = scanner.scan( root );
+
+				expect( app.modules.len() ).toBe( 1 );
+				expect( app.modules[ 1 ].name ).toBe( "api" );
+				expect( app.modules[ 1 ].routerFile ).toBe( root & "/modules_app/api/config/Router.bx" );
+				expect( app.modules[ 1 ].handlers.len() ).toBe( 1 );
+				expect( app.modules[ 1 ].handlers[ 1 ].module ).toBe( "api" );
+				expect( app.modules[ 1 ].models.len() ).toBe( 1 );
+			} );
+
+			it( "skips a modules_app child that has no ModuleConfig", function() {
+				var root = newAppRoot();
+				writeClass( root & "/modules_app/api/ModuleConfig.bx" );
+				directoryCreate( root & "/modules_app/leftovers", true, true );
+
+				expect( scanner.scan( root ).modules.len() ).toBe( 1 );
+			} );
+
+			it( "recognizes an app made up only of modules", function() {
+				var root = newAppRoot();
+				writeClass( root & "/modules_app/api/ModuleConfig.bx" );
+
+				expect( scanner.scan( root ).isColdBoxApp ).toBeTrue();
+			} );
+
+			it( "tolerates a trailing slash on the app root", function() {
+				var root = newAppRoot();
+				writeClass( root & "/handlers/Main.bx" );
+
+				var app = scanner.scan( root & "/" );
+
+				expect( app.handlers.len() ).toBe( 1 );
+				expect( app.appRoot ).toBe( root );
+			} );
+
+		} );
+	}
+
+}

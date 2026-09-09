@@ -91,7 +91,20 @@ class {
 		"i18n"         : { "defaultLocale" : { "code" : "en", "label" : "English" }, "locales" : [] },
 		"blog"         : { "postsPerPage" : 10, "feed" : true, "feedLimit" : 25 },
 		"versions"     : { "default" : "" },
-		"cloud"        : { "siteId" : "", "apiUrl" : "" }
+		"cloud"        : { "siteId" : "", "apiUrl" : "" },
+		"docbox"       : {
+			"projectTitle"   : "",
+			"mappings"       : {},
+			"excludes"       : "",
+			"pagePathPrefix" : "api/docbox",
+			"tags"           : [ "api", "docbox" ]
+		},
+		"coldbox"      : {
+			"appRoot"        : "",
+			"pagePathPrefix" : "api/coldbox",
+			"tags"           : [ "api", "coldbox" ],
+			"include"        : [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
+		}
 	}
 
 	/**
@@ -485,8 +498,97 @@ class {
 		validateVariables( arguments.config.variables ?: "" )
 		validateVersions( arguments.config.versions ?: "" )
 		validateCloud( arguments.config.cloud ?: "" )
+		validateDocBox( arguments.config.docbox ?: "" )
+		validateColdBox( arguments.config.coldbox ?: "" )
 
 		return arguments.config
+	}
+
+	/**
+	 * Validates the site config's `coldbox` block - where the ColdBox app
+	 * being documented lives, and which page sets the `coldbox` verb
+	 * generates from it. Whether `appRoot` actually holds a ColdBox app is
+	 * the verb's own check, since it has the better error to give.
+	 *
+	 * Typed `any` rather than `struct` for the same reason as
+	 * `validateDocBox()`.
+	 *
+	 * @coldbox The merged `coldbox` config block
+	 *
+	 * @throws BxSites.InvalidConfig
+	 */
+	private void function validateColdBox( required any coldbox ) {
+		if ( !isStruct( arguments.coldbox ) ) {
+			throw(
+				type    = "BxSites.InvalidConfig",
+				message = "#variables.configFileName# [coldbox], when present, must be an object"
+			)
+		}
+
+		for ( var stringKey in [ "appRoot", "pagePathPrefix" ] ) {
+			if ( !isSimpleValue( arguments.coldbox[ stringKey ] ?: "" ) ) {
+				throw(
+					type    = "BxSites.InvalidConfig",
+					message = "#variables.configFileName# [coldbox.#stringKey#], when present, must be a string"
+				)
+			}
+		}
+
+		for ( var arrayKey in [ "tags", "include" ] ) {
+			if ( !isArray( arguments.coldbox[ arrayKey ] ?: [] ) ) {
+				throw(
+					type    = "BxSites.InvalidConfig",
+					message = "#variables.configFileName# [coldbox.#arrayKey#], when present, must be an array of strings"
+				)
+			}
+		}
+	}
+
+	/**
+	 * Validates the site config's `docbox` block - the source mappings and
+	 * page placement the `docbox` verb generates BoxLang/CFML API
+	 * reference pages from. Only shape is checked here; whether a mapped
+	 * directory actually exists is the verb's own concern, since a config
+	 * can legitimately describe a source tree that a given checkout
+	 * doesn't have.
+	 *
+	 * Typed `any` rather than `struct` so a config that sets it to a
+	 * non-object gets this readable error instead of an argument-type one.
+	 *
+	 * @docbox The merged `docbox` config block
+	 *
+	 * @throws BxSites.InvalidConfig
+	 */
+	private void function validateDocBox( required any docbox ) {
+		if ( !isStruct( arguments.docbox ) ) {
+			throw(
+				type    = "BxSites.InvalidConfig",
+				message = "#variables.configFileName# [docbox], when present, must be an object"
+			)
+		}
+
+		if ( !isStruct( arguments.docbox.mappings ?: {} ) ) {
+			throw(
+				type    = "BxSites.InvalidConfig",
+				message = "#variables.configFileName# [docbox.mappings], when present, must be an object of mapping name -> source directory"
+			)
+		}
+
+		for ( var stringKey in [ "projectTitle", "excludes", "pagePathPrefix" ] ) {
+			if ( !isSimpleValue( arguments.docbox[ stringKey ] ?: "" ) ) {
+				throw(
+					type    = "BxSites.InvalidConfig",
+					message = "#variables.configFileName# [docbox.#stringKey#], when present, must be a string"
+				)
+			}
+		}
+
+		if ( !isArray( arguments.docbox.tags ?: [] ) ) {
+			throw(
+				type    = "BxSites.InvalidConfig",
+				message = "#variables.configFileName# [docbox.tags], when present, must be an array of strings"
+			)
+		}
 	}
 
 	/**

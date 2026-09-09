@@ -1,0 +1,137 @@
+/**
+ * Exercises ColdBoxConfigParser - the literal `this.*` declarations a
+ * ColdBox ModuleConfig makes about itself, and the non-literals it
+ * deliberately reports as absent.
+ */
+class extends="testbox.system.BaseSpec" {
+
+	function run() {
+		describe( "build.ColdBoxConfigParser", function() {
+
+			beforeEach( function() {
+				variables.parser = new "models.build.ColdBoxConfigParser@bxsites"();
+				variables.tempDirs = [];
+			} );
+
+			afterEach( function() {
+				for ( var dir in tempDirs ) {
+					if ( directoryExists( dir ) ) {
+						directoryDelete( dir, true );
+					}
+				}
+			} );
+
+			it( "returns nothing for a config file that doesn't exist", function() {
+				expect( parser.moduleMetadata( "/no/such/ModuleConfig.bx" ) ).toBeEmpty();
+			} );
+
+			it( "reads a module's declared metadata from disk", function() {
+				var dir = createTempDirectory( prefix = "bxsites-cbconfig-" );
+				tempDirs.append( dir );
+				fileWrite( dir & "/ModuleConfig.bx", "class {
+	this.title = ""API Module""
+	this.entryPoint = ""api""
+	this.version = ""1.2.0""
+}" );
+
+				var metadata = parser.moduleMetadata( dir & "/ModuleConfig.bx" );
+
+				expect( metadata.title ).toBe( "API Module" );
+				expect( metadata.entryPoint ).toBe( "api" );
+				expect( metadata.version ).toBe( "1.2.0" );
+			} );
+
+			it( "returns no interceptors for a config file that doesn't exist", function() {
+				expect( parser.interceptorDeclarations( "/no/such/ColdBox.bx" ) ).toBeEmpty();
+			} );
+
+			it( "reads the interceptors an app registers, skipping any whose class is computed", function() {
+				var dir = createTempDirectory( prefix = "bxsites-cbconfig-int-" );
+				tempDirs.append( dir );
+				fileWrite( dir & "/ColdBox.bx", "class {
+	function configure() {
+		coldbox = { appName : ""Demo"" }
+
+		interceptors = [
+			{ class : ""interceptors.Tracker"", name : ""tracker"" },
+			{ class : ""interceptors.Audit"", properties : { enabled : true } },
+			{ class : someVariable }
+		]
+	}
+}" );
+
+				var declared = parser.interceptorDeclarations( dir & "/ColdBox.bx" );
+
+				expect( declared.len() ).toBe( 2 );
+				expect( declared[ 1 ].class ).toBe( "interceptors.Tracker" );
+				expect( declared[ 1 ].name ).toBe( "tracker" );
+				expect( declared[ 2 ].class ).toBe( "interceptors.Audit" );
+				expect( declared[ 2 ].name ).toBe( "" );
+			} );
+
+			it( "returns no interceptors for a config that registers none", function() {
+				var dir = createTempDirectory( prefix = "bxsites-cbconfig-noint-" );
+				tempDirs.append( dir );
+				fileWrite( dir & "/ColdBox.bx", "class { function configure() { coldbox = {} } }" );
+
+				expect( parser.interceptorDeclarations( dir & "/ColdBox.bx" ) ).toBeEmpty();
+			} );
+
+			it( "reads string, boolean, numeric and array literals in their own types", function() {
+				var properties = parser.thisProperties( "class {
+	this.title = ""API""
+	this.autoMapModels = true
+	this.disabled = false
+	this.order = 42
+	this.dependencies = [ ""cbsecurity"", ""cbauth"" ]
+}" );
+
+				expect( properties.title ).toBe( "API" );
+				expect( properties.autoMapModels ).toBeTrue();
+				expect( properties.disabled ).toBeFalse();
+				expect( properties.order ).toBe( 42 );
+				expect( properties.dependencies ).toBe( [ "cbsecurity", "cbauth" ] );
+			} );
+
+			it( "reads single-quoted literals too", function() {
+				var properties = parser.thisProperties( "class { this.entryPoint = 'api' }" );
+
+				expect( properties.entryPoint ).toBe( "api" );
+			} );
+
+			it( "reads declarations written with a semicolon and CFML component syntax", function() {
+				var properties = parser.thisProperties( "component {
+	this.title = ""Legacy"";
+	this.entryPoint = ""legacy"";
+}" );
+
+				expect( properties.title ).toBe( "Legacy" );
+				expect( properties.entryPoint ).toBe( "legacy" );
+			} );
+
+			it( "reports a computed value as absent rather than guessing at it", function() {
+				var properties = parser.thisProperties( "class {
+	this.title = ""API""
+	this.entryPoint = getSetting( ""apiEntry"" )
+	this.settings = { foo : ""bar"" }
+}" );
+
+				expect( properties.title ).toBe( "API" );
+				expect( properties ).notToHaveKey( "entryPoint" );
+				expect( properties ).notToHaveKey( "settings" );
+			} );
+
+			it( "never mistakes a comparison for an assignment", function() {
+				var properties = parser.thisProperties( "class { function configure() { if ( this.disabled == true ) { return } } }" );
+
+				expect( properties ).notToHaveKey( "disabled" );
+			} );
+
+			it( "returns nothing for a class that declares nothing about itself", function() {
+				expect( parser.thisProperties( "class { function configure() {} }" ) ).toBeEmpty();
+			} );
+
+		} );
+	}
+
+}

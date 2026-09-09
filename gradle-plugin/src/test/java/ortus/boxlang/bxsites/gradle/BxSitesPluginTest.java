@@ -3,6 +3,7 @@ package ortus.boxlang.bxsites.gradle;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -15,6 +16,7 @@ import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import ortus.boxlang.bxsites.gradle.tasks.AbstractBxSitesVerbTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesBuildTask;
 
 /**
@@ -223,6 +225,65 @@ class BxSitesPluginTest {
         assertEquals("api/javadoc", javadoc.getPagePathPrefix().get());
         assertEquals(java.util.List.of("api", "javadoc"), javadoc.getTags().get());
         assertTrue(javadoc.getSourceFiles().isEmpty());
+    }
+
+    @Test
+    void apply_registersTheDocBoxDocTask(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        assertNotNull(project.getTasks().findByName("bxSitesDocBoxDoc"));
+    }
+
+    @Test
+    void apply_registersNoColdBoxTask(@TempDir Path projectDir) {
+        // A ColdBox application is built through CommandBox, never Gradle -
+        // the `coldbox` verb is a bx-sites CLI concern only.
+        Project project = newProject(projectDir);
+
+        assertNull(project.getTasks().findByName("bxSitesColdBoxDoc"));
+    }
+
+    @Test
+    void boxlangDocBoxExtension_hasSensibleDefaults(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        var docbox = project.getExtensions().getByType(BxSitesExtension.class).getBoxlang().getDocbox();
+
+        assertFalse(docbox.getEnabled().get());
+        assertTrue(docbox.getMappings().get().isEmpty());
+        assertTrue(docbox.toVerbArguments().isEmpty());
+    }
+
+    @Test
+    void boxlangDocBoxExtension_turnsItsOptionsIntoVerbFlags(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+
+        var docbox = project.getExtensions().getByType(BxSitesExtension.class).getBoxlang().getDocbox();
+        docbox.getMappings().put("models", "models");
+        docbox.getProjectTitle().set("Bookshelf API");
+        docbox.getPagePathPrefix().set("api/classes");
+        docbox.getTags().set(java.util.List.of("api", "classes"));
+
+        var args = docbox.toVerbArguments();
+
+        assertTrue(args.contains("--mappings:models=models"));
+        assertTrue(args.contains("--projectTitle=Bookshelf API"));
+        assertTrue(args.contains("--pagePathPrefix=api/classes"));
+        assertTrue(args.contains("--tags=api,classes"));
+        // Never passed when unset, so the project's own config still decides.
+        assertFalse(args.stream().anyMatch(arg -> arg.startsWith("--excludes")));
+        assertFalse(args.stream().anyMatch(arg -> arg.startsWith("--jsonDir")));
+    }
+
+    @Test
+    void docBoxTask_carriesItsExtensionOptionsAsVerbArguments(@TempDir Path projectDir) {
+        Project project = newProject(projectDir);
+        project.getExtensions().getByType(BxSitesExtension.class).getBoxlang().getDocbox()
+                .getProjectTitle().set("Bookshelf API");
+
+        var docboxTask = (AbstractBxSitesVerbTask) project.getTasks().getByName("bxSitesDocBoxDoc");
+
+        assertTrue(docboxTask.getExtraArgs().get().contains("--projectTitle=Bookshelf API"));
     }
 
     @Test

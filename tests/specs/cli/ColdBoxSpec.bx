@@ -1,0 +1,436 @@
+/**
+ * Exercises the `coldbox` verb end to end against a real (if tiny)
+ * ColdBox conventions tree on disk. Nothing here needs an app that
+ * boots - which is the whole point of the static approach.
+ */
+class extends="testbox.system.BaseSpec" {
+
+	function run() {
+		describe( "cli.ColdBox", function() {
+
+			beforeEach( function() {
+				variables.verb = new "models.cli.ColdBox@bxsites"();
+				variables.tempDirs = [];
+			} );
+
+			afterEach( function() {
+				for ( var dir in tempDirs ) {
+					if ( directoryExists( dir ) ) {
+						directoryDelete( dir, true );
+					}
+				}
+			} );
+
+			private void function writeFile( required string path, required string content ) {
+				var parent = path.reReplace( "/[^/]+$", "" );
+				if ( !directoryExists( parent ) ) {
+					directoryCreate( parent, true, true );
+				}
+				fileWrite( path, content );
+			}
+
+			/**
+			 * A bx-sites project whose root is also a small ColdBox app -
+			 * the common shape, a site documenting the app it lives in.
+			 */
+			private string function newProjectRoot( boolean withApp = true ) {
+				var dir = createTempDirectory( prefix = "bxsites-cli-coldbox-" );
+				tempDirs.append( dir );
+				directoryCreate( dir & "/docs", true, true );
+				fileWrite( dir & "/docs/index.md", "## Home" );
+				fileWrite( dir & "/bxsites.json", jsonSerialize( { "name" : "Demo" } ) );
+
+				if ( withApp ) {
+					writeFile( dir & "/handlers/Main.bx", "/**
+ * The application's main handler.
+ */
+class {
+
+	/**
+	 * Render the home page
+	 *
+	 * @event The request context
+	 */
+	function index( event, rc, prc ) {}
+
+	function preHandler( event, rc, prc ) {}
+
+	private function helper() {}
+}" );
+					writeFile( dir & "/models/UserService.bx", "/**
+ * Loads and stores users.
+ */
+class singleton {
+
+	/**
+	 * The configured user datasource
+	 */
+	property name=""datasource"" type=""string"" inject=""coldbox:setting:userDatasource"";
+
+	property name=""pageSize"" type=""numeric"" default=""25"";
+
+	/**
+	 * Find a user
+	 *
+	 * @id The user id
+	 */
+	function findById( required numeric id ) {}
+}" );
+					writeFile( dir & "/config/WireBox.bx", "class {
+	function configure() {
+		map( ""UserService"" ).to( ""models.UserService"" ).asSingleton()
+		map( ""Cart"" ).to( ""models.Cart"" ).into( this.SCOPES.SESSION )
+	}
+}" );
+					writeFile( dir & "/config/Router.bx", "class {
+	function configure() {
+		route( ""/home"" ).as( ""home"" ).to( ""main.index"" )
+		apiResources( ""users"" )
+		route( "":handler/:action?"" ).end()
+	}
+}" );
+				}
+
+				return dir;
+			}
+
+			private void function addModule( required string projectRoot, required string name, required string entryPoint ) {
+				writeFile( projectRoot & "/modules_app/" & name & "/ModuleConfig.bx", "class {
+	this.title = ""API Module""
+	this.entryPoint = """ & entryPoint & """
+}" );
+				writeFile( projectRoot & "/modules_app/" & name & "/config/Router.bx", "class {
+	function configure() {
+		route( ""/ping"" ).to( ""utility.ping"" )
+	}
+}" );
+				writeFile( projectRoot & "/modules_app/" & name & "/handlers/Utility.bx", "class { function ping( event, rc, prc ) {} }" );
+			}
+
+			it( "throws BxSites.MissingProjectRoot when projectRoot is blank", function() {
+				expect( () => verb.run( {} ) ).toThrow( "BxSites.MissingProjectRoot" );
+			} );
+
+			it( "throws BxSites.NotAColdBoxApp when there's no application to document", function() {
+				var projectRoot = newProjectRoot( withApp = false );
+
+				expect( () => verb.run( { projectRoot : projectRoot } ) ).toThrow( "BxSites.NotAColdBoxApp" );
+			} );
+
+			it( "documents the app's routes into the content dir", function() {
+				var projectRoot = newProjectRoot();
+
+				var result = verb.run( { projectRoot : projectRoot } );
+
+				expect( result.exitCode ).toBe( 0 );
+				expect( result.message ).toInclude( "route(s)" );
+				expect( fileExists( projectRoot & "/docs/api/coldbox/routes.md" ) ).toBeTrue();
+				expect( fileExists( projectRoot & "/docs/api/coldbox/index.md" ) ).toBeTrue();
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/routes.md" );
+				expect( page ).toInclude( "`main.index`" );
+				expect( page ).toInclude( "`users.index`" );
+			} );
+
+			it( "prefixes a module's routes with its declared entry point", function() {
+				var projectRoot = newProjectRoot();
+				addModule( projectRoot, "api", "v1" );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/routes.md" );
+				expect( page ).toInclude( "`/v1/ping`" );
+				expect( page ).toInclude( "`api`" );
+			} );
+
+			it( "falls back to the module's own name when it declares no entry point", function() {
+				var projectRoot = newProjectRoot();
+				writeFile( projectRoot & "/modules_app/shop/ModuleConfig.bx", "class { this.title = ""Shop"" }" );
+				writeFile( projectRoot & "/modules_app/shop/config/Router.bx", "class {
+	function configure() {
+		route( ""/cart"" ).to( ""cart.index"" )
+	}
+}" );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				expect( fileRead( projectRoot & "/docs/api/coldbox/routes.md" ) ).toInclude( "`/shop/cart`" );
+			} );
+
+			it( "honors --appRoot for an app that isn't the project root", function() {
+				var projectRoot = newProjectRoot( withApp = false );
+				writeFile( projectRoot & "/app/handlers/Main.bx", "class { function index( event, rc, prc ) {} }" );
+				writeFile( projectRoot & "/app/config/Router.bx", "class {
+	function configure() {
+		route( ""/home"" ).to( ""main.index"" )
+	}
+}" );
+
+				var result = verb.run( { projectRoot : projectRoot, appRoot : "app" } );
+
+				expect( result.exitCode ).toBe( 0 );
+				expect( fileRead( projectRoot & "/docs/api/coldbox/routes.md" ) ).toInclude( "`main.index`" );
+			} );
+
+			it( "honors --pagePathPrefix and --tags", function() {
+				var projectRoot = newProjectRoot();
+
+				verb.run( { projectRoot : projectRoot, pagePathPrefix : "reference", tags : "reference, app" } );
+
+				var page = fileRead( projectRoot & "/docs/reference/routes.md" );
+				expect( page ).toInclude( "tags: [reference, app]" );
+			} );
+
+			it( "reads appRoot, page prefix and tags from the project's own config", function() {
+				var projectRoot = newProjectRoot( withApp = false );
+				writeFile( projectRoot & "/app/handlers/Main.bx", "class { function index( event, rc, prc ) {} }" );
+				writeFile( projectRoot & "/app/config/Router.bx", "class {
+	function configure() {
+		route( ""/home"" ).to( ""main.index"" )
+	}
+}" );
+				fileWrite( projectRoot & "/bxsites.json", jsonSerialize( {
+					"name"    : "Demo",
+					"coldbox" : {
+						"appRoot"        : "app",
+						"pagePathPrefix" : "api/app",
+						"tags"           : [ "app" ]
+					}
+				} ) );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				expect( fileRead( projectRoot & "/docs/api/app/routes.md" ) ).toInclude( "tags: [app]" );
+			} );
+
+			it( "writes a page per handler, with the handlers index", function() {
+				var projectRoot = newProjectRoot();
+
+				verb.run( { projectRoot : projectRoot } );
+
+				expect( fileExists( projectRoot & "/docs/api/coldbox/handlers/Main.md" ) ).toBeTrue();
+				expect( fileExists( projectRoot & "/docs/api/coldbox/handlers/index.md" ) ).toBeTrue();
+			} );
+
+			it( "reads a handler's actions and doc comments through DocBox", function() {
+				if ( !new "models.build.DocBoxRunner@bxsites"().isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/handlers/Main.md" );
+
+				expect( page ).toInclude( "The application's main handler." );
+				expect( page ).toInclude( "## Actions" );
+				expect( page ).toInclude( "Render the home page" );
+				expect( page ).toInclude( "The request context" );
+				expect( page ).toInclude( "## Lifecycle hooks" );
+				expect( page ).notToInclude( "helper(" );
+			} );
+
+			it( "keeps a module's handler metadata separate from the app's own", function() {
+				if ( !new "models.build.DocBoxRunner@bxsites"().isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+				addModule( projectRoot, "api", "v1" );
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/handlers/api/Utility.md" );
+
+				expect( page ).toInclude( "module `api`" );
+				expect( page ).toInclude( "ping(" );
+				expect( page ).toInclude( "`/v1/ping`" );
+			} );
+
+			it( "skips handler pages when --include asks only for routes", function() {
+				var projectRoot = newProjectRoot();
+
+				verb.run( { projectRoot : projectRoot, include : "routes" } );
+
+				expect( directoryExists( projectRoot & "/docs/api/coldbox/handlers" ) ).toBeFalse();
+				expect( fileExists( projectRoot & "/docs/api/coldbox/routes.md" ) ).toBeTrue();
+			} );
+
+			it( "writes a page per model, with the models index", function() {
+				var projectRoot = newProjectRoot();
+
+				verb.run( { projectRoot : projectRoot } );
+
+				expect( fileExists( projectRoot & "/docs/api/coldbox/models/UserService.md" ) ).toBeTrue();
+				expect( fileExists( projectRoot & "/docs/api/coldbox/models/index.md" ) ).toBeTrue();
+			} );
+
+			it( "reads a model's injections, properties and methods through DocBox", function() {
+				if ( !new "models.build.DocBoxRunner@bxsites"().isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/models/UserService.md" );
+
+				expect( page ).toInclude( "Loads and stores users." );
+				expect( page ).toInclude( "scope `singleton`" );
+				expect( page ).toInclude( "## Injected dependencies" );
+				expect( page ).toInclude( "coldbox:setting:userDatasource" );
+				expect( page ).toInclude( "| `pageSize` | `numeric` | `25` |" );
+				expect( page ).toInclude( "findById(" );
+			} );
+
+			it( "tabulates the app's own WireBox mappings", function() {
+				var projectRoot = newProjectRoot();
+
+				verb.run( { projectRoot : projectRoot } );
+
+				var index = fileRead( projectRoot & "/docs/api/coldbox/models/index.md" );
+
+				expect( index ).toInclude( "## WireBox mappings" );
+				expect( index ).toInclude( "| `UserService` | `models.UserService` | class | `singleton` |" );
+				expect( index ).toInclude( "| `Cart` | `models.Cart` | class | `session` |" );
+			} );
+
+			it( "attributes a module's own binder mappings to that module", function() {
+				var projectRoot = newProjectRoot();
+				addModule( projectRoot, "api", "v1" );
+				writeFile( projectRoot & "/modules_app/api/config/WireBox.bx", "class {
+	function configure() {
+		map( ""OrderService"" ).to( ""models.OrderService"" ).asSingleton()
+	}
+}" );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				expect( fileRead( projectRoot & "/docs/api/coldbox/models/index.md" ) ).toInclude( "| `OrderService` | `models.OrderService` | class | `singleton` | `api` |" );
+			} );
+
+			it( "skips model pages when --include leaves them out", function() {
+				var projectRoot = newProjectRoot();
+
+				verb.run( { projectRoot : projectRoot, include : "routes,handlers" } );
+
+				expect( directoryExists( projectRoot & "/docs/api/coldbox/models" ) ).toBeFalse();
+				expect( fileExists( projectRoot & "/docs/api/coldbox/handlers/index.md" ) ).toBeTrue();
+			} );
+
+			it( "writes a page per module, with the modules index", function() {
+				var projectRoot = newProjectRoot();
+				addModule( projectRoot, "api", "v1" );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/modules/api.md" );
+
+				expect( fileExists( projectRoot & "/docs/api/coldbox/modules/index.md" ) ).toBeTrue();
+				expect( page ).toInclude( "API Module" );
+				expect( page ).toInclude( "mounted at `/v1`" );
+				expect( page ).toInclude( "`/v1/ping`" );
+			} );
+
+			it( "documents the interceptors the app registers and declares", function() {
+				var projectRoot = newProjectRoot();
+				writeFile( projectRoot & "/config/ColdBox.bx", "class {
+	function configure() {
+		interceptors = [ { class : ""interceptors.Tracker"", name : ""tracker"" } ]
+	}
+}" );
+				writeFile( projectRoot & "/interceptors/Tracker.bx", "/**
+ * Tracks page views.
+ */
+class {
+	function preEvent( event, interceptData, rc, prc ) {}
+	function postEvent( event, interceptData, rc, prc ) {}
+}" );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/interceptors.md" );
+
+				expect( page ).toInclude( "| `interceptors.Tracker` | `tracker` |" );
+				expect( page ).toInclude( "Tracker" );
+			} );
+
+			it( "reads an interceptor's interception points through DocBox", function() {
+				if ( !new "models.build.DocBoxRunner@bxsites"().isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+				writeFile( projectRoot & "/interceptors/Tracker.bx", "/**
+ * Tracks page views.
+ */
+class {
+	function preEvent( event, interceptData, rc, prc ) {}
+	function postEvent( event, interceptData, rc, prc ) {}
+}" );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/interceptors.md" );
+
+				expect( page ).toInclude( "Tracks page views." );
+				expect( page ).toInclude( "Listens for `preEvent`, `postEvent`" );
+			} );
+
+			it( "documents the app's scheduled tasks", function() {
+				var projectRoot = newProjectRoot();
+				writeFile( projectRoot & "/config/Scheduler.bx", "class {
+	function configure() {
+		task( ""Heartbeat"" )
+			.call( () => runEvent( ""main.heartbeat"" ) )
+			.every( 5, ""minutes"" )
+			.onOneServer();
+	}
+}" );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				var page = fileRead( projectRoot & "/docs/api/coldbox/scheduled-tasks.md" );
+
+				expect( page ).toInclude( "Heartbeat" );
+				expect( page ).toInclude( "every 5 minutes" );
+				expect( page ).toInclude( "one server only" );
+			} );
+
+			it( "attributes a module's own scheduled tasks to that module", function() {
+				var projectRoot = newProjectRoot();
+				addModule( projectRoot, "api", "v1" );
+				writeFile( projectRoot & "/modules_app/api/config/Scheduler.bx", "class {
+	function configure() {
+		task( ""Sync orders"" ).call( () => runEvent( ""orders.sync"" ) ).everyHour();
+	}
+}" );
+
+				verb.run( { projectRoot : projectRoot } );
+
+				expect( fileRead( projectRoot & "/docs/api/coldbox/scheduled-tasks.md" ) ).toInclude( "| Sync orders | `every hour` | `runEvent( ""orders.sync"" )` | &mdash; | `api` |" );
+			} );
+
+			it( "writes no interceptor or scheduler page for an app that has neither", function() {
+				var projectRoot = newProjectRoot();
+
+				verb.run( { projectRoot : projectRoot } );
+
+				expect( fileExists( projectRoot & "/docs/api/coldbox/interceptors.md" ) ).toBeFalse();
+				expect( fileExists( projectRoot & "/docs/api/coldbox/scheduled-tasks.md" ) ).toBeFalse();
+			} );
+
+			it( "reports a warning, without failing, for an app whose routes are all runtime-built", function() {
+				var projectRoot = newProjectRoot( withApp = false );
+				writeFile( projectRoot & "/handlers/Main.bx", "class { function index( event, rc, prc ) {} }" );
+
+				var result = verb.run( { projectRoot : projectRoot } );
+
+				expect( result.exitCode ).toBe( 0 );
+				expect( result.message ).toInclude( "No routes found" );
+				expect( fileExists( projectRoot & "/docs/api/coldbox/index.md" ) ).toBeTrue();
+			} );
+
+		} );
+	}
+
+}

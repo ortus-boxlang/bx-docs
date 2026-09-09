@@ -1,0 +1,436 @@
+/**
+ * Reads a ColdBox `Router` (app or module) as text and returns the routes
+ * it declares, without executing a line of it.
+ *
+ * ## How it reads a router
+ *
+ * `BoxLangSourceReader` strips comments and splits the source into
+ * statements; this class adds the routing meaning. Each statement that starts with a routing
+ * initiator (`route`, `get`, `post`, ..., `resources`, `apiResources`,
+ * `group`) becomes one or more route rows. Chained modifiers and
+ * terminators on the same statement (`.as()`, `.withVerbs()`, `.to()`,
+ * `.toHandler()`, ...) are read off that same statement, so a fluent
+ * multi-line declaration parses as the single route it is. `group()` is
+ * handled by recursing into its own closure body and prefixing whatever
+ * comes back, and `resources()`/`apiResources()` expand into exactly the
+ * seven (or five) rows ColdBox documents for them.
+ *
+ * ## What it deliberately can't see
+ *
+ * Static reading has a hard edge, and it's better to name it than to
+ * pretend otherwise. A pattern or target built from a variable, a loop
+ * that registers routes, a router that delegates to a helper function -
+ * all of it is invisible here, because none of it is a literal in the
+ * file. Such statements are skipped rather than guessed at, so a
+ * generated routes page under-reports rather than lies. Anything with a
+ * literal pattern parses correctly whether or not the rest of the file
+ * does.
+ */
+class {
+
+	/**
+	 * The shared source-scanning primitives - comments, statements,
+	 * balanced blocks, literal arguments. This class only adds ColdBox's
+	 * routing meaning on top of them.
+	 */
+	variables.reader = new "models.build.BoxLangSourceReader@bxsites"()
+
+	/**
+	 * The HTTP-verb initiators, and the verb each one restricts its route
+	 * to. `route()` itself carries no restriction until `.withVerbs()`.
+	 */
+	static {
+		verbInitiators = {
+			"get"     : "GET",
+			"post"    : "POST",
+			"put"     : "PUT",
+			"patch"   : "PATCH",
+			"delete"  : "DELETE",
+			"options" : "OPTIONS"
+		}
+
+		/**
+		 * Every resourceful route ColdBox generates, in declaration order -
+		 * verb, URL suffix, action, and the purpose its own docs give it.
+		 * `apiResources()` is this same table minus the two HTML-form
+		 * actions (`new`, `edit`).
+		 */
+		resourceActions = [
+			{ "action" : "index",  "verb" : "GET",       "suffix" : "",             "purpose" : "Get all" },
+			{ "action" : "new",    "verb" : "GET",       "suffix" : "/new",         "purpose" : "Return the HTML form for creating one" },
+			{ "action" : "create", "verb" : "POST",      "suffix" : "",             "purpose" : "Create one" },
+			{ "action" : "show",   "verb" : "GET",       "suffix" : "/:id",         "purpose" : "Show one by id" },
+			{ "action" : "edit",   "verb" : "GET",       "suffix" : "/:id/edit",    "purpose" : "Return the HTML form for editing one" },
+			{ "action" : "update", "verb" : "PUT/PATCH", "suffix" : "/:id",         "purpose" : "Update one by id" },
+			{ "action" : "delete", "verb" : "DELETE",    "suffix" : "/:id",         "purpose" : "Delete one by id" }
+		]
+
+		apiExcludedActions = [ "new", "edit" ]
+
+		/**
+		 * Route terminators, in the order they're looked for, mapped to
+		 * the `targetType` each produces. Longest names first so `.to(`
+		 * can never shadow `.toHandler(`.
+		 */
+		terminators = [
+			{ "call" : "toNamespaceRouting", "type" : "namespace" },
+			{ "call" : "toModuleRouting",    "type" : "module" },
+			{ "call" : "toRedirect",         "type" : "redirect" },
+			{ "call" : "toResponse",         "type" : "response" },
+			{ "call" : "toHandler",          "type" : "handler" },
+			{ "call" : "toAction",           "type" : "action" },
+			{ "call" : "toView",             "type" : "view" },
+			{ "call" : "toSSE",              "type" : "sse" },
+			{ "call" : "toMCP",              "type" : "mcp" },
+			{ "call" : "toAi",               "type" : "ai" },
+			{ "call" : "to",                 "type" : "event" }
+		]
+	}
+
+	/**
+	 * Parses one router file.
+	 *
+	 * @routerFile Absolute path to a `Router.bx`/`Router.cfc`
+	 * @module The module these routes belong to, or "" for the app's own router
+	 * @prefix A URL prefix applied to every pattern - a module's entry point, typically
+	 *
+	 * @return Array of route structs; empty when the file doesn't exist
+	 */
+	array function parse( required string routerFile, string module = "", string prefix = "" ) {
+		if ( !fileExists( arguments.routerFile ) ) {
+			return []
+		}
+
+		return parseSource(
+			source = fileRead( arguments.routerFile ),
+			module = arguments.module,
+			prefix = arguments.prefix
+		)
+	}
+
+	/**
+	 * Parses router source directly - the entry point every spec uses,
+	 * and what `parse()` delegates to once it has read the file.
+	 *
+	 * @source The router's source code
+	 * @module The module these routes belong to
+	 * @prefix A URL prefix applied to every pattern
+	 *
+	 * @return Array of `{ pattern, verbs, target, targetType, name, module, purpose }` structs
+	 */
+	array function parseSource( required string source, string module = "", string prefix = "" ) {
+		var routes = []
+
+		for ( var statement in variables.reader.statements( variables.reader.stripComments( arguments.source ) ) ) {
+			routes.append( parseStatement( statement, arguments.module, arguments.prefix ), true )
+		}
+
+		return routes
+	}
+
+	/**
+	 * Turns one statement into the routes it declares - none, one, or
+	 * (for a resource or a group) several.
+	 *
+	 * @statement A single router statement
+	 * @module The module context
+	 * @prefix The URL prefix context
+	 */
+	private array function parseStatement( required string statement, required string module, required string prefix ) {
+		// A module's ModuleConfig registers routes through an explicit
+		// `router.` reference; the app router calls the same methods bare.
+		var trimmed = variables.reader.withoutReceiver( arguments.statement )
+		var initiator = variables.reader.initiatorOf( arguments.statement )
+
+		if ( !len( initiator ) ) {
+			return []
+		}
+
+		var call = variables.reader.callArguments( trimmed )
+		if ( !call.closed ) {
+			return []
+		}
+		var args = call.content
+
+		switch ( lCase( initiator ) ) {
+			case "group":
+				return parseGroup( args, arguments.module, arguments.prefix )
+			case "resources":
+				return parseResources( args, arguments.module, arguments.prefix, false )
+			case "apiresources":
+				return parseResources( args, arguments.module, arguments.prefix, true )
+			case "route":
+				return parseRoute( trimmed, args, arguments.module, arguments.prefix, "" )
+			default:
+				if ( static.verbInitiators.keyExists( lCase( initiator ) ) ) {
+					return parseRoute( trimmed, args, arguments.module, arguments.prefix, static.verbInitiators[ lCase( initiator ) ] )
+				}
+				return []
+		}
+	}
+
+	/**
+	 * One `route()`/`get()`/`post()`/... declaration, including whatever
+	 * its chained modifiers and terminator say.
+	 *
+	 * @statement The whole statement, chained calls included
+	 * @args The initiator call's own argument text
+	 * @module The module context
+	 * @prefix The URL prefix context
+	 * @verb The HTTP verb the initiator itself restricts to, or ""
+	 */
+	private array function parseRoute(
+		required string statement,
+		required string args,
+		required string module,
+		required string prefix,
+		required string verb
+	) {
+		var parsed = variables.reader.parseArguments( arguments.args )
+		var pattern = variables.reader.literalArgument( parsed, "pattern", 1 )
+
+		// No literal pattern means it was built at runtime - skip rather
+		// than publish a route whose URL we'd be guessing at.
+		if ( !len( pattern ) ) {
+			return []
+		}
+
+		var target = variables.reader.literalArgument( parsed, "target", 2 )
+		var targetType = len( target ) ? "event" : ""
+
+		// `route( "/echo", ( event, rc, prc ) => {...} )` - an inline
+		// closure as the target is the shorthand for `.toResponse()`, so
+		// record it as the response route it is rather than as a route
+		// with no target at all.
+		if ( !len( targetType ) && hasInlineTarget( parsed ) ) {
+			targetType = "response"
+		}
+
+		var terminator = findTerminator( arguments.statement )
+
+		if ( len( terminator.type ) ) {
+			targetType = terminator.type
+			target = len( terminator.value ) ? terminator.value : target
+		}
+
+		if ( !len( targetType ) && variables.reader.hasCall( arguments.statement, "end" ) ) {
+			targetType = "convention"
+		}
+
+		var verbs = arguments.verb
+		var withVerbs = variables.reader.chainedValue( arguments.statement, "withVerbs" )
+		if ( len( withVerbs ) ) {
+			verbs = withVerbs.listToArray( "," ).map( ( entry ) => uCase( trim( entry ) ) ).toList( "/" )
+		}
+
+		var name = variables.reader.literalArgument( parsed, "name", 3 )
+		var chainedName = variables.reader.chainedValue( arguments.statement, "as" )
+		if ( len( chainedName ) ) {
+			name = chainedName
+		}
+
+		var routeModule = arguments.module
+		var chainedModule = variables.reader.chainedValue( arguments.statement, "withModule" )
+		if ( len( chainedModule ) ) {
+			routeModule = chainedModule
+		}
+
+		return [ route(
+			pattern    = joinPattern( arguments.prefix, pattern ),
+			verbs      = verbs,
+			target     = target,
+			targetType = targetType,
+			name       = name,
+			module     = routeModule
+		) ]
+	}
+
+	/**
+	 * A `group()` call: read its options, then recurse into its closure
+	 * body so nested declarations parse exactly like top-level ones,
+	 * carrying the group's own pattern prefix and module.
+	 *
+	 * @args The group call's argument text
+	 * @module The module context
+	 * @prefix The URL prefix context
+	 */
+	private array function parseGroup( required string args, required string module, required string prefix ) {
+		var blocks = variables.reader.topLevelBlocks( arguments.args )
+
+		if ( !blocks.len() ) {
+			return []
+		}
+
+		// `group( options, body )`: the body is the last brace block, the
+		// options struct the first - unless there's only one block, which
+		// is then the body.
+		var body = blocks[ blocks.len() ]
+		var options = blocks.len() > 1 ? variables.reader.parseArguments( blocks[ 1 ] ) : { "named" : {}, "positional" : [] }
+
+		var groupPattern = variables.reader.literalArgument( options, "pattern", 0 )
+		var groupModule = variables.reader.literalArgument( options, "module", 0 )
+
+		return parseSource(
+			source = body,
+			module = len( groupModule ) ? groupModule : arguments.module,
+			prefix = joinPattern( arguments.prefix, groupPattern )
+		)
+	}
+
+	/**
+	 * A `resources()`/`apiResources()` call, expanded into the individual
+	 * routes ColdBox generates for it.
+	 *
+	 * @args The call's argument text
+	 * @module The module context
+	 * @prefix The URL prefix context
+	 * @apiOnly Whether this was `apiResources()`, which drops the two HTML-form actions
+	 */
+	private array function parseResources(
+		required string args,
+		required string module,
+		required string prefix,
+		required boolean apiOnly
+	) {
+		var parsed = variables.reader.parseArguments( arguments.args )
+		var resource = variables.reader.literalArgument( parsed, "resource", 1 )
+
+		if ( !len( resource ) ) {
+			return []
+		}
+
+		var handler = variables.reader.literalArgument( parsed, "handler", 0 )
+		handler = len( handler ) ? handler : resource
+
+		var pattern = variables.reader.literalArgument( parsed, "pattern", 0 )
+		pattern = len( pattern ) ? pattern : "/" & resource
+
+		var parameterName = variables.reader.literalArgument( parsed, "parameterName", 0 )
+		parameterName = len( parameterName ) ? parameterName : "id"
+
+		var resourceModule = variables.reader.literalArgument( parsed, "module", 0 )
+		resourceModule = len( resourceModule ) ? resourceModule : arguments.module
+
+		var only = variables.reader.listArgument( parsed, "only" )
+		var except = variables.reader.listArgument( parsed, "except" )
+		var routes = []
+
+		for ( var entry in static.resourceActions ) {
+			if ( arguments.apiOnly && static.apiExcludedActions.findNoCase( entry.action ) ) {
+				continue
+			}
+			if ( only.len() && !only.findNoCase( entry.action ) ) {
+				continue
+			}
+			if ( except.len() && except.findNoCase( entry.action ) ) {
+				continue
+			}
+
+			routes.append( route(
+				pattern    = joinPattern( arguments.prefix, pattern & entry.suffix.replace( ":id", ":" & parameterName ) ),
+				verbs      = entry.verb,
+				target     = handler & "." & entry.action,
+				targetType = "event",
+				name       = "",
+				module     = resourceModule,
+				purpose    = entry.purpose & " " & resource
+			) )
+		}
+
+		return routes
+	}
+
+	/**
+	 * One normalized route row - the single place the shape every caller
+	 * relies on is defined.
+	 *
+	 * @pattern The URL pattern, prefix already applied
+	 * @verbs The HTTP verbs this route answers, or "" for any
+	 * @target What the route resolves to, in `targetType`'s terms
+	 * @targetType One of event/handler/action/view/redirect/response/module/namespace/sse/ai/mcp/convention, or ""
+	 * @name The route's registered name, or ""
+	 * @module The owning module, or ""
+	 * @purpose A human description, when the declaration implies one
+	 */
+	private struct function route(
+		required string pattern,
+		required string verbs,
+		required string target,
+		required string targetType,
+		required string name,
+		required string module,
+		string purpose = ""
+	) {
+		return {
+			"pattern"    : arguments.pattern,
+			"verbs"      : arguments.verbs,
+			"target"     : arguments.target,
+			"targetType" : arguments.targetType,
+			"name"       : arguments.name,
+			"module"     : arguments.module,
+			"purpose"    : arguments.purpose
+		}
+	}
+
+	/**
+	 * The first route terminator present in a statement.
+	 *
+	 * @statement The statement to search
+	 *
+	 * @return `{ type, value }`, both "" when the statement has no terminator
+	 */
+	private struct function findTerminator( required string statement ) {
+		for ( var terminator in static.terminators ) {
+			if ( variables.reader.hasCall( arguments.statement, terminator.call ) ) {
+				return { "type" : terminator.type, "value" : variables.reader.chainedValue( arguments.statement, terminator.call ) }
+			}
+		}
+
+		return { "type" : "", "value" : "" }
+	}
+
+	/**
+	 * Whether a route's target argument was given, but as something other
+	 * than a string literal - in practice an inline closure.
+	 *
+	 * @parsed A `parseArguments()` result
+	 */
+	private boolean function hasInlineTarget( required struct parsed ) {
+		if ( arguments.parsed.named.keyExists( "target" ) ) {
+			return true
+		}
+
+		return arguments.parsed.positional.len() >= 2
+	}
+
+	/**
+	 * Joins a prefix and a pattern into one clean URL pattern. With no
+	 * prefix the declared pattern is left exactly as the router wrote it -
+	 * a conventions route reads `:handler/:action?` in the source and
+	 * should read that way on the page too.
+	 *
+	 * @prefix The inherited prefix, possibly ""
+	 * @pattern The declared pattern
+	 */
+	private string function joinPattern( required string prefix, required string pattern ) {
+		var left = arguments.prefix.reReplace( "[\/]+$", "" )
+		var right = arguments.pattern
+
+		if ( !len( left ) ) {
+			return right
+		}
+
+		// A module's entry point is declared bare (`this.entryPoint = "api"`),
+		// but the URL it mounts at is rooted.
+		if ( !left.startsWith( "/" ) ) {
+			left = "/" & left
+		}
+
+		if ( !len( right ) ) {
+			return left
+		}
+
+		return left & ( right.startsWith( "/" ) ? right : "/" & right )
+	}
+
+}

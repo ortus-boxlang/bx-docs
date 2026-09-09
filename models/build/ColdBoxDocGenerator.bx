@@ -1,0 +1,1404 @@
+/**
+ * Renders a scanned ColdBox application as bx-sites Markdown pages: an
+ * app overview, a routes table covering the app router plus every module
+ * router, a page per event handler, a page per model alongside the
+ * WireBox mappings that wire them together, a page per module, and the
+ * app's interceptors and scheduled tasks.
+ *
+ * The ColdBox-side counterpart of the Gradle/Maven plugins'
+ * `bxSitesControllerScanDoc`, which does the same job for Spring MVC -
+ * except that where Spring reflection can only see mapped methods, a
+ * ColdBox app declares far more about itself on disk, so this grows to
+ * cover handlers, models and modules in their own milestones.
+ *
+ * Like `DocBoxDocGenerator`, this is a pure transform: it takes the
+ * structs `ColdBoxAppScanner` and `ColdBoxRouterParser` produce and
+ * writes Markdown. It never reads a project's disk itself, so every spec
+ * runs against fixture structs.
+ */
+class {
+
+	variables.hash = char( 35 )
+	variables.newline = char( 10 )
+
+	/**
+	 * The page sets this generator can emit, and the config/CLI token
+	 * that selects each. Later milestones extend this list; anything not
+	 * named in `include` is skipped entirely.
+	 */
+	static {
+		sections = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
+
+		/**
+		 * ColdBox's own handler lifecycle methods - implicit hooks the
+		 * framework calls, not actions a URL can reach. Listed in their
+		 * own section so a reader isn't left wondering which of a
+		 * handler's public methods are actually routable.
+		 */
+		lifecycleActions = [
+			"preHandler",
+			"postHandler",
+			"aroundHandler",
+			"onMissingAction",
+			"onError",
+			"onInvalidHTTPMethod"
+		]
+	}
+
+	/**
+	 * Renders every requested page for one scanned application.
+	 *
+	 * @app A `ColdBoxAppScanner.scan()` result
+	 * @routes Every route parsed from the app and its modules
+	 * @contentDir Absolute path of the project's content directory (`docs/` or `src/`)
+	 * @pagePathPrefix Where pages go, relative to `contentDir`
+	 * @tags Frontmatter tags applied to every generated page
+	 * @include Which page sets to emit
+	 *
+	 * @return `{ pageFiles, warnings }`
+	 */
+	struct function generate(
+		required struct app,
+		required array routes,
+		required string contentDir,
+		string pagePathPrefix = "api/coldbox",
+		array tags = [ "api", "coldbox" ],
+		array include = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ],
+		struct classDocs = {},
+		array mappings = [],
+		array interceptors = [],
+		array tasks = []
+	) {
+		var pagesRoot = arguments.contentDir & "/" & arguments.pagePathPrefix.reReplace( "^/+|/+$", "", "all" )
+		var pageFiles = []
+		var warnings = []
+		var sectionLinks = []
+
+		if ( arguments.include.findNoCase( "routes" ) ) {
+			if ( arguments.routes.len() ) {
+				var routesFile = pagesRoot & "/routes.md"
+				writePage( routesFile, renderRoutesPage( arguments.routes, arguments.tags ) )
+				pageFiles.append( routesFile )
+				sectionLinks.append( { "title" : "Routes", "link" : "routes.md" } )
+			} else {
+				warnings.append( "No routes found - the app declares no router, or every route is built at runtime" )
+			}
+		}
+
+		if ( arguments.include.findNoCase( "handlers" ) ) {
+			var handlerResult = writeHandlerPages( arguments.app, arguments.routes, pagesRoot, arguments.tags, arguments.classDocs )
+			pageFiles.append( handlerResult.pageFiles, true )
+			warnings.append( handlerResult.warnings, true )
+
+			if ( handlerResult.pageFiles.len() ) {
+				sectionLinks.append( { "title" : "Handlers", "link" : "handlers/index.md" } )
+			}
+		}
+
+		if ( arguments.include.findNoCase( "models" ) ) {
+			var modelResult = writeModelPages( arguments.app, arguments.mappings, pagesRoot, arguments.tags, arguments.classDocs )
+			pageFiles.append( modelResult.pageFiles, true )
+			warnings.append( modelResult.warnings, true )
+
+			if ( modelResult.pageFiles.len() ) {
+				sectionLinks.append( { "title" : "Models", "link" : "models/index.md" } )
+			}
+		}
+
+		if ( arguments.include.findNoCase( "modules" ) && arguments.app.modules.len() ) {
+			var moduleResult = writeModulePages( arguments.app, arguments.routes, arguments.mappings, pagesRoot, arguments.tags )
+			pageFiles.append( moduleResult.pageFiles, true )
+			sectionLinks.append( { "title" : "Modules", "link" : "modules/index.md" } )
+		}
+
+		if ( arguments.include.findNoCase( "interceptors" ) && ( arguments.interceptors.len() || arguments.app.interceptors.len() ) ) {
+			var interceptorsFile = pagesRoot & "/interceptors.md"
+			writePage( interceptorsFile, renderInterceptorsPage( arguments.app, arguments.interceptors, arguments.classDocs, arguments.tags ) )
+			pageFiles.append( interceptorsFile )
+			sectionLinks.append( { "title" : "Interceptors", "link" : "interceptors.md" } )
+		}
+
+		if ( arguments.include.findNoCase( "scheduler" ) && arguments.tasks.len() ) {
+			var tasksFile = pagesRoot & "/scheduled-tasks.md"
+			writePage( tasksFile, renderTasksPage( arguments.tasks, arguments.tags ) )
+			pageFiles.append( tasksFile )
+			sectionLinks.append( { "title" : "Scheduled tasks", "link" : "scheduled-tasks.md" } )
+		}
+
+		var indexFile = pagesRoot & "/index.md"
+		writePage( indexFile, renderIndexPage( arguments.app, arguments.routes, arguments.tags, sectionLinks ) )
+		pageFiles.append( indexFile )
+
+		return { "pageFiles" : pageFiles, "warnings" : warnings }
+	}
+
+	/**
+	 * Writes one page per handler, app and module alike, plus the index
+	 * that lists them.
+	 *
+	 * @app The scanned application
+	 * @routes Every parsed route
+	 * @pagesRoot Absolute path of this generator's page root
+	 * @tags Frontmatter tags
+	 * @classDocs DocBox class metadata, keyed as `<module>:<handler name>`
+	 *
+	 * @return `{ pageFiles, warnings }`
+	 */
+	private struct function writeHandlerPages(
+		required struct app,
+		required array routes,
+		required string pagesRoot,
+		required array tags,
+		required struct classDocs
+	) {
+		var handlers = arguments.app.handlers.duplicate()
+
+		for ( var module in arguments.app.modules ) {
+			handlers.append( module.handlers, true )
+		}
+
+		if ( !handlers.len() ) {
+			return { "pageFiles" : [], "warnings" : [] }
+		}
+
+		var pageFiles = []
+		var warnings = []
+		var undocumented = 0
+
+		for ( var handler in handlers ) {
+			var key = classKey( "handler", handler.module, handler.name )
+			var doc = arguments.classDocs[ key ] ?: {}
+
+			if ( doc.isEmpty() ) {
+				undocumented++
+			}
+
+			var pageFile = arguments.pagesRoot & "/handlers/" & handlerPagePath( handler.module, handler.name )
+			writePage( pageFile, renderHandlerPage( handler, doc, arguments.routes, arguments.tags ) )
+			pageFiles.append( pageFile )
+		}
+
+		var indexFile = arguments.pagesRoot & "/handlers/index.md"
+		writePage( indexFile, renderHandlersIndexPage( handlers, arguments.classDocs, arguments.routes, arguments.tags ) )
+		pageFiles.append( indexFile )
+
+		if ( undocumented == handlers.len() ) {
+			warnings.append(
+				"Handler pages list no actions - handler metadata comes from DocBox, so install the bx-docbox module to document each handler's actions"
+			)
+		} else if ( undocumented ) {
+			warnings.append( "#undocumented# handler(s) had no readable metadata and list no actions" )
+		}
+
+		return { "pageFiles" : pageFiles, "warnings" : warnings }
+	}
+
+	/**
+	 * The app overview: what the scan found, and links to the pages that
+	 * describe each part of it.
+	 *
+	 * @app The scanned application
+	 * @routes Every parsed route
+	 * @tags Frontmatter tags
+	 * @sectionLinks `{ title, link }` per page set actually written
+	 */
+	private string function renderIndexPage( required struct app, required array routes, required array tags, required array sectionLinks ) {
+		var moduleHandlers = arguments.app.modules.reduce( ( total, module ) => total + module.handlers.len(), 0 )
+		var lines = [
+			frontMatter( "ColdBox Application", "Routes, handlers, models and modules discovered from this application's conventions.", arguments.tags ),
+			heading( 1, "ColdBox Application" ),
+			"",
+			"Generated from the application's own conventions on disk - nothing was booted, so anything registered at runtime isn't listed here.",
+			"",
+			"| What | Count |",
+			"|---|---|",
+			"| Routes | #arguments.routes.len()# |",
+			"| Handlers | #arguments.app.handlers.len() + moduleHandlers# |",
+			"| Models | #arguments.app.models.len()# |",
+			"| Interceptors | #arguments.app.interceptors.len()# |",
+			"| Modules | #arguments.app.modules.len()# |",
+			""
+		]
+
+		var links = arguments.sectionLinks.map( ( section ) => "- [" & section.title & "](" & section.link & ")" )
+
+		if ( links.len() ) {
+			lines.append( heading( 2, "Pages" ) )
+			lines.append( "" )
+			lines.append( links, true )
+			lines.append( "" )
+		}
+
+		if ( arguments.app.modules.len() ) {
+			lines.append( heading( 2, "Modules" ) )
+			lines.append( "" )
+
+			for ( var module in arguments.app.modules ) {
+				lines.append( "- `#module.name#` &mdash; #module.handlers.len()# handler(s), #module.models.len()# model(s)" )
+			}
+
+			lines.append( "" )
+		}
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * The routes table: every declared route, in declaration order.
+	 *
+	 * A plain Markdown pipe table on purpose. A generator-authored raw
+	 * `<table>` carrying its own per-row Alpine attributes does not
+	 * survive this pipeline - `TableWrapProcessor` injects its own
+	 * `x-show` into every `<tr>` of a table with ten or more rows, and the
+	 * Markdown renderer entity-escapes a `<tr>`'s own attribute values -
+	 * so per-row filtering has to come from bx-sites rather than from
+	 * here. That is no loss: the same processor gives every table of this
+	 * size a live filter box for free, and a pipe table stays readable in
+	 * the raw Markdown, themed everywhere, and fully in the search index.
+	 *
+	 * @routes Every parsed route
+	 * @tags Frontmatter tags
+	 */
+	private string function renderRoutesPage( required array routes, required array tags ) {
+		var lines = [
+			frontMatter( "Routes", "Every URL pattern this application declares, and what each one resolves to.", arguments.tags ),
+			heading( 1, "Routes" ),
+			"",
+			"#arguments.routes.len()# route(s), in the order the routers declare them - ColdBox matches the first one that fits, so order is meaningful.",
+			"",
+			"| Verbs | Pattern | Target | Name | Module |",
+			"|---|---|---|---|---|"
+		]
+
+		for ( var route in arguments.routes ) {
+			lines.append(
+				"| #cell( verbLabel( route.verbs ) )# | `#cell( route.pattern )#` | #targetCell( route )# | #nameCell( route.name )# | #nameCell( route.module )# |"
+			)
+		}
+
+		lines.append( "" )
+		lines.append( legend( arguments.routes ), true )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * Writes one page per module, plus the index that lists them.
+	 *
+	 * @app The scanned application
+	 * @routes Every parsed route
+	 * @mappings Every parsed WireBox mapping
+	 * @pagesRoot Absolute path of this generator's page root
+	 * @tags Frontmatter tags
+	 *
+	 * @return `{ pageFiles }`
+	 */
+	private struct function writeModulePages(
+		required struct app,
+		required array routes,
+		required array mappings,
+		required string pagesRoot,
+		required array tags
+	) {
+		var pageFiles = []
+
+		for ( var module in arguments.app.modules ) {
+			var pageFile = arguments.pagesRoot & "/modules/" & module.name & ".md"
+			writePage( pageFile, renderModulePage( module, arguments.routes, arguments.mappings, arguments.tags ) )
+			pageFiles.append( pageFile )
+		}
+
+		var indexFile = arguments.pagesRoot & "/modules/index.md"
+		writePage( indexFile, renderModulesIndexPage( arguments.app.modules, arguments.routes, arguments.tags ) )
+		pageFiles.append( indexFile )
+
+		return { "pageFiles" : pageFiles }
+	}
+
+	/**
+	 * The modules index: every module with its entry point and what it
+	 * contributes to the app.
+	 *
+	 * @modules Every scanned module
+	 * @routes Every parsed route
+	 * @tags Frontmatter tags
+	 */
+	private string function renderModulesIndexPage( required array modules, required array routes, required array tags ) {
+		var lines = [
+			frontMatter( "Modules", "Every module this application declares, and what each one contributes.", arguments.tags ),
+			heading( 1, "Modules" ),
+			"",
+			"| Module | Entry point | Version | Handlers | Models | Routes |",
+			"|---|---|---|---|---|---|"
+		]
+
+		for ( var module in arguments.modules ) {
+			var metadata = module.metadata ?: {}
+			var moduleName = module.name
+			var routeCount = arguments.routes.filter( ( route ) => compareNoCase( route.module, moduleName ) == 0 ).len()
+
+			lines.append(
+				"| [`#cell( module.name )#`](#module.name#.md) | #nameCell( metadata.entryPoint ?: "" )# | #nameCell( metadata.version ?: "" )# | #module.handlers.len()# | #module.models.len()# | #routeCount# |"
+			)
+		}
+
+		lines.append( "" )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * One module page: what it declares about itself, then the routes,
+	 * handlers, models and mappings it brings to the application.
+	 *
+	 * @module One scanned module
+	 * @routes Every parsed route
+	 * @mappings Every parsed WireBox mapping
+	 * @tags Frontmatter tags
+	 */
+	private string function renderModulePage( required struct module, required array routes, required array mappings, required array tags ) {
+		var metadata = arguments.module.metadata ?: {}
+		var moduleName = arguments.module.name
+		var description = trim( metadata.description ?: "" )
+		var lines = [
+			frontMatter( metadata.title ?: arguments.module.name, description, arguments.tags ),
+			heading( 1, metadata.title ?: arguments.module.name ),
+			"",
+			"`#arguments.module.name#`" & ( len( trim( metadata.entryPoint ?: "" ) ) ? " &middot; mounted at `/#metadata.entryPoint#`" : "" ),
+			""
+		]
+
+		if ( len( description ) ) {
+			lines.append( description )
+			lines.append( "" )
+		}
+
+		lines.append( moduleMetadataSection( metadata ), true )
+
+		var moduleRoutes = arguments.routes.filter( ( route ) => compareNoCase( route.module, moduleName ) == 0 )
+		if ( moduleRoutes.len() ) {
+			lines.append( heading( 2, "Routes" ) )
+			lines.append( "" )
+			lines.append( "| Verbs | Pattern | Target |" )
+			lines.append( "|---|---|---|" )
+
+			for ( var route in moduleRoutes ) {
+				lines.append( "| #cell( verbLabel( route.verbs ) )# | `#cell( route.pattern )#` | #targetCell( route )# |" )
+			}
+
+			lines.append( "" )
+		}
+
+		if ( arguments.module.handlers.len() ) {
+			lines.append( heading( 2, "Handlers" ) )
+			lines.append( "" )
+
+			for ( var handler in arguments.module.handlers ) {
+				lines.append( "- [`#cell( handler.name )#`](../handlers/#handlerPagePath( arguments.module.name, handler.name )#)" )
+			}
+
+			lines.append( "" )
+		}
+
+		if ( arguments.module.models.len() ) {
+			lines.append( heading( 2, "Models" ) )
+			lines.append( "" )
+
+			for ( var model in arguments.module.models ) {
+				lines.append( "- [`#cell( model.name )#`](../models/#handlerPagePath( arguments.module.name, model.name )#)" )
+			}
+
+			lines.append( "" )
+		}
+
+		var moduleMappings = arguments.mappings.filter( ( mapping ) => compareNoCase( mapping.module, moduleName ) == 0 )
+		if ( moduleMappings.len() ) {
+			lines.append( heading( 2, "WireBox mappings" ) )
+			lines.append( "" )
+			lines.append( "| Alias | Maps to | Scope |" )
+			lines.append( "|---|---|---|" )
+
+			for ( var mapping in moduleMappings ) {
+				lines.append( "| `#cell( mapping.alias )#` | #nameCell( mapping.target )# | #nameCell( mapping.scope )# |" )
+			}
+
+			lines.append( "" )
+		}
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * A module's own declared metadata, as a table - only the keys it
+	 * actually sets, so a terse ModuleConfig doesn't produce a table full
+	 * of blanks.
+	 *
+	 * @metadata The module's `this.*` declarations
+	 */
+	private array function moduleMetadataSection( required struct metadata ) {
+		var labels = {
+			"author"         : "Author",
+			"version"        : "Version",
+			"entryPoint"     : "Entry point",
+			"webURL"         : "Web URL",
+			"modelNamespace" : "Model namespace",
+			"cfmapping"      : "Mapping",
+			"autoMapModels"  : "Auto-maps models",
+			"dependencies"   : "Depends on",
+			"disabled"       : "Disabled"
+		}
+		var rows = []
+
+		for ( var key in [ "author", "version", "entryPoint", "webURL", "modelNamespace", "cfmapping", "autoMapModels", "dependencies", "disabled" ] ) {
+			if ( !arguments.metadata.keyExists( key ) ) {
+				continue
+			}
+
+			var value = arguments.metadata[ key ]
+			var rendered = isArray( value ) ? value.map( ( entry ) => "`" & entry & "`" ).toList( ", " ) : cell( toDisplay( value ) )
+
+			if ( !len( rendered ) ) {
+				continue
+			}
+
+			rows.append( "| #labels[ key ]# | #rendered# |" )
+		}
+
+		if ( !rows.len() ) {
+			return []
+		}
+
+		var lines = [ "| | |", "|---|---|" ]
+		lines.append( rows, true )
+		lines.append( "" )
+
+		return lines
+	}
+
+	/**
+	 * The interceptors page: what the config registers, and what each
+	 * interceptor class listens for.
+	 *
+	 * An interceptor's public methods are its interception points - that
+	 * is how ColdBox itself decides what to call - so the methods a class
+	 * declares are exactly the list worth showing.
+	 *
+	 * @app The scanned application
+	 * @declared Interceptors registered in `config/ColdBox`
+	 * @classDocs DocBox class metadata keyed by `classKey()`
+	 * @tags Frontmatter tags
+	 */
+	private string function renderInterceptorsPage(
+		required struct app,
+		required array declared,
+		required struct classDocs,
+		required array tags
+	) {
+		var lines = [
+			frontMatter( "Interceptors", "The interceptors this application registers, and the interception points each one listens for.", arguments.tags ),
+			heading( 1, "Interceptors" ),
+			""
+		]
+
+		if ( arguments.declared.len() ) {
+			lines.append( heading( 2, "Registered in config" ) )
+			lines.append( "" )
+			lines.append( "| Class | Name |" )
+			lines.append( "|---|---|" )
+
+			for ( var interceptor in arguments.declared ) {
+				lines.append( "| `#cell( interceptor.class )#` | #nameCell( interceptor.name )# |" )
+			}
+
+			lines.append( "" )
+		}
+
+		if ( arguments.app.interceptors.len() ) {
+			lines.append( heading( 2, "Declared in interceptors/" ) )
+			lines.append( "" )
+
+			for ( var interceptor in arguments.app.interceptors ) {
+				var doc = arguments.classDocs[ classKey( "interceptor", "", interceptor.name ) ] ?: {}
+				var points = publicFunctions( doc ).map( ( member ) => "`" & ( member.name ?: "" ) & "`" )
+
+				lines.append( heading( 3, interceptor.name ) )
+				lines.append( "" )
+
+				var hint = trim( doc.hint ?: "" )
+				if ( len( hint ) ) {
+					lines.append( hint )
+					lines.append( "" )
+				}
+
+				lines.append( points.len() ? "Listens for " & points.toList( ", " ) : "No interception points found - install the `bx-docbox` module to read them." )
+				lines.append( "" )
+			}
+		}
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * The scheduled tasks page.
+	 *
+	 * @tasks Every parsed scheduled task
+	 * @tags Frontmatter tags
+	 */
+	private string function renderTasksPage( required array tasks, required array tags ) {
+		var lines = [
+			frontMatter( "Scheduled tasks", "The tasks this application schedules, how often each runs, and what it runs.", arguments.tags ),
+			heading( 1, "Scheduled tasks" ),
+			"",
+			"| Task | Schedule | Runs | Constraints | Module |",
+			"|---|---|---|---|---|"
+		]
+
+		for ( var task in arguments.tasks ) {
+			var constraints = task.constraints.len() ? cell( task.constraints.toList( ", " ) ) : "&mdash;"
+			var target = len( trim( task.target ) ) ? "`" & cell( task.target ) & "`" : "&mdash;"
+
+			lines.append(
+				"| #cell( task.name )# | #nameCell( task.schedule )# | #target# | #constraints# | #nameCell( task.module )# |"
+			)
+		}
+
+		lines.append( "" )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * Writes one page per model, plus the index that lists them and the
+	 * WireBox mappings that wire them together.
+	 *
+	 * @app The scanned application
+	 * @mappings Every WireBox mapping parsed from the app and its modules
+	 * @pagesRoot Absolute path of this generator's page root
+	 * @tags Frontmatter tags
+	 * @classDocs DocBox class metadata, keyed by `classKey()`
+	 *
+	 * @return `{ pageFiles, warnings }`
+	 */
+	private struct function writeModelPages(
+		required struct app,
+		required array mappings,
+		required string pagesRoot,
+		required array tags,
+		required struct classDocs
+	) {
+		var models = arguments.app.models.map( ( model ) => {
+			return { "name" : model.name, "file" : model.file, "module" : "" };
+		} )
+
+		for ( var module in arguments.app.modules ) {
+			for ( var model in module.models ) {
+				models.append( { "name" : model.name, "file" : model.file, "module" : module.name } )
+			}
+		}
+
+		if ( !models.len() && !arguments.mappings.len() ) {
+			return { "pageFiles" : [], "warnings" : [] }
+		}
+
+		var pageFiles = []
+		var warnings = []
+		var undocumented = 0
+
+		for ( var model in models ) {
+			var doc = arguments.classDocs[ classKey( "model", model.module, model.name ) ] ?: {}
+
+			if ( doc.isEmpty() ) {
+				undocumented++
+			}
+
+			var pageFile = arguments.pagesRoot & "/models/" & handlerPagePath( model.module, model.name )
+			writePage( pageFile, renderModelPage( model, doc, arguments.mappings, arguments.tags ) )
+			pageFiles.append( pageFile )
+		}
+
+		var indexFile = arguments.pagesRoot & "/models/index.md"
+		writePage( indexFile, renderModelsIndexPage( models, arguments.classDocs, arguments.mappings, arguments.tags ) )
+		pageFiles.append( indexFile )
+
+		if ( models.len() && undocumented == models.len() ) {
+			warnings.append(
+				"Model pages list no members - model metadata comes from DocBox, so install the bx-docbox module to document them"
+			)
+		} else if ( undocumented ) {
+			warnings.append( "#undocumented# model(s) had no readable metadata and list no members" )
+		}
+
+		return { "pageFiles" : pageFiles, "warnings" : warnings }
+	}
+
+	/**
+	 * The models index: every model with its scope and dependency count,
+	 * then the binder's own declared mappings.
+	 *
+	 * @models Every model, app and module alike
+	 * @classDocs DocBox class metadata keyed by `classKey()`
+	 * @mappings Every parsed WireBox mapping
+	 * @tags Frontmatter tags
+	 */
+	private string function renderModelsIndexPage(
+		required array models,
+		required struct classDocs,
+		required array mappings,
+		required array tags
+	) {
+		var lines = [
+			frontMatter( "Models", "The application's model layer, and the WireBox mappings that wire it together.", arguments.tags ),
+			heading( 1, "Models" ),
+			""
+		]
+
+		if ( arguments.models.len() ) {
+			lines.append( "| Model | Module | Scope | Injects |" )
+			lines.append( "|---|---|---|---|" )
+
+			for ( var model in arguments.models ) {
+				var doc = arguments.classDocs[ classKey( "model", model.module, model.name ) ] ?: {}
+				var link = handlerPagePath( model.module, model.name )
+
+				lines.append(
+					"| [`#cell( model.name )#`](#link#) | #nameCell( model.module )# | #nameCell( scopeOf( model, doc, arguments.mappings ) )# | #injectionsOf( doc ).len()# |"
+				)
+			}
+
+			lines.append( "" )
+		}
+
+		lines.append( mappingsSection( arguments.mappings ), true )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * The binder's declared mappings, as their own section.
+	 *
+	 * @mappings Every parsed WireBox mapping
+	 */
+	private array function mappingsSection( required array mappings ) {
+		if ( !arguments.mappings.len() ) {
+			return []
+		}
+
+		var lines = [
+			heading( 2, "WireBox mappings" ),
+			"",
+			"Declared in the application's binder. A model with no mapping here is still injectable - WireBox maps the models directory by convention.",
+			"",
+			"| Alias | Maps to | Kind | Scope | Module |",
+			"|---|---|---|---|---|"
+		]
+
+		for ( var mapping in arguments.mappings ) {
+			lines.append(
+				"| `#cell( mapping.alias )#` | #nameCell( mapping.target )# | #cell( mapping.targetType )# | #nameCell( mapping.scope )# | #nameCell( mapping.module )# |"
+			)
+		}
+
+		lines.append( "" )
+
+		return lines
+	}
+
+	/**
+	 * One model page: what it is, how it's scoped, what it has injected
+	 * into it, and the methods it exposes.
+	 *
+	 * @model One scanned model
+	 * @doc Its DocBox class metadata, or an empty struct when there is none
+	 * @mappings Every parsed WireBox mapping
+	 * @tags Frontmatter tags
+	 */
+	private string function renderModelPage(
+		required struct model,
+		required struct doc,
+		required array mappings,
+		required array tags
+	) {
+		var hint = trim( arguments.doc.hint ?: "" )
+		var lines = [
+			frontMatter( arguments.model.name, firstSentence( hint ), arguments.tags ),
+			heading( 1, arguments.model.name ),
+			"",
+			modelIdentityLine( arguments.model, arguments.doc, arguments.mappings ),
+			""
+		]
+
+		if ( len( hint ) ) {
+			lines.append( hint )
+			lines.append( "" )
+		}
+
+		var injections = injectionsOf( arguments.doc )
+		if ( injections.len() ) {
+			lines.append( heading( 2, "Injected dependencies" ) )
+			lines.append( "" )
+			lines.append( "| Property | Injects | Type | Description |" )
+			lines.append( "|---|---|---|---|" )
+
+			for ( var injection in injections ) {
+				lines.append(
+					"| `#cell( injection.name )#` | #nameCell( injection.inject )# | `#cell( injection.type )#` | #cell( injection.hint )# |"
+				)
+			}
+
+			lines.append( "" )
+		}
+
+		var properties = plainPropertiesOf( arguments.doc )
+		if ( properties.len() ) {
+			lines.append( heading( 2, "Properties" ) )
+			lines.append( "" )
+			lines.append( "| Property | Type | Default | Description |" )
+			lines.append( "|---|---|---|---|" )
+
+			for ( var property in properties ) {
+				var defaultValue = toDisplay( property[ "default" ] ?: "" )
+				lines.append(
+					"| `#cell( property.name ?: "" )#` | `#cell( property.type ?: "any" )#` | #len( defaultValue ) ? "`" & cell( defaultValue ) & "`" : "&mdash;"# | #cell( property.hint ?: "" )# |"
+				)
+			}
+
+			lines.append( "" )
+		}
+
+		var methods = publicFunctions( arguments.doc )
+		if ( methods.len() ) {
+			lines.append( heading( 2, "Methods" ) )
+			lines.append( "" )
+
+			for ( var method in methods ) {
+				lines.append( renderAction( method, { "name" : arguments.model.name, "module" : arguments.model.module }, [] ), true )
+			}
+		}
+
+		if ( arguments.doc.isEmpty() ) {
+			lines.append( "No metadata was readable for this model, so its members aren't listed. Install the `bx-docbox` module and re-run to document them." )
+			lines.append( "" )
+		}
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * The `models.UserService` / module / scope line under a model's H1.
+	 *
+	 * @model One scanned model
+	 * @doc Its DocBox class metadata
+	 * @mappings Every parsed WireBox mapping
+	 */
+	private string function modelIdentityLine( required struct model, required struct doc, required array mappings ) {
+		var parts = [ "`models.#arguments.model.name#`" ]
+
+		if ( len( trim( arguments.model.module ) ) ) {
+			parts.append( "module `#arguments.model.module#`" )
+		}
+
+		var scope = scopeOf( arguments.model, arguments.doc, arguments.mappings )
+		if ( len( scope ) ) {
+			parts.append( "scope `#scope#`" )
+		}
+
+		if ( len( trim( arguments.doc[ "extends" ] ?: "" ) ) ) {
+			parts.append( "extends `#arguments.doc[ "extends" ]#`" )
+		}
+
+		return parts.toList( " &middot; " )
+	}
+
+	/**
+	 * A model's scope: what the class itself declares by annotation,
+	 * else what the binder puts it into.
+	 *
+	 * @model One scanned model
+	 * @doc Its DocBox class metadata
+	 * @mappings Every parsed WireBox mapping
+	 */
+	private string function scopeOf( required struct model, required struct doc, required array mappings ) {
+		var annotations = arguments.doc.annotations ?: {}
+
+		if ( isStruct( annotations ) ) {
+			for ( var scope in [ "singleton", "transient" ] ) {
+				if ( annotations.keyExists( scope ) ) {
+					return scope
+				}
+			}
+
+			if ( len( trim( annotations.scope ?: "" ) ) ) {
+				return lCase( trim( annotations.scope ) )
+			}
+		}
+
+		var simpleName = arguments.model.name.listLast( "." )
+
+		for ( var mapping in arguments.mappings ) {
+			if ( !len( mapping.scope ) ) {
+				continue
+			}
+
+			if ( compareNoCase( mapping.alias, simpleName ) == 0 || mapping.target.listLast( "." ) == simpleName ) {
+				return mapping.scope
+			}
+		}
+
+		return ""
+	}
+
+	/**
+	 * A model's injected dependencies: the declared properties carrying
+	 * an `inject` annotation, which is how WireBox wiring shows up on a
+	 * class.
+	 *
+	 * @doc A DocBox class metadata struct
+	 */
+	private array function injectionsOf( required struct doc ) {
+		return normalizedProperties( arguments.doc )
+			.filter( ( property ) => isStruct( property.annotations ?: "" ) && property.annotations.keyExists( "inject" ) )
+			.map( ( property ) => {
+				var injected = property.annotations.inject
+
+				return {
+					"name"   : property.name ?: "",
+					"inject" : isSimpleValue( injected ) && len( trim( injected ) ) ? trim( injected ) : ( property.name ?: "" ),
+					"type"   : property.type ?: "any",
+					"hint"   : property.hint ?: ""
+				};
+			} )
+	}
+
+	/**
+	 * A model's declared properties that aren't injections - its own
+	 * state rather than its wiring.
+	 *
+	 * @doc A DocBox class metadata struct
+	 */
+	private array function plainPropertiesOf( required struct doc ) {
+		return normalizedProperties( arguments.doc )
+			.filter( ( property ) => !isStruct( property.annotations ?: "" ) || !property.annotations.keyExists( "inject" ) )
+	}
+
+	/**
+	 * A class' declared properties, or an empty array when it has none -
+	 * these are present only because `DocBoxRunner` merges them back in
+	 * (DocBox's own JSON strategy drops them), so a class documented some
+	 * other way legitimately has none.
+	 *
+	 * @doc A DocBox class metadata struct
+	 */
+	private array function normalizedProperties( required struct doc ) {
+		var properties = arguments.doc.properties ?: []
+
+		return isArray( properties ) ? properties : []
+	}
+
+	/**
+	 * Best-effort string rendering of any metadata value.
+	 *
+	 * @value The value to render
+	 */
+	private string function toDisplay( required any value ) {
+		if ( isNull( arguments.value ) ) {
+			return ""
+		}
+
+		return isSimpleValue( arguments.value ) ? toString( arguments.value ) : jsonSerialize( arguments.value )
+	}
+
+	/**
+	 * The handlers index: every handler, what it belongs to, how many
+	 * actions it exposes, and how many routes reach it.
+	 *
+	 * @handlers Every handler, app and module alike
+	 * @classDocs DocBox class metadata keyed by handler key
+	 * @routes Every parsed route
+	 * @tags Frontmatter tags
+	 */
+	private string function renderHandlersIndexPage(
+		required array handlers,
+		required struct classDocs,
+		required array routes,
+		required array tags
+	) {
+		var lines = [
+			frontMatter( "Handlers", "Every event handler this application declares, and the actions each one exposes.", arguments.tags ),
+			heading( 1, "Handlers" ),
+			"",
+			"| Handler | Module | Actions | Routes |",
+			"|---|---|---|---|"
+		]
+
+		for ( var handler in arguments.handlers ) {
+			var doc = arguments.classDocs[ classKey( "handler", handler.module, handler.name ) ] ?: {}
+			var actions = actionsOf( doc ).len()
+			var routeCount = routesForHandler( arguments.routes, handler ).len()
+			var link = handlerPagePath( handler.module, handler.name )
+
+			lines.append( "| [`#cell( handler.name )#`](#link#) | #nameCell( handler.module )# | #actions# | #routeCount# |" )
+		}
+
+		lines.append( "" )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * One handler page: what it is, the routes that reach it, its
+	 * routable actions, and ColdBox's own lifecycle hooks kept separate
+	 * from them.
+	 *
+	 * @handler One scanned handler
+	 * @doc Its DocBox class metadata, or an empty struct when there is none
+	 * @routes Every parsed route
+	 * @tags Frontmatter tags
+	 */
+	private string function renderHandlerPage(
+		required struct handler,
+		required struct doc,
+		required array routes,
+		required array tags
+	) {
+		var hint = trim( arguments.doc.hint ?: "" )
+		var lines = [
+			frontMatter( arguments.handler.name, firstSentence( hint ), arguments.tags ),
+			heading( 1, arguments.handler.name ),
+			"",
+			handlerIdentityLine( arguments.handler, arguments.doc ),
+			""
+		]
+
+		if ( len( hint ) ) {
+			lines.append( hint )
+			lines.append( "" )
+		}
+
+		lines.append( handlerRoutesSection( arguments.routes, arguments.handler ), true )
+
+		var actions = actionsOf( arguments.doc )
+		var lifecycle = lifecycleOf( arguments.doc )
+
+		if ( !actions.len() && !lifecycle.len() ) {
+			lines.append(
+				arguments.doc.isEmpty()
+					? "No metadata was readable for this handler, so its actions aren't listed. Install the `bx-docbox` module and re-run to document them."
+					: "This handler declares no public actions."
+			)
+			lines.append( "" )
+
+			return lines.toList( variables.newline )
+		}
+
+		if ( actions.len() ) {
+			lines.append( heading( 2, "Actions" ) )
+			lines.append( "" )
+
+			for ( var action in actions ) {
+				lines.append( renderAction( action, arguments.handler, arguments.routes ), true )
+			}
+		}
+
+		if ( lifecycle.len() ) {
+			lines.append( heading( 2, "Lifecycle hooks" ) )
+			lines.append( "" )
+			lines.append( "ColdBox calls these itself around the handler's actions - they aren't reachable as events of their own." )
+			lines.append( "" )
+
+			for ( var hook in lifecycle ) {
+				lines.append( renderAction( hook, arguments.handler, [] ), true )
+			}
+		}
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * The `handlers.admin.Users` / module line under a handler's H1.
+	 *
+	 * @handler One scanned handler
+	 * @doc Its DocBox class metadata
+	 */
+	private string function handlerIdentityLine( required struct handler, required struct doc ) {
+		var parts = [ "`handlers.#arguments.handler.name#`" ]
+
+		if ( len( trim( arguments.handler.module ) ) ) {
+			parts.append( "module `#arguments.handler.module#`" )
+		}
+
+		if ( len( trim( arguments.doc[ "extends" ] ?: "" ) ) ) {
+			parts.append( "extends `#arguments.doc[ "extends" ]#`" )
+		}
+
+		return parts.toList( " &middot; " )
+	}
+
+	/**
+	 * The routes that reach a handler, as its own section - the thing a
+	 * reader opening a handler page most wants to know.
+	 *
+	 * @routes Every parsed route
+	 * @handler One scanned handler
+	 */
+	private array function handlerRoutesSection( required array routes, required struct handler ) {
+		var matched = routesForHandler( arguments.routes, arguments.handler )
+
+		if ( !matched.len() ) {
+			return []
+		}
+
+		var lines = [ heading( 2, "Routes" ), "", "| Verbs | Pattern | Action |", "|---|---|---|" ]
+
+		for ( var match in matched ) {
+			lines.append( "| #cell( verbLabel( match.route.verbs ) )# | `#cell( match.route.pattern )#` | #nameCell( match.action )# |" )
+		}
+
+		lines.append( "" )
+
+		return lines
+	}
+
+	/**
+	 * One action or lifecycle hook: signature, hint, parameters, and the
+	 * routes that reach it.
+	 *
+	 * @member One entry of the handler's `functions` array
+	 * @handler The handler it belongs to
+	 * @routes Every parsed route, or an empty array to skip route linking
+	 */
+	private array function renderAction( required struct member, required struct handler, required array routes ) {
+		var name = arguments.member.name ?: ""
+		var lines = [ heading( 3, "`" & signatureOf( arguments.member ) & "`" ), "" ]
+
+		var hint = trim( arguments.member.hint ?: "" )
+		if ( len( hint ) ) {
+			lines.append( hint )
+			lines.append( "" )
+		}
+
+		var patterns = routesForHandler( arguments.routes, arguments.handler )
+			.filter( ( match ) => compareNoCase( match.action, name ) == 0 )
+			.map( ( match ) => "`" & match.route.pattern & "`" )
+
+		if ( patterns.len() ) {
+			lines.append( "Reached by " & patterns.toList( ", " ) )
+			lines.append( "" )
+		}
+
+		var parameters = arguments.member.parameters ?: []
+		if ( isArray( parameters ) && parameters.len() ) {
+			lines.append( "| Parameter | Type | Required | Description |" )
+			lines.append( "|---|---|---|---|" )
+
+			for ( var parameter in parameters ) {
+				var description = isStruct( parameter.documentation ?: "" ) ? ( parameter.documentation.hint ?: "" ) : ""
+				var requiredCell = ( parameter.required ?: false ) ? "yes" : "no"
+
+				lines.append( "| `#cell( parameter.name ?: "" )#` | `#cell( parameter.type ?: "any" )#` | #requiredCell# | #cell( description )# |" )
+			}
+
+			lines.append( "" )
+		}
+
+		var returns = isStruct( arguments.member.documentation ?: "" ) ? trim( arguments.member.documentation[ "return" ] ?: "" ) : ""
+		if ( len( returns ) ) {
+			lines.append( "- **Returns** " & returns )
+			lines.append( "" )
+		}
+
+		return lines
+	}
+
+	/**
+	 * A handler's routable actions: its public functions, minus `init`
+	 * and minus ColdBox's own lifecycle hooks.
+	 *
+	 * @doc A handler's DocBox class metadata
+	 */
+	private array function actionsOf( required struct doc ) {
+		return publicFunctions( arguments.doc ).filter( ( member ) => {
+			return !static.lifecycleActions.findNoCase( member.name ?: "" );
+		} )
+	}
+
+	/**
+	 * A handler's lifecycle hooks, in the order ColdBox documents them.
+	 *
+	 * @doc A handler's DocBox class metadata
+	 */
+	private array function lifecycleOf( required struct doc ) {
+		return publicFunctions( arguments.doc ).filter( ( member ) => {
+			return static.lifecycleActions.findNoCase( member.name ?: "" ) > 0;
+		} )
+	}
+
+	/**
+	 * Every public function a class declares, except its constructor.
+	 *
+	 * @doc A DocBox class metadata struct
+	 */
+	private array function publicFunctions( required struct doc ) {
+		var functions = arguments.doc.functions ?: []
+
+		if ( !isArray( functions ) ) {
+			return []
+		}
+
+		return functions.filter( ( member ) => {
+			return lCase( trim( member.access ?: "public" ) ) == "public" && ( member.name ?: "" ) != "init";
+		} )
+	}
+
+	/**
+	 * The routes that reach a handler, each paired with the action it
+	 * resolves to. Matching is case-insensitive because ColdBox's own
+	 * event names are.
+	 *
+	 * @routes Every parsed route
+	 * @handler One scanned handler
+	 *
+	 * @return Array of `{ route, action }` structs
+	 */
+	private array function routesForHandler( required array routes, required struct handler ) {
+		var name = arguments.handler.name
+		var module = arguments.handler.module
+		var matched = []
+
+		for ( var route in arguments.routes ) {
+			if ( compareNoCase( route.module, module ) != 0 ) {
+				continue
+			}
+
+			if ( route.targetType == "handler" && compareNoCase( route.target, name ) == 0 ) {
+				matched.append( { "route" : route, "action" : "" } )
+				continue
+			}
+
+			if ( route.targetType != "event" ) {
+				continue
+			}
+
+			var prefix = name & "."
+
+			if ( route.target.len() > prefix.len() && compareNoCase( route.target.left( prefix.len() ), prefix ) == 0 ) {
+				matched.append( { "route" : route, "action" : route.target.mid( prefix.len() + 1, route.target.len() ) } )
+			}
+		}
+
+		return matched
+	}
+
+	/**
+	 * A function's rendered signature, e.g. `any index( event, rc, prc )`.
+	 *
+	 * @member One entry of a class' `functions` array
+	 */
+	private string function signatureOf( required struct member ) {
+		var parameters = ( isArray( arguments.member.parameters ?: "" ) ? arguments.member.parameters : [] )
+			.map( ( parameter ) => parameter.name ?: "" )
+
+		// `index()` rather than `index(  )` when an action takes nothing.
+		var rendered = parameters.len() ? "( " & parameters.toList( ", " ) & " )" : "()"
+
+		return "#arguments.member.returnType ?: "any"# #arguments.member.name ?: ""##rendered#"
+	}
+
+	/**
+	 * The key a class' metadata is looked up under - its kind, module and
+	 * name together, since two modules can each declare a `Main`, and a
+	 * handler and a model can share a name too.
+	 *
+	 * @kind `handler` or `model`
+	 * @module The owning module, or "" for the app's own
+	 * @name The class' dotted name
+	 */
+	string function classKey( required string kind, required string module, required string name ) {
+		return lCase( arguments.kind & ":" & arguments.module & ":" & arguments.name )
+	}
+
+	/**
+	 * Where a handler's page lives, relative to the handlers directory -
+	 * module handlers nest under their module so two `Main` handlers
+	 * never collide.
+	 *
+	 * @module The owning module, or "" for the app's own
+	 * @name The handler's dotted name
+	 */
+	private string function handlerPagePath( required string module, required string name ) {
+		var path = arguments.name.replace( ".", "/", "all" ) & ".md"
+
+		return len( trim( arguments.module ) ) ? arguments.module & "/" & path : path
+	}
+
+	/**
+	 * The first sentence of a docblock hint, for frontmatter `summary`.
+	 *
+	 * @hint The full hint text
+	 */
+	private string function firstSentence( required string hint ) {
+		var flattened = trim( arguments.hint.reReplace( "\s+", " ", "all" ) )
+
+		if ( !len( flattened ) ) {
+			return ""
+		}
+
+		var terminator = flattened.reFind( "\. " )
+
+		return terminator > 0 ? flattened.left( terminator ) : flattened
+	}
+
+	/**
+	 * How a route's verb restriction reads in the table.
+	 *
+	 * @verbs The route's verb restriction, "" for none
+	 */
+	private string function verbLabel( required string verbs ) {
+		return len( trim( arguments.verbs ) ) ? trim( arguments.verbs ) : "ANY"
+	}
+
+	/**
+	 * A route's target cell: the target itself, qualified by what kind of
+	 * target it is whenever that isn't the ordinary event case.
+	 *
+	 * @route One parsed route
+	 */
+	private string function targetCell( required struct route ) {
+		var target = trim( arguments.route.target )
+		var type = trim( arguments.route.targetType )
+
+		if ( !len( target ) ) {
+			return len( type ) ? "*" & cell( typeLabel( type ) ) & "*" : "&mdash;"
+		}
+
+		if ( type == "event" ) {
+			return "`" & cell( target ) & "`"
+		}
+
+		return "`" & cell( target ) & "` *" & cell( typeLabel( type ) ) & "*"
+	}
+
+	/**
+	 * A plain-language label for a route's target type.
+	 *
+	 * @type The parsed target type
+	 */
+	private string function typeLabel( required string type ) {
+		var labels = {
+			"event"     : "event",
+			"handler"   : "handler",
+			"action"    : "action",
+			"view"      : "view",
+			"redirect"  : "redirect",
+			"response"  : "inline response",
+			"module"    : "module routing",
+			"namespace" : "namespace routing",
+			"sse"       : "SSE stream",
+			"ai"        : "AI inference",
+			"mcp"       : "MCP endpoint",
+			"convention" : "by convention"
+		}
+
+		return labels[ arguments.type ] ?: arguments.type
+	}
+
+	/**
+	 * A name/module cell, em-dashed when empty.
+	 *
+	 * @value The raw value
+	 */
+	private string function nameCell( required string value ) {
+		return len( trim( arguments.value ) ) ? "`" & cell( arguments.value ) & "`" : "&mdash;"
+	}
+
+	/**
+	 * A short note under the table, when the routes include anything
+	 * whose meaning isn't self-evident from the row itself.
+	 *
+	 * @routes Every parsed route
+	 */
+	private array function legend( required array routes ) {
+		var hasConvention = arguments.routes.some( ( route ) => route.targetType == "convention" )
+
+		if ( !hasConvention ) {
+			return []
+		}
+
+		return [
+			"A route marked *by convention* has no explicit target: ColdBox resolves the handler and action from the URL pattern's own placeholders.",
+			""
+		]
+	}
+
+	/**
+	 * Renders a page's frontmatter block.
+	 *
+	 * @title The page title
+	 * @summary A one-line summary, or "" to omit the key
+	 * @tags Frontmatter tags
+	 */
+	private string function frontMatter( required string title, required string summary, required array tags ) {
+		var lines = [ "---", "title: " & quoted( arguments.title ) ]
+
+		if ( len( trim( arguments.summary ) ) ) {
+			lines.append( "summary: " & quoted( arguments.summary ) )
+		}
+
+		if ( arguments.tags.len() ) {
+			lines.append( "tags: [" & arguments.tags.toList( ", " ) & "]" )
+		}
+
+		lines.append( "---" )
+		lines.append( "" )
+
+		return lines.toList( variables.newline )
+	}
+
+	/**
+	 * A Markdown ATX heading at the given level.
+	 *
+	 * @level Heading level, 1-6
+	 * @text The heading text
+	 */
+	private string function heading( required numeric level, required string text ) {
+		return repeatString( variables.hash, arguments.level ) & " " & arguments.text
+	}
+
+	/**
+	 * A table cell: single-lined, with pipes escaped so a pattern or
+	 * target containing one can't break the table it sits in.
+	 *
+	 * @value The raw cell text
+	 */
+	private string function cell( required string value ) {
+		return arguments.value
+			.reReplace( "[#variables.newline##char( 13 )#]+", " ", "all" )
+			.replace( "|", "\|", "all" )
+			.trim()
+	}
+
+	/**
+	 * A double-quoted YAML scalar with any inner quotes escaped.
+	 *
+	 * @value The raw value
+	 */
+	private string function quoted( required string value ) {
+		return """" & arguments.value.replace( """", "\""", "all" ) & """"
+	}
+
+	/**
+	 * Writes one page, creating its parent directory tree first.
+	 *
+	 * @pageFile Absolute path of the page to write
+	 * @content The rendered Markdown
+	 */
+	private void function writePage( required string pageFile, required string content ) {
+		var parent = arguments.pageFile.reReplace( "/[^/]+$", "" )
+
+		if ( !directoryExists( parent ) ) {
+			directoryCreate( parent, true, true )
+		}
+
+		fileWrite( arguments.pageFile, arguments.content )
+	}
+
+}

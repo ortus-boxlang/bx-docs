@@ -1,0 +1,256 @@
+/**
+ * Reads a WireBox binder (`config/WireBox`, or a module's own) as text
+ * and returns the object mappings it declares.
+ *
+ * The binder DSL is the same shape as ColdBox's routing DSL - a fluent,
+ * chained, multi-line call whose interesting values are string literals -
+ * so this shares `BoxLangSourceReader` with `ColdBoxRouterParser` and only
+ * adds WireBox's own meaning: which initiator starts a mapping, which
+ * destination it resolves to, and which scope it lands in.
+ *
+ * ## What it reads
+ *
+ * `map()`/`mapPath()`/`mapDirectory()`, their destinations (`to`, `toDSL`,
+ * `toJava`, `toRSS`, `toFactoryMethod`, `toProvider`, `toValue`), and the
+ * scope a mapping is put into, whether written as a shortcut
+ * (`asSingleton()`) or explicitly (`into( this.SCOPES.REQUEST )`).
+ *
+ * ## What it deliberately can't see
+ *
+ * The same hard edge as every other static reader here: a mapping built
+ * from a variable, a loop, or a `getProperty()` call has no literal to
+ * read, so it's skipped rather than guessed at. `mapDirectory()` is
+ * reported as the directory-wide registration it is, not expanded into
+ * the individual mappings WireBox would create at runtime - that
+ * expansion depends on what's actually on disk when the app boots.
+ */
+class {
+
+	/**
+	 * The shared source-scanning primitives.
+	 */
+	variables.reader = new "models.build.BoxLangSourceReader@bxsites"()
+
+	static {
+		/**
+		 * The binder calls that start a mapping, and what each one means.
+		 */
+		initiators = {
+			"map"          : "alias",
+			"mappath"      : "path",
+			"mapdirectory" : "directory"
+		}
+
+		/**
+		 * Mapping destinations, longest first so `to` can never shadow
+		 * `toDSL`, mapped to the label each gets on the page.
+		 */
+		destinations = [
+			{ "call" : "toFactoryMethod", "type" : "factory method" },
+			{ "call" : "toProvider",      "type" : "provider" },
+			{ "call" : "toValue",         "type" : "value" },
+			{ "call" : "toJava",          "type" : "Java class" },
+			{ "call" : "toDSL",           "type" : "DSL" },
+			{ "call" : "toRSS",           "type" : "RSS feed" },
+			{ "call" : "to",              "type" : "class" }
+		]
+
+		/**
+		 * The scope shortcuts, and the scope each one names.
+		 */
+		scopeShortcuts = {
+			"assingleton"   : "singleton",
+			"asrequest"     : "request",
+			"assession"     : "session",
+			"asapplication" : "application",
+			"astransient"   : "transient"
+		}
+	}
+
+	/**
+	 * Parses one binder file.
+	 *
+	 * @binderFile Absolute path to a `WireBox.bx`/`WireBox.cfc`
+	 * @module The module these mappings belong to, or "" for the app's own
+	 *
+	 * @return Array of mapping structs; empty when the file doesn't exist
+	 */
+	array function parse( required string binderFile, string module = "" ) {
+		if ( !fileExists( arguments.binderFile ) ) {
+			return []
+		}
+
+		return parseSource( source = fileRead( arguments.binderFile ), module = arguments.module )
+	}
+
+	/**
+	 * Parses binder source directly.
+	 *
+	 * @source The binder's source code
+	 * @module The module these mappings belong to
+	 *
+	 * @return Array of `{ alias, kind, target, targetType, scope, module }` structs
+	 */
+	array function parseSource( required string source, string module = "" ) {
+		var mappings = []
+
+		for ( var statement in variables.reader.statements( variables.reader.stripComments( arguments.source ) ) ) {
+			var mapping = parseStatement( statement, arguments.module )
+
+			if ( !isNull( mapping ) ) {
+				mappings.append( mapping )
+			}
+		}
+
+		return mappings
+	}
+
+	/**
+	 * One statement, as the mapping it declares - or null when it isn't
+	 * one, or when its alias is built at runtime.
+	 *
+	 * @statement A single binder statement
+	 * @module The module context
+	 */
+	private any function parseStatement( required string statement, required string module ) {
+		var initiator = lCase( variables.reader.initiatorOf( arguments.statement ) )
+
+		if ( !static.initiators.keyExists( initiator ) ) {
+			return javacast( "null", "" )
+		}
+
+		var trimmed = variables.reader.withoutReceiver( arguments.statement )
+		var call = variables.reader.callArguments( trimmed )
+
+		if ( !call.closed ) {
+			return javacast( "null", "" )
+		}
+
+		var parsed = variables.reader.parseArguments( call.content )
+		var kind = static.initiators[ initiator ]
+		var alias = aliasFor( parsed, kind )
+
+		if ( !len( alias ) ) {
+			return javacast( "null", "" )
+		}
+
+		var destination = findDestination( trimmed )
+
+		return {
+			"alias"      : alias,
+			"kind"       : kind,
+			"target"     : len( destination.value ) ? destination.value : impliedTarget( parsed, kind ),
+			"targetType" : len( destination.type ) ? destination.type : impliedTargetType( kind ),
+			"scope"      : scopeOf( trimmed ),
+			"module"     : arguments.module
+		}
+	}
+
+	/**
+	 * A mapping's alias: what a `map()` was given, or the class/directory
+	 * name a `mapPath()`/`mapDirectory()` implies.
+	 *
+	 * @parsed A `parseArguments()` result
+	 * @kind Which initiator declared this mapping
+	 */
+	private string function aliasFor( required struct parsed, required string kind ) {
+		if ( arguments.kind == "alias" ) {
+			return variables.reader.literalArgument( arguments.parsed, "alias", 1 )
+		}
+
+		var path = arguments.kind == "path"
+			? variables.reader.literalArgument( arguments.parsed, "path", 1 )
+			: variables.reader.literalArgument( arguments.parsed, "packagePath", 1 )
+
+		// `mapPath( "models.UserService" )` registers under the class
+		// name alone, which is the alias a developer actually injects.
+		return arguments.kind == "path" ? path.listLast( "." ) : path
+	}
+
+	/**
+	 * The path a `mapPath()`/`mapDirectory()` points at, since those
+	 * carry their destination in the initiator itself.
+	 *
+	 * @parsed A `parseArguments()` result
+	 * @kind Which initiator declared this mapping
+	 */
+	private string function impliedTarget( required struct parsed, required string kind ) {
+		if ( arguments.kind == "path" ) {
+			return variables.reader.literalArgument( arguments.parsed, "path", 1 )
+		}
+
+		if ( arguments.kind == "directory" ) {
+			return variables.reader.literalArgument( arguments.parsed, "packagePath", 1 )
+		}
+
+		return ""
+	}
+
+	/**
+	 * What kind of thing an initiator maps to when no destination was
+	 * chained onto it.
+	 *
+	 * @kind Which initiator declared this mapping
+	 */
+	private string function impliedTargetType( required string kind ) {
+		if ( arguments.kind == "path" ) {
+			return "class"
+		}
+
+		return arguments.kind == "directory" ? "directory" : ""
+	}
+
+	/**
+	 * The first destination chained onto a mapping.
+	 *
+	 * @statement The statement to search
+	 *
+	 * @return `{ type, value }`, both "" when there is none
+	 */
+	private struct function findDestination( required string statement ) {
+		for ( var destination in static.destinations ) {
+			if ( variables.reader.hasCall( arguments.statement, destination.call ) ) {
+				return {
+					"type"  : destination.type,
+					"value" : variables.reader.chainedValue( arguments.statement, destination.call )
+				}
+			}
+		}
+
+		return { "type" : "", "value" : "" }
+	}
+
+	/**
+	 * The scope a mapping is put into - a shortcut like `asSingleton()`,
+	 * or the last segment of an explicit `into( this.SCOPES.REQUEST )`.
+	 *
+	 * @statement The statement to search
+	 */
+	private string function scopeOf( required string statement ) {
+		for ( var shortcut in static.scopeShortcuts ) {
+			if ( variables.reader.hasCall( arguments.statement, shortcut ) ) {
+				return static.scopeShortcuts[ shortcut ]
+			}
+		}
+
+		if ( !variables.reader.hasCall( arguments.statement, "into" ) ) {
+			return ""
+		}
+
+		var literal = variables.reader.chainedValue( arguments.statement, "into" )
+
+		if ( len( literal ) ) {
+			return lCase( literal )
+		}
+
+		// `into( this.SCOPES.SINGLETON )` isn't a literal, but its last
+		// segment names the scope as plainly as one would.
+		var position = reFindNoCase( "\.\s*into\s*\(", arguments.statement )
+		var open = find( "(", arguments.statement, position )
+		var block = variables.reader.balancedBlock( arguments.statement, open, "(", ")" )
+		var expression = trim( block.content )
+
+		return expression.reFindNoCase( "SCOPES\s*\." ) ? lCase( expression.listLast( "." ) ) : ""
+	}
+
+}

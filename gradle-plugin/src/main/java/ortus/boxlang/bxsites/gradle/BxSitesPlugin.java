@@ -18,6 +18,7 @@ import ortus.boxlang.bxsites.core.provisioning.ArtifactCoordinates;
 import ortus.boxlang.bxsites.gradle.tasks.AbstractBxSitesVerbTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesBuildTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesControllerScanDocTask;
+import ortus.boxlang.bxsites.gradle.tasks.BxSitesDocBoxDocTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesDeployTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesDoctorTask;
 import ortus.boxlang.bxsites.gradle.tasks.BxSitesJavadocDocTask;
@@ -187,6 +188,25 @@ public class BxSitesPlugin implements Plugin<Project> {
             task.getControllerPagesDir().set(task.getContentDir().dir(controllerScan.getPagePathPrefix()));
             task.onlyIf(t -> controllerScan.getEnabled().get());
         });
+
+        // The BoxLang doc generator - a verb wrapper, unlike the Spring Boot
+        // three above, because the generator itself lives on the BoxLang
+        // side. Not wired into a lifecycle by default: a docs pass over a
+        // project's own source is a deliberate step, not something a build
+        // should start doing on its own.
+        //
+        // There is deliberately no ColdBox counterpart here. A ColdBox
+        // application is built and run through CommandBox, never Gradle, so
+        // the `coldbox` verb stays a bx-sites CLI concern.
+        project.getTasks().register("bxSitesDocBoxDoc", BxSitesDocBoxDocTask.class, task -> {
+            task.setGroup("bx-sites");
+            task.setDescription("Generates a BoxLang/CFML API reference from DocBox into the bx-sites content dir.");
+            var docbox = extension.getBoxlang().getDocbox();
+            wireCommonProperties(task, extension, provision.get());
+            task.getExtraArgs().set(project.provider(docbox::toVerbArguments));
+            task.onlyIf(t -> docbox.getEnabled().get());
+        });
+
 
         project.getTasks().named("assemble", task -> {
             if (extension.getHookIntoAssemble().get()) {

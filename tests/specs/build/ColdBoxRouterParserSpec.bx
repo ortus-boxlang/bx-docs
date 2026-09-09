@@ -1,0 +1,261 @@
+/**
+ * Exercises ColdBoxRouterParser against real ColdBox routing DSL source -
+ * every initiator, modifier and terminator shape the framework documents,
+ * plus the runtime-built declarations it deliberately can't read.
+ */
+class extends="testbox.system.BaseSpec" {
+
+	function run() {
+		describe( "build.ColdBoxRouterParser", function() {
+
+			beforeEach( function() {
+				variables.parser = new "models.build.ColdBoxRouterParser@bxsites"();
+				variables.tempDirs = [];
+			} );
+
+			afterEach( function() {
+				for ( var dir in tempDirs ) {
+					if ( directoryExists( dir ) ) {
+						directoryDelete( dir, true );
+					}
+				}
+			} );
+
+			/**
+			 * Wraps router body statements in the class/configure()
+			 * scaffolding a real router has, so the parser is always
+			 * exercised against the shape it meets in the wild.
+			 */
+			private array function parseBody( required string body, string module = "", string prefix = "" ) {
+				return parser.parseSource(
+					source = "class {" & char( 10 ) & "function configure() {" & char( 10 ) & body & char( 10 ) & "}" & char( 10 ) & "}",
+					module = module,
+					prefix = prefix
+				);
+			}
+
+			private struct function firstRoute( required string body ) {
+				var routes = parseBody( body );
+				expect( routes.len() ).toBeGTE( 1 );
+				return routes[ 1 ];
+			}
+
+			it( "returns nothing for a router file that doesn't exist", function() {
+				expect( parser.parse( "/no/such/Router.bx" ) ).toBeEmpty();
+			} );
+
+			it( "parses a fluent route with a name and an event target", function() {
+				var route = firstRoute( 'route( "/home" ).as( "home" ).to( "main.index" );' );
+
+				expect( route.pattern ).toBe( "/home" );
+				expect( route.target ).toBe( "main.index" );
+				expect( route.targetType ).toBe( "event" );
+				expect( route.name ).toBe( "home" );
+				expect( route.verbs ).toBe( "" );
+			} );
+
+			it( "parses a fluent route split across several lines", function() {
+				var route = firstRoute( 'route( "/home" )' & char( 10 ) & '    .as( "home" )' & char( 10 ) & '    .to( "main.index" );' );
+
+				expect( route.pattern ).toBe( "/home" );
+				expect( route.name ).toBe( "home" );
+				expect( route.target ).toBe( "main.index" );
+			} );
+
+			it( "parses named arguments", function() {
+				var route = firstRoute( 'route( pattern : "/api/contacts", target : "contacts.index", name : "api.contacts" );' );
+
+				expect( route.pattern ).toBe( "/api/contacts" );
+				expect( route.target ).toBe( "contacts.index" );
+				expect( route.name ).toBe( "api.contacts" );
+			} );
+
+			it( "parses an inline positional target", function() {
+				var route = firstRoute( 'route( "/wiki/:page", "wiki.show" );' );
+
+				expect( route.pattern ).toBe( "/wiki/:page" );
+				expect( route.target ).toBe( "wiki.show" );
+				expect( route.targetType ).toBe( "event" );
+			} );
+
+			it( "restricts a route to the verb its initiator implies", function() {
+				var routes = parseBody( 'get( "/users/:id", "users.show" );' & char( 10 ) & 'post( "/users", "users.create" );' & char( 10 ) & 'delete( "/users/:id", "users.delete" );' );
+
+				expect( routes.len() ).toBe( 3 );
+				expect( routes[ 1 ].verbs ).toBe( "GET" );
+				expect( routes[ 2 ].verbs ).toBe( "POST" );
+				expect( routes[ 3 ].verbs ).toBe( "DELETE" );
+			} );
+
+			it( "reads an explicit withVerbs restriction", function() {
+				var route = firstRoute( 'route( "/admin" ).withVerbs( "GET,POST" ).to( "admin.index" );' );
+
+				expect( route.verbs ).toBe( "GET/POST" );
+			} );
+
+			it( "recognizes every non-event terminator", function() {
+				var routes = parseBody(
+					'route( "/old/book" ).toRedirect( "/mybook" );' & char( 10 ) &
+					'route( "/contact-us" ).toView( "main/contact" );' & char( 10 ) &
+					'route( "/users/:action" ).toHandler( "users" );' & char( 10 ) &
+					'route( "/admin/:action" ).toAction( "index" );' & char( 10 ) &
+					'route( "/mod" ).toModuleRouting( "api" );'
+				);
+
+				expect( routes[ 1 ].targetType ).toBe( "redirect" );
+				expect( routes[ 1 ].target ).toBe( "/mybook" );
+				expect( routes[ 2 ].targetType ).toBe( "view" );
+				expect( routes[ 3 ].targetType ).toBe( "handler" );
+				expect( routes[ 4 ].targetType ).toBe( "action" );
+				expect( routes[ 5 ].targetType ).toBe( "module" );
+			} );
+
+			it( "never lets .to() shadow a longer terminator name", function() {
+				var route = firstRoute( 'route( "/x" ).toHandler( "users" );' );
+
+				expect( route.targetType ).toBe( "handler" );
+				expect( route.target ).toBe( "users" );
+			} );
+
+			it( "reads an inline closure target as an inline response", function() {
+				var route = firstRoute( 'route( "/healthcheck", function( event, rc, prc ) {' & char( 10 ) & '    return "Ok!";' & char( 10 ) & '} );' );
+
+				expect( route.pattern ).toBe( "/healthcheck" );
+				expect( route.targetType ).toBe( "response" );
+			} );
+
+			it( "marks a conventions route as targeted by convention, keeping its pattern verbatim", function() {
+				var route = firstRoute( 'route( ":handler/:action?" ).end();' );
+
+				expect( route.pattern ).toBe( ":handler/:action?" );
+				expect( route.targetType ).toBe( "convention" );
+			} );
+
+			it( "expands resources() into all seven documented routes", function() {
+				var routes = parseBody( 'resources( "photos" );' );
+
+				expect( routes.len() ).toBe( 7 );
+				expect( routes.map( ( route ) => route.target ) ).toBe( [
+					"photos.index", "photos.new", "photos.create", "photos.show", "photos.edit", "photos.update", "photos.delete"
+				] );
+				expect( routes[ 1 ].pattern ).toBe( "/photos" );
+				expect( routes[ 2 ].pattern ).toBe( "/photos/new" );
+				expect( routes[ 4 ].pattern ).toBe( "/photos/:id" );
+				expect( routes[ 5 ].pattern ).toBe( "/photos/:id/edit" );
+				expect( routes[ 6 ].verbs ).toBe( "PUT/PATCH" );
+				expect( routes[ 7 ].verbs ).toBe( "DELETE" );
+			} );
+
+			it( "expands apiResources() without the two HTML-form actions", function() {
+				var routes = parseBody( 'apiResources( "users" );' );
+
+				expect( routes.len() ).toBe( 5 );
+				expect( routes.map( ( route ) => route.target ) ).notToInclude( "users.new" );
+				expect( routes.map( ( route ) => route.target ) ).notToInclude( "users.edit" );
+			} );
+
+			it( "honors a resource's handler, pattern and parameterName overrides", function() {
+				var routes = parseBody( 'resources( resource = "photos", handler = "MyPhotoHandler", pattern = "/gallery", parameterName = "photoId" );' );
+
+				expect( routes[ 1 ].target ).toBe( "MyPhotoHandler.index" );
+				expect( routes[ 1 ].pattern ).toBe( "/gallery" );
+				expect( routes[ 4 ].pattern ).toBe( "/gallery/:photoId" );
+			} );
+
+			it( "honors a resource's only list", function() {
+				var routes = parseBody( 'resources( resource = "tags", only = "index,show" );' );
+
+				expect( routes.len() ).toBe( 2 );
+				expect( routes[ 1 ].target ).toBe( "tags.index" );
+				expect( routes[ 2 ].target ).toBe( "tags.show" );
+			} );
+
+			it( "honors a resource's except array", function() {
+				var routes = parseBody( 'resources( resource = "tags", except = [ "delete", "update" ] );' );
+
+				expect( routes.map( ( route ) => route.target ) ).notToInclude( "tags.delete" );
+				expect( routes.map( ( route ) => route.target ) ).notToInclude( "tags.update" );
+				expect( routes.len() ).toBe( 5 );
+			} );
+
+			it( "prefixes and attributes every route declared inside a group", function() {
+				var routes = parseBody(
+					'group( { pattern : "/api/v1", module : "api" }, function() {' & char( 10 ) &
+					'    route( "/ping" ).to( "utility.ping" );' & char( 10 ) &
+					'    get( "/status", "utility.status" );' & char( 10 ) &
+					'} );'
+				);
+
+				expect( routes.len() ).toBe( 2 );
+				expect( routes[ 1 ].pattern ).toBe( "/api/v1/ping" );
+				expect( routes[ 1 ].module ).toBe( "api" );
+				expect( routes[ 2 ].pattern ).toBe( "/api/v1/status" );
+				expect( routes[ 2 ].verbs ).toBe( "GET" );
+			} );
+
+			it( "applies a caller-supplied prefix, rooting a bare module entry point", function() {
+				var routes = parseBody( 'route( "/ping" ).to( "utility.ping" );', "api", "api" );
+
+				expect( routes[ 1 ].pattern ).toBe( "/api/ping" );
+				expect( routes[ 1 ].module ).toBe( "api" );
+			} );
+
+			it( "reads routes registered through a module's own router reference", function() {
+				var routes = parseBody( 'router.route( "/ping" ).to( "utility.ping" );' );
+
+				expect( routes.len() ).toBe( 1 );
+				expect( routes[ 1 ].target ).toBe( "utility.ping" );
+			} );
+
+			it( "ignores commented-out routes", function() {
+				var routes = parseBody(
+					'// route( "/commented" ).to( "nope.index" );' & char( 10 ) &
+					'/* route( "/blockcommented" ).to( "nope.index" ); */' & char( 10 ) &
+					'route( "/real" ).to( "real.index" );'
+				);
+
+				expect( routes.len() ).toBe( 1 );
+				expect( routes[ 1 ].pattern ).toBe( "/real" );
+			} );
+
+			it( "never mistakes a double slash inside a string for a comment", function() {
+				var route = firstRoute( 'route( "/docs" ).toRedirect( "https://example.com/docs" );' );
+
+				expect( route.target ).toBe( "https://example.com/docs" );
+			} );
+
+			it( "skips a route whose pattern is built at runtime rather than guessing at it", function() {
+				var routes = parseBody(
+					'var dynamic = "/dyn";' & char( 10 ) &
+					'route( dynamic ).to( "dyn.index" );' & char( 10 ) &
+					'route( "/real" ).to( "real.index" );'
+				);
+
+				expect( routes.len() ).toBe( 1 );
+				expect( routes[ 1 ].pattern ).toBe( "/real" );
+			} );
+
+			it( "ignores non-routing statements in the router", function() {
+				var routes = parseBody(
+					'setFullRewrites( true );' & char( 10 ) &
+					'route( "/real" ).to( "real.index" );'
+				);
+
+				expect( routes.len() ).toBe( 1 );
+			} );
+
+			it( "parses a router file from disk", function() {
+				var dir = createTempDirectory( prefix = "bxsites-routerparser-" );
+				tempDirs.append( dir );
+				fileWrite( dir & "/Router.bx", "class {" & char( 10 ) & "function configure() {" & char( 10 ) & 'route( "/home" ).to( "main.index" );' & char( 10 ) & "}" & char( 10 ) & "}" );
+
+				var routes = parser.parse( dir & "/Router.bx" );
+
+				expect( routes.len() ).toBe( 1 );
+				expect( routes[ 1 ].pattern ).toBe( "/home" );
+			} );
+
+		} );
+	}
+
+}

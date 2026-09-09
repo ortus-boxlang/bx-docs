@@ -1,0 +1,806 @@
+/**
+ * Exercises ColdBoxDocGenerator against fixture structs - the shapes
+ * ColdBoxAppScanner and ColdBoxRouterParser produce - so page rendering
+ * is covered without touching a real application tree.
+ */
+class extends="testbox.system.BaseSpec" {
+
+	function run() {
+		describe( "build.ColdBoxDocGenerator", function() {
+
+			beforeEach( function() {
+				variables.generator = new "models.build.ColdBoxDocGenerator@bxsites"();
+				variables.tempDirs = [];
+			} );
+
+			afterEach( function() {
+				for ( var dir in tempDirs ) {
+					if ( directoryExists( dir ) ) {
+						directoryDelete( dir, true );
+					}
+				}
+			} );
+
+			private string function newTempDir() {
+				var dir = createTempDirectory( prefix = "bxsites-cbgen-" );
+				tempDirs.append( dir );
+				return dir;
+			}
+
+			private struct function fixtureApp() {
+				return {
+					"appRoot"      : "/app",
+					"isColdBoxApp" : true,
+					"configFile"   : "/app/config/ColdBox.bx",
+					"routerFile"   : "/app/config/Router.bx",
+					"wireBoxFile"  : "",
+					"schedulerFile" : "",
+					"handlers"     : [ { "name" : "Main", "file" : "/app/handlers/Main.bx", "module" : "" } ],
+					"models"       : [ { "name" : "UserService", "file" : "/app/models/UserService.bx" } ],
+					"interceptors" : [],
+					"modules"      : [ {
+						"name"       : "api",
+						"root"       : "/app/modules_app/api",
+						"configFile" : "/app/modules_app/api/ModuleConfig.bx",
+						"routerFile" : "/app/modules_app/api/config/Router.bx",
+						"handlers"   : [ { "name" : "Orders", "file" : "/app/modules_app/api/handlers/Orders.bx", "module" : "api" } ],
+						"models"     : [],
+						"metadata"   : {
+							"title"        : "API Module",
+							"author"       : "Ortus",
+							"version"      : "1.2.0",
+							"entryPoint"   : "api",
+							"description"  : "Everything the public API needs.",
+							"dependencies" : [ "cbsecurity" ]
+						}
+					} ]
+				};
+			}
+
+			private array function fixtureRoutes() {
+				return [
+					route( "/home", "", "main.index", "event", "home", "" ),
+					route( "/old/book", "", "/mybook", "redirect", "", "" ),
+					route( "/users/:id", "GET", "users.show", "event", "", "" ),
+					route( "/api/orders", "GET", "orders.index", "event", "", "api" ),
+					route( ":handler/:action?", "", "", "convention", "", "" )
+				];
+			}
+
+			private struct function route(
+				required string pattern,
+				required string verbs,
+				required string target,
+				required string targetType,
+				required string name,
+				required string module
+			) {
+				return {
+					"pattern"    : pattern,
+					"verbs"      : verbs,
+					"target"     : target,
+					"targetType" : targetType,
+					"name"       : name,
+					"module"     : module,
+					"purpose"    : ""
+				};
+			}
+
+			private struct function handlerDocs() {
+				return {
+					"handler::main" : {
+						"name"      : "Main",
+						"package"   : "handlers",
+						"type"      : "Class",
+						"extends"   : "",
+						"hint"      : "The application's main handler. Renders the public pages.",
+						"functions" : [
+							{
+								"name"          : "index",
+								"access"        : "public",
+								"returnType"    : "Any",
+								"hint"          : "Render the home page",
+								"documentation" : { "hint" : "Render the home page", "return" : "the rendered view" },
+								"parameters"    : [
+									{ "name" : "event", "type" : "Any", "required" : false, "documentation" : { "hint" : "The request context" } },
+									{ "name" : "rc", "type" : "Any", "required" : false, "documentation" : {} }
+								]
+							},
+							{
+								"name"          : "preHandler",
+								"access"        : "public",
+								"returnType"    : "Any",
+								"hint"          : "Runs before every action",
+								"documentation" : {},
+								"parameters"    : []
+							},
+							{
+								"name"          : "helper",
+								"access"        : "private",
+								"returnType"    : "Any",
+								"hint"          : "",
+								"documentation" : {},
+								"parameters"    : []
+							},
+							{
+								"name"          : "init",
+								"access"        : "public",
+								"returnType"    : "Any",
+								"hint"          : "",
+								"documentation" : {},
+								"parameters"    : []
+							}
+						]
+					},
+					"handler:api:orders" : {
+						"name"      : "Orders",
+						"package"   : "cbmodules.api.handlers",
+						"type"      : "Class",
+						"extends"   : "",
+						"hint"      : "Order endpoints.",
+						"functions" : [
+							{ "name" : "index", "access" : "public", "returnType" : "Any", "hint" : "List orders", "documentation" : {}, "parameters" : [] }
+						]
+					}
+				};
+			}
+
+			it( "writes a routes page and an app index", function() {
+				var contentDir = newTempDir();
+
+				var docs = handlerDocs();
+				docs.append( modelDocs() );
+
+				var result = generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = docs );
+
+				expect( result.warnings ).toBeEmpty();
+				expect( result.pageFiles.len() ).toBeGTE( 2 );
+				expect( fileExists( contentDir & "/api/coldbox/routes.md" ) ).toBeTrue();
+				expect( fileExists( contentDir & "/api/coldbox/index.md" ) ).toBeTrue();
+			} );
+
+			it( "honors pagePathPrefix and tags", function() {
+				var contentDir = newTempDir();
+
+				generator.generate(
+					app            = fixtureApp(),
+					routes         = fixtureRoutes(),
+					contentDir     = contentDir,
+					pagePathPrefix = "reference/app",
+					tags           = [ "reference" ]
+				);
+
+				expect( fileRead( contentDir & "/reference/app/routes.md" ) ).toInclude( "tags: [reference]" );
+			} );
+
+			it( "renders one table row per route, in declaration order", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				var page = fileRead( contentDir & "/api/coldbox/routes.md" );
+
+				expect( page ).toInclude( "| ANY | `/home` | `main.index` | `home` | &mdash; |" );
+				expect( page ).toInclude( "| GET | `/users/:id` | `users.show` | &mdash; | &mdash; |" );
+				expect( page.find( "/home" ) ).toBeLT( page.find( "/users/:id" ) );
+			} );
+
+			it( "qualifies a target that isn't an ordinary event", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				var page = fileRead( contentDir & "/api/coldbox/routes.md" );
+
+				expect( page ).toInclude( "`/mybook` *redirect*" );
+				expect( page ).toInclude( "*by convention*" );
+			} );
+
+			it( "explains the by-convention rows it rendered", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/routes.md" ) ).toInclude( "resolves the handler and action from the URL pattern" );
+			} );
+
+			it( "leaves the legend off a routes page with no by-convention route", function() {
+				var contentDir = newTempDir();
+				var routes = fixtureRoutes().filter( ( route ) => route.targetType != "convention" );
+
+				generator.generate( app = fixtureApp(), routes = routes, contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/routes.md" ) ).notToInclude( "resolves the handler and action" );
+			} );
+
+			it( "names a route's module so a reader can tell where it came from", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/routes.md" ) ).toInclude( "| GET | `/api/orders` | `orders.index` | &mdash; | `api` |" );
+			} );
+
+			it( "counts handlers across the app and its modules on the index", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				var index = fileRead( contentDir & "/api/coldbox/index.md" );
+
+				expect( index ).toInclude( "| Routes | 5 |" );
+				expect( index ).toInclude( "| Handlers | 2 |" );
+				expect( index ).toInclude( "| Modules | 1 |" );
+				expect( index ).toInclude( "- `api` &mdash; 1 handler(s), 0 model(s)" );
+			} );
+
+			it( "links the pages it actually wrote from the index", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/index.md" ) ).toInclude( "- [Routes](routes.md)" );
+			} );
+
+			it( "warns, and still writes an index, when the app declares no readable routes", function() {
+				var contentDir = newTempDir();
+
+				var result = generator.generate( app = fixtureApp(), routes = [], contentDir = contentDir, include = [ "routes" ] );
+
+				expect( result.warnings.len() ).toBe( 1 );
+				expect( result.warnings[ 1 ] ).toInclude( "No routes found" );
+				expect( fileExists( contentDir & "/api/coldbox/routes.md" ) ).toBeFalse();
+				expect( fileExists( contentDir & "/api/coldbox/index.md" ) ).toBeTrue();
+			} );
+
+			it( "skips a page set that include doesn't ask for", function() {
+				var contentDir = newTempDir();
+
+				generator.generate(
+					app        = fixtureApp(),
+					routes     = fixtureRoutes(),
+					contentDir = contentDir,
+					include    = []
+				);
+
+				expect( fileExists( contentDir & "/api/coldbox/routes.md" ) ).toBeFalse();
+				expect( fileExists( contentDir & "/api/coldbox/index.md" ) ).toBeTrue();
+			} );
+
+			it( "writes a page per handler, app and module alike, plus a handlers index", function() {
+				var contentDir = newTempDir();
+
+				var docs = handlerDocs();
+				docs.append( modelDocs() );
+
+				var result = generator.generate(
+					app        = fixtureApp(),
+					routes     = fixtureRoutes(),
+					contentDir = contentDir,
+					classDocs  = docs
+				);
+
+				expect( result.warnings ).toBeEmpty();
+				expect( fileExists( contentDir & "/api/coldbox/handlers/Main.md" ) ).toBeTrue();
+				expect( fileExists( contentDir & "/api/coldbox/handlers/api/Orders.md" ) ).toBeTrue();
+				expect( fileExists( contentDir & "/api/coldbox/handlers/index.md" ) ).toBeTrue();
+			} );
+
+			it( "nests a module's handler under the module so two Main handlers never collide", function() {
+				var contentDir = newTempDir();
+				var app = fixtureApp();
+				app.modules[ 1 ].handlers = [ { "name" : "Main", "file" : "/app/modules_app/api/handlers/Main.bx", "module" : "api" } ];
+
+				generator.generate( app = app, routes = fixtureRoutes(), contentDir = contentDir, classDocs = handlerDocs() );
+
+				expect( fileExists( contentDir & "/api/coldbox/handlers/Main.md" ) ).toBeTrue();
+				expect( fileExists( contentDir & "/api/coldbox/handlers/api/Main.md" ) ).toBeTrue();
+			} );
+
+			it( "lists a handler's routable actions, skipping init and private methods", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = handlerDocs() );
+
+				var page = fileRead( contentDir & "/api/coldbox/handlers/Main.md" );
+
+				expect( page ).toInclude( "## Actions" );
+				expect( page ).toInclude( "`Any index( event, rc )`" );
+				expect( page ).notToInclude( "helper(" );
+				expect( page ).notToInclude( "init(" );
+			} );
+
+			it( "keeps ColdBox's own lifecycle hooks out of the actions list", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = handlerDocs() );
+
+				var page = fileRead( contentDir & "/api/coldbox/handlers/Main.md" );
+
+				expect( page ).toInclude( "## Lifecycle hooks" );
+				expect( page.find( "## Actions" ) ).toBeLT( page.find( "## Lifecycle hooks" ) );
+				expect( page.find( "preHandler" ) ).toBeGT( page.find( "## Lifecycle hooks" ) );
+			} );
+
+			it( "renders an action's hint, parameters and return text", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = handlerDocs() );
+
+				var page = fileRead( contentDir & "/api/coldbox/handlers/Main.md" );
+
+				expect( page ).toInclude( "Render the home page" );
+				expect( page ).toInclude( "| `event` | `Any` | no | The request context |" );
+				expect( page ).toInclude( "- **Returns** the rendered view" );
+			} );
+
+			it( "renders a no-argument action without empty parentheses padding", function() {
+				var contentDir = newTempDir();
+				var docs = handlerDocs();
+				docs[ "handler::main" ].functions.append( {
+					"name"          : "ping",
+					"access"        : "public",
+					"returnType"    : "void",
+					"hint"          : "Health probe",
+					"documentation" : {},
+					"parameters"    : []
+				} );
+
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = docs );
+
+				expect( fileRead( contentDir & "/api/coldbox/handlers/Main.md" ) ).toInclude( "`void ping()`" );
+			} );
+
+			it( "cross-links the routes that reach a handler, and the action each one hits", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = handlerDocs() );
+
+				var page = fileRead( contentDir & "/api/coldbox/handlers/Main.md" );
+
+				expect( page ).toInclude( "## Routes" );
+				expect( page ).toInclude( "| ANY | `/home` | `index` |" );
+				expect( page ).toInclude( "Reached by `/home`" );
+			} );
+
+			it( "matches a module's routes only to that module's handlers", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = handlerDocs() );
+
+				expect( fileRead( contentDir & "/api/coldbox/handlers/api/Orders.md" ) ).toInclude( "`/api/orders`" );
+				expect( fileRead( contentDir & "/api/coldbox/handlers/Main.md" ) ).notToInclude( "/api/orders" );
+			} );
+
+			it( "names the module a handler belongs to", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = handlerDocs() );
+
+				expect( fileRead( contentDir & "/api/coldbox/handlers/api/Orders.md" ) ).toInclude( "module `api`" );
+			} );
+
+			it( "counts actions and routes per handler on the handlers index", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = handlerDocs() );
+
+				var index = fileRead( contentDir & "/api/coldbox/handlers/index.md" );
+
+				expect( index ).toInclude( "| [`Main`](Main.md) | &mdash; | 1 | 1 |" );
+				expect( index ).toInclude( "| [`Orders`](api/Orders.md) | `api` | 1 | 1 |" );
+			} );
+
+			it( "links the handlers index from the app index", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = handlerDocs() );
+
+				expect( fileRead( contentDir & "/api/coldbox/index.md" ) ).toInclude( "- [Handlers](handlers/index.md)" );
+			} );
+
+			it( "still writes handler pages without metadata, saying how to get it", function() {
+				var contentDir = newTempDir();
+
+				var result = generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, include = [ "handlers" ] );
+
+				expect( result.warnings.len() ).toBe( 1 );
+				expect( result.warnings[ 1 ] ).toInclude( "bx-docbox" );
+
+				var page = fileRead( contentDir & "/api/coldbox/handlers/Main.md" );
+				expect( page ).toInclude( "install the `bx-docbox` module" );
+				expect( page ).toInclude( "## Routes" );
+			} );
+
+			it( "warns about only the handlers whose metadata is missing", function() {
+				var contentDir = newTempDir();
+				var docs = handlerDocs();
+				docs.delete( "handler:api:orders" );
+
+				var result = generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = docs, include = [ "handlers" ] );
+
+				expect( result.warnings.len() ).toBe( 1 );
+				expect( result.warnings[ 1 ] ).toInclude( "1 handler(s)" );
+			} );
+
+			it( "skips handler pages when include doesn't ask for them", function() {
+				var contentDir = newTempDir();
+
+				generator.generate(
+					app        = fixtureApp(),
+					routes     = fixtureRoutes(),
+					contentDir = contentDir,
+					include    = [ "routes" ],
+					classDocs  = handlerDocs()
+				);
+
+				expect( directoryExists( contentDir & "/api/coldbox/handlers" ) ).toBeFalse();
+				expect( fileExists( contentDir & "/api/coldbox/routes.md" ) ).toBeTrue();
+			} );
+
+			private struct function modelDocs() {
+				return {
+					"model::userservice" : {
+						"name"        : "UserService",
+						"package"     : "models",
+						"type"        : "Class",
+						"extends"     : "",
+						"hint"        : "Loads and stores users.",
+						"annotations" : { "singleton" : "" },
+						"properties"  : [
+							{
+								"name"        : "datasource",
+								"type"        : "string",
+								"default"     : "",
+								"hint"        : "The configured user datasource",
+								"annotations" : { "name" : "datasource", "inject" : "coldbox:setting:userDatasource" }
+							},
+							{
+								"name"        : "pageSize",
+								"type"        : "numeric",
+								"default"     : "25",
+								"hint"        : "How many users to page by",
+								"annotations" : { "name" : "pageSize" }
+							}
+						],
+						"functions"   : [
+							{
+								"name"          : "findById",
+								"access"        : "public",
+								"returnType"    : "Any",
+								"hint"          : "Find a user",
+								"documentation" : { "return" : "the user, or null" },
+								"parameters"    : [
+									{ "name" : "id", "type" : "numeric", "required" : true, "documentation" : { "hint" : "The user id" } }
+								]
+							}
+						]
+					}
+				};
+			}
+
+			private array function fixtureMappings() {
+				return [
+					{ "alias" : "UserService", "kind" : "alias", "target" : "models.UserService", "targetType" : "class", "scope" : "singleton", "module" : "" },
+					{ "alias" : "models.services", "kind" : "directory", "target" : "models.services", "targetType" : "directory", "scope" : "", "module" : "" },
+					{ "alias" : "OrderService", "kind" : "alias", "target" : "models.OrderService", "targetType" : "class", "scope" : "session", "module" : "api" }
+				];
+			}
+
+			it( "writes a page per model plus a models index", function() {
+				var contentDir = newTempDir();
+
+				generator.generate(
+					app        = fixtureApp(),
+					routes     = fixtureRoutes(),
+					contentDir = contentDir,
+					classDocs  = modelDocs(),
+					mappings   = fixtureMappings()
+				);
+
+				expect( fileExists( contentDir & "/api/coldbox/models/UserService.md" ) ).toBeTrue();
+				expect( fileExists( contentDir & "/api/coldbox/models/index.md" ) ).toBeTrue();
+			} );
+
+			it( "separates a model's injected dependencies from its own properties", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = modelDocs(), mappings = fixtureMappings() );
+
+				var page = fileRead( contentDir & "/api/coldbox/models/UserService.md" );
+
+				expect( page ).toInclude( "## Injected dependencies" );
+				expect( page ).toInclude( "| `datasource` | `coldbox:setting:userDatasource` | `string` | The configured user datasource |" );
+				expect( page ).toInclude( "## Properties" );
+				expect( page ).toInclude( "| `pageSize` | `numeric` | `25` | How many users to page by |" );
+			} );
+
+			it( "falls back to the property name when inject carries no value of its own", function() {
+				var contentDir = newTempDir();
+				var docs = modelDocs();
+				docs[ "model::userservice" ].properties[ 1 ].annotations.inject = "";
+
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = docs, mappings = [] );
+
+				expect( fileRead( contentDir & "/api/coldbox/models/UserService.md" ) ).toInclude( "| `datasource` | `datasource` |" );
+			} );
+
+			it( "reads a model's scope from its own annotation", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = modelDocs(), mappings = [] );
+
+				expect( fileRead( contentDir & "/api/coldbox/models/UserService.md" ) ).toInclude( "scope `singleton`" );
+			} );
+
+			it( "falls back to the binder's scope for a model that declares none", function() {
+				var contentDir = newTempDir();
+				var docs = modelDocs();
+				docs[ "model::userservice" ].annotations = {};
+
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = docs, mappings = fixtureMappings() );
+
+				expect( fileRead( contentDir & "/api/coldbox/models/UserService.md" ) ).toInclude( "scope `singleton`" );
+			} );
+
+			it( "lists a model's public methods with their parameters and return text", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = modelDocs(), mappings = [] );
+
+				var page = fileRead( contentDir & "/api/coldbox/models/UserService.md" );
+
+				expect( page ).toInclude( "## Methods" );
+				expect( page ).toInclude( "`Any findById( id )`" );
+				expect( page ).toInclude( "| `id` | `numeric` | yes | The user id |" );
+				expect( page ).toInclude( "- **Returns** the user, or null" );
+			} );
+
+			it( "tabulates the binder's own mappings on the models index", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = modelDocs(), mappings = fixtureMappings() );
+
+				var index = fileRead( contentDir & "/api/coldbox/models/index.md" );
+
+				expect( index ).toInclude( "## WireBox mappings" );
+				expect( index ).toInclude( "| `UserService` | `models.UserService` | class | `singleton` | &mdash; |" );
+				expect( index ).toInclude( "| `models.services` | `models.services` | directory | &mdash; | &mdash; |" );
+				expect( index ).toInclude( "| `OrderService` | `models.OrderService` | class | `session` | `api` |" );
+			} );
+
+			it( "counts each model's injections on the models index", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = modelDocs(), mappings = fixtureMappings() );
+
+				expect( fileRead( contentDir & "/api/coldbox/models/index.md" ) ).toInclude( "| [`UserService`](UserService.md) | &mdash; | `singleton` | 1 |" );
+			} );
+
+			it( "links the models index from the app index", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = modelDocs(), mappings = fixtureMappings() );
+
+				expect( fileRead( contentDir & "/api/coldbox/index.md" ) ).toInclude( "- [Models](models/index.md)" );
+			} );
+
+			it( "still writes model pages without metadata, saying how to get it", function() {
+				var contentDir = newTempDir();
+
+				var result = generator.generate(
+					app        = fixtureApp(),
+					routes     = fixtureRoutes(),
+					contentDir = contentDir,
+					include    = [ "models" ],
+					mappings   = fixtureMappings()
+				);
+
+				expect( result.warnings.len() ).toBe( 1 );
+				expect( result.warnings[ 1 ] ).toInclude( "bx-docbox" );
+				expect( fileRead( contentDir & "/api/coldbox/models/UserService.md" ) ).toInclude( "install the `bx-docbox` module" );
+			} );
+
+			it( "writes a models index for mappings alone, when the app declares no models", function() {
+				var contentDir = newTempDir();
+				var app = fixtureApp();
+				app.models = [];
+
+				generator.generate(
+					app        = app,
+					routes     = fixtureRoutes(),
+					contentDir = contentDir,
+					include    = [ "models" ],
+					mappings   = fixtureMappings()
+				);
+
+				expect( fileRead( contentDir & "/api/coldbox/models/index.md" ) ).toInclude( "## WireBox mappings" );
+			} );
+
+			it( "skips model pages when include doesn't ask for them", function() {
+				var contentDir = newTempDir();
+
+				generator.generate(
+					app        = fixtureApp(),
+					routes     = fixtureRoutes(),
+					contentDir = contentDir,
+					include    = [ "routes" ],
+					classDocs  = modelDocs(),
+					mappings   = fixtureMappings()
+				);
+
+				expect( directoryExists( contentDir & "/api/coldbox/models" ) ).toBeFalse();
+			} );
+
+			private array function fixtureTasks() {
+				return [
+					{
+						"name"        : "Heartbeat",
+						"schedule"    : "every 5 minutes",
+						"target"      : 'runEvent( "main.heartbeat" )',
+						"constraints" : [ "one server only" ],
+						"module"      : ""
+					},
+					{
+						"name"        : "Nightly sync",
+						"schedule"    : "every day at 02:00",
+						"target"      : "",
+						"constraints" : [],
+						"module"      : "api"
+					}
+				];
+			}
+
+			it( "writes a page per module plus a modules index", function() {
+				var contentDir = newTempDir();
+
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileExists( contentDir & "/api/coldbox/modules/api.md" ) ).toBeTrue();
+				expect( fileExists( contentDir & "/api/coldbox/modules/index.md" ) ).toBeTrue();
+			} );
+
+			it( "renders a module's declared metadata, and where it mounts", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				var page = fileRead( contentDir & "/api/coldbox/modules/api.md" );
+
+				expect( page ).toInclude( 'title: "API Module"' );
+				expect( page ).toInclude( "mounted at `/api`" );
+				expect( page ).toInclude( "| Author | Ortus |" );
+				expect( page ).toInclude( "| Version | 1.2.0 |" );
+				expect( page ).toInclude( "| Depends on | `cbsecurity` |" );
+				expect( page ).toInclude( "Everything the public API needs." );
+			} );
+
+			it( "lists only that module's routes, handlers and mappings on its page", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, mappings = fixtureMappings() );
+
+				var page = fileRead( contentDir & "/api/coldbox/modules/api.md" );
+
+				expect( page ).toInclude( "`/api/orders`" );
+				expect( page ).notToInclude( "/home" );
+				expect( page ).toInclude( "[`Orders`](../handlers/api/Orders.md)" );
+				expect( page ).toInclude( "| `OrderService` | `models.OrderService` | `session` |" );
+			} );
+
+			it( "counts what each module contributes on the modules index", function() {
+				var contentDir = newTempDir();
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/modules/index.md" ) ).toInclude( "| [`api`](api.md) | `api` | `1.2.0` | 1 | 0 | 1 |" );
+			} );
+
+			it( "leaves the metadata table off a module that declares nothing about itself", function() {
+				var contentDir = newTempDir();
+				var app = fixtureApp();
+				app.modules[ 1 ].metadata = {};
+
+				generator.generate( app = app, routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/modules/api.md" ) ).notToInclude( "| Author |" );
+			} );
+
+			it( "writes an interceptors page covering both config and the interceptors folder", function() {
+				var contentDir = newTempDir();
+				var app = fixtureApp();
+				app.interceptors = [ { "name" : "Tracker", "file" : "/app/interceptors/Tracker.bx" } ];
+				var docs = {
+					"interceptor::tracker" : {
+						"name"      : "Tracker",
+						"hint"      : "Tracks page views.",
+						"functions" : [
+							{ "name" : "preEvent", "access" : "public", "returnType" : "Any", "hint" : "", "documentation" : {}, "parameters" : [] },
+							{ "name" : "postEvent", "access" : "public", "returnType" : "Any", "hint" : "", "documentation" : {}, "parameters" : [] }
+						]
+					}
+				};
+
+				generator.generate(
+					app          = app,
+					routes       = fixtureRoutes(),
+					contentDir   = contentDir,
+					classDocs    = docs,
+					interceptors = [ { "class" : "interceptors.Tracker", "name" : "tracker" } ]
+				);
+
+				var page = fileRead( contentDir & "/api/coldbox/interceptors.md" );
+
+				expect( page ).toInclude( "| `interceptors.Tracker` | `tracker` |" );
+				expect( page ).toInclude( "Tracks page views." );
+				expect( page ).toInclude( "Listens for `preEvent`, `postEvent`" );
+			} );
+
+			it( "says how to read interception points when there's no metadata for a class", function() {
+				var contentDir = newTempDir();
+				var app = fixtureApp();
+				app.interceptors = [ { "name" : "Tracker", "file" : "/app/interceptors/Tracker.bx" } ];
+
+				generator.generate( app = app, routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/interceptors.md" ) ).toInclude( "install the `bx-docbox` module" );
+			} );
+
+			it( "writes no interceptors page for an app that has none", function() {
+				var contentDir = newTempDir();
+
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileExists( contentDir & "/api/coldbox/interceptors.md" ) ).toBeFalse();
+			} );
+
+			it( "writes a scheduled tasks page with each task's schedule, work and constraints", function() {
+				var contentDir = newTempDir();
+
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, tasks = fixtureTasks() );
+
+				var page = fileRead( contentDir & "/api/coldbox/scheduled-tasks.md" );
+
+				expect( page ).toInclude( '| Heartbeat | `every 5 minutes` | `runEvent( "main.heartbeat" )` | one server only | &mdash; |' );
+				expect( page ).toInclude( "| Nightly sync | `every day at 02:00` | &mdash; | &mdash; | `api` |" );
+			} );
+
+			it( "writes no scheduled tasks page for an app that schedules nothing", function() {
+				var contentDir = newTempDir();
+
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir );
+
+				expect( fileExists( contentDir & "/api/coldbox/scheduled-tasks.md" ) ).toBeFalse();
+			} );
+
+			it( "links every page set it wrote from the app index", function() {
+				var contentDir = newTempDir();
+				var app = fixtureApp();
+				app.interceptors = [ { "name" : "Tracker", "file" : "/app/interceptors/Tracker.bx" } ];
+
+				generator.generate(
+					app          = app,
+					routes       = fixtureRoutes(),
+					contentDir   = contentDir,
+					classDocs    = handlerDocs(),
+					mappings     = fixtureMappings(),
+					interceptors = [ { "class" : "interceptors.Tracker", "name" : "tracker" } ],
+					tasks        = fixtureTasks()
+				);
+
+				var index = fileRead( contentDir & "/api/coldbox/index.md" );
+
+				for ( var link in [ "routes.md", "handlers/index.md", "models/index.md", "modules/index.md", "interceptors.md", "scheduled-tasks.md" ] ) {
+					expect( index ).toInclude( "(" & link & ")" );
+				}
+			} );
+
+			it( "skips the module, interceptor and scheduler page sets when include leaves them out", function() {
+				var contentDir = newTempDir();
+				var app = fixtureApp();
+				app.interceptors = [ { "name" : "Tracker", "file" : "/app/interceptors/Tracker.bx" } ];
+
+				generator.generate(
+					app          = app,
+					routes       = fixtureRoutes(),
+					contentDir   = contentDir,
+					include      = [ "routes" ],
+					interceptors = [ { "class" : "interceptors.Tracker", "name" : "tracker" } ],
+					tasks        = fixtureTasks()
+				);
+
+				expect( directoryExists( contentDir & "/api/coldbox/modules" ) ).toBeFalse();
+				expect( fileExists( contentDir & "/api/coldbox/interceptors.md" ) ).toBeFalse();
+				expect( fileExists( contentDir & "/api/coldbox/scheduled-tasks.md" ) ).toBeFalse();
+			} );
+
+			it( "escapes a pipe in a pattern so it can't break the table", function() {
+				var contentDir = newTempDir();
+				var routes = [ route( "/:year-numeric{4}|:month", "GET", "blog.list", "event", "", "" ) ];
+
+				generator.generate( app = fixtureApp(), routes = routes, contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/coldbox/routes.md" ) ).toInclude( "\|:month" );
+			} );
+
+		} );
+	}
+
+}

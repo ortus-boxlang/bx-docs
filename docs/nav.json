@@ -76,6 +76,15 @@
 		]
 	},
 	{
+		"title": "BoxLang Integration",
+		"children": [
+			"guides/docbox.md",
+			"guides/coldbox.md",
+			"guides/docbox-example.md",
+			"guides/coldbox-example.md"
+		]
+	},
+	{
 		"title": "Help",
 		"children": [
 			"troubleshooting.md",

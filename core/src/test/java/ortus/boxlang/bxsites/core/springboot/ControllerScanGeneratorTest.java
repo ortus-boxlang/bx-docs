@@ -55,22 +55,23 @@ class ControllerScanGeneratorTest {
         assertTrue(page.contains("title: \"BookController\""));
         assertTrue(page.contains("tags: [api, controllers]"));
 
-        // The filter toolbar - one chip per HTTP method actually present.
-        assertTrue(page.contains("x-data=\"{ q: '', k: 'all' }\""), "expected the Alpine filter toolbar");
-        assertTrue(page.contains("@click=\"k='get'\">GET</button>"), "expected a GET chip");
-        assertTrue(page.contains("@click=\"k='post'\">POST</button>"), "expected a POST chip");
-        assertFalse(page.contains("@click=\"k='delete'\""), "no DELETE endpoint exists on this fixture - no DELETE chip");
+        // A plain Markdown pipe table, one row per endpoint x path x method.
+        // Deliberately NOT a raw <table> with per-row Alpine attributes: that
+        // never worked in a real build (bx-sites' own TableWrapProcessor
+        // injects its own x-show into every row of a table this size, and the
+        // Markdown renderer entity-escapes a <tr>'s attribute values), and the
+        // same processor already gives such a table a live filter box. See
+        // ControllerScanGenerator#appendFilterableTable.
+        assertFalse(page.contains("x-data=\"{ q: '', k: 'all' }\""), "no generator-authored filter toolbar - bx-sites supplies the table filter");
+        assertFalse(page.contains("data-k="), "no per-row filter attributes, which this pipeline strips anyway");
 
-        // Each row carries its own kind/search-name for the toolbar to filter on -
-        // the bare @GetMapping combined with the class-level base path.
-        assertTrue(page.contains("data-k=\"get\" data-n=\"/api/books String list()\""));
-        assertTrue(page.contains("<td>GET</td><td><code>/api/books</code></td><td><code>String list()</code></td>"));
+        assertTrue(page.contains("| Method | Path | Handler |"));
+        // The bare @GetMapping combined with the class-level base path.
+        assertTrue(page.contains("| GET | `/api/books` | `String list()` |"));
         // @GetMapping("/{id}") combined with the base path.
-        assertTrue(page.contains("data-k=\"get\" data-n=\"/api/books/{id} String getOne(String)\""));
-        assertTrue(page.contains("<td>GET</td><td><code>/api/books/{id}</code></td><td><code>String getOne(String)</code></td>"));
+        assertTrue(page.contains("| GET | `/api/books/{id}` | `String getOne(String)` |"));
         // @PostMapping endpoint.
-        assertTrue(page.contains("data-k=\"post\" data-n=\"/api/books String create(String)\""));
-        assertTrue(page.contains("<td>POST</td><td><code>/api/books</code></td><td><code>String create(String)</code></td>"));
+        assertTrue(page.contains("| POST | `/api/books` | `String create(String)` |"));
 
         Path plainControllerPage = contentDir.resolve("api/controllers")
                 .resolve("ortus/boxlang/bxsites/core/springboot/fixtures/PlainController.md");
