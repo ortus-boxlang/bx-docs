@@ -30,6 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+* `coldbox` told a reader to install `bx-docbox` whenever class metadata was
+  missing, including when the module was installed and the DocBox run had
+  simply failed. The failure is now reported with its real cause, on the
+  pages and in the verb's output, and the install advice is kept for the
+  case that actually calls for it.
+
 * Spring controller-scan pages emitted a raw table whose rows carried their
   own Alpine `x-show` attributes; those never worked, because
   `TableWrapProcessor` injects its own into every row of a table with ten
