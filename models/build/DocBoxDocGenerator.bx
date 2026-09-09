@@ -486,8 +486,10 @@ class {
 			} )
 
 		var returnType = arguments.member.returnType ?: "any"
+		// `name()` rather than `name(  )` when a function takes nothing.
+		var rendered = parameters.len() ? "( " & parameters.toList( ", " ) & " )" : "()"
 
-		return "#returnType# #arguments.member.name ?: ""#( #parameters.toList( ", " )# )"
+		return "#returnType# #arguments.member.name ?: ""##rendered#"
 	}
 
 	/**

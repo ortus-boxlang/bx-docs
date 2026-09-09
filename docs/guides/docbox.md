@@ -199,5 +199,8 @@ sources include BoxLang or CFML classes - see
 [Gradle Plugin](gradle-plugin.md#boxlang-doc-generation) and
 [Maven Plugin](maven-plugin.md#boxlang-doc-generation).
 
+See [DocBox Output Example](docbox-example.md) for a real generated page,
+end to end.
+
 Documenting a ColdBox application is a separate verb - see
 [ColdBox Applications](coldbox.md).

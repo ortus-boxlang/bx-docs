@@ -325,6 +325,23 @@ class extends="testbox.system.BaseSpec" {
 				expect( page ).toInclude( "- **Returns** the rendered view" );
 			} );
 
+			it( "renders a no-argument action without empty parentheses padding", function() {
+				var contentDir = newTempDir();
+				var docs = handlerDocs();
+				docs[ "handler::main" ].functions.append( {
+					"name"          : "ping",
+					"access"        : "public",
+					"returnType"    : "void",
+					"hint"          : "Health probe",
+					"documentation" : {},
+					"parameters"    : []
+				} );
+
+				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = docs );
+
+				expect( fileRead( contentDir & "/api/coldbox/handlers/Main.md" ) ).toInclude( "`void ping()`" );
+			} );
+
 			it( "cross-links the routes that reach a handler, and the action each one hits", function() {
 				var contentDir = newTempDir();
 				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = handlerDocs() );

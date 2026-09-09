@@ -146,6 +146,12 @@ install-bx-module bx-docbox
 Without it the verb still runs and still lists every handler, model,
 route and module; the pages simply say what's missing and how to get it.
 
+## A real example
+
+[ColdBox Output Example](coldbox-example.md) shows five of these pages as
+they actually come out of a run, against a small application whose source
+is shown alongside them.
+
 ## What it can't see
 
 Static reading has a hard edge, and it's better to name it than to pretend

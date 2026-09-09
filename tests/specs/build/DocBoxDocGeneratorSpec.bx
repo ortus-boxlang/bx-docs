@@ -210,6 +210,24 @@ class extends="testbox.system.BaseSpec" {
 				expect( page ).toInclude( "`String drive( numeric speed = 10 )`" );
 			} );
 
+			it( "renders a no-argument signature without empty parentheses padding", function() {
+				var doc = carDoc();
+				doc.functions.append( {
+					"name"          : "reset",
+					"access"        : "public",
+					"returnType"    : "void",
+					"hint"          : "Reset it",
+					"documentation" : {},
+					"parameters"    : []
+				} );
+				var jsonDir = newJsonDir( doc );
+				var contentDir = newTempDir();
+
+				generator.generate( jsonDir = jsonDir, contentDir = contentDir );
+
+				expect( fileRead( contentDir & "/api/docbox/app/Car.md" ) ).toInclude( "`void reset()`" );
+			} );
+
 			it( "renders a parameter table and the function's own return tag", function() {
 				var jsonDir = newJsonDir( carDoc() );
 				var contentDir = newTempDir();

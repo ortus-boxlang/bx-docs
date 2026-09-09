@@ -1197,7 +1197,10 @@ class {
 		var parameters = ( isArray( arguments.member.parameters ?: "" ) ? arguments.member.parameters : [] )
 			.map( ( parameter ) => parameter.name ?: "" )
 
-		return "#arguments.member.returnType ?: "any"# #arguments.member.name ?: ""#( #parameters.toList( ", " )# )"
+		// `index()` rather than `index(  )` when an action takes nothing.
+		var rendered = parameters.len() ? "( " & parameters.toList( ", " ) & " )" : "()"
+
+		return "#arguments.member.returnType ?: "any"# #arguments.member.name ?: ""##rendered#"
 	}
 
 	/**
