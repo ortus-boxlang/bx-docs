@@ -141,6 +141,13 @@ Set which one a project uses in `bxsites.yaml`:
     { "theme": { "name": "material" } }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [theme]
+    name = "material"
+    ```
+
 ## Installing a published theme
 
 A theme published to ForgeBox installs with nothing but the `bxSites`
@@ -166,6 +173,13 @@ between them purely by name:
 === "JSON"
     ```json title="bxsites.json"
     { "theme": { "name": "bx-sites-theme-blog1" } }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [theme]
+    name = "bx-sites-theme-blog1"
     ```
 
 A theme needs no BoxLang module/class-loader involvement at all (unlike a
@@ -276,6 +290,11 @@ without touching `resources/themes/` at all:
 === "JSON"
     ```json title="bxsites.json"
     { "extraCss": ["assets/brand.css"] }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    extraCss = [ "assets/brand.css" ]
     ```
 
 ```css title="docs/assets/brand.css" linenums="1"

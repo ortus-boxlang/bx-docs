@@ -208,6 +208,21 @@ also nie ein Duplikat:
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+
+    [[nav]]
+    path = "index.md"
+
+    [[nav]]
+    title = "Blog"
+    url = "blog/index.html"
+    icon = "lucide:newspaper"
+
+    [[nav]]
+    path = "about.md"
+    ```
+
 Einzelne Beiträge werden nicht selbst zur Navigation hinzugefügt
 (genau wie der Tags-Index) - sie sind erreichbar von `/blog/`, ihrer
 eigenen Kategorie-Seite, ihrer eigenen Jahresarchiv-Seite, der Seite
@@ -242,6 +257,15 @@ für jeden Beitrag, unbegrenzt:
 === "JSON"
     ```json title="bxsites.json"
     { "blog": { "postsPerPage": 10, "feed": true, "feedLimit": 25 } }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [blog]
+    postsPerPage = 10
+    feed = true
+    feedLimit = 25
     ```
 
 ## Entwürfe ansehen

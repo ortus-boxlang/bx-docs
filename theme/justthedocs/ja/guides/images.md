@@ -101,6 +101,15 @@ WebP だけでもサイズ削減の大部分は得られ、対応するツール
     { "assets": { "images": { "enabled": false } } }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [assets]
+
+    [assets.images]
+    enabled = false
+    ```
+
 プレーンで未加工の `docs/assets/**` コピーにフォールバックします -
 この機能が存在する以前にすべての画像が扱われていたのとまったく同じです。
 
@@ -124,6 +133,16 @@ WebP だけでもサイズ削減の大部分は得られ、対応するツール
     		}
     	}
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+
+    [assets]
+
+    [assets.images]
+    widths = [ 480, 960, 1440 ]
+    formats = [ "webp" ]
     ```
 
 `widths` のデフォルトは `[400, 800, 1200, 1600]`、`formats` のデフォルトは
@@ -152,6 +171,12 @@ WebP だけでもサイズ削減の大部分は得られ、対応するツール
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+    extraCss = [ "assets/a.css", "assets/b.css" ]
+    extraJs = [ "assets/app.js" ]
+    ```
+
 エントリごとに 1 つの `<link>`/`<script>` タグを出す代わりに、フィンガープリント
 付きの `assets/bundle.<hash>.css`（記載順）と `assets/bundle.<hash>.js` を
 それぞれ 1 つずつビルドします。CSS はコメントが除去され空白が圧縮されますが、
@@ -175,6 +200,11 @@ JS では意図的に安全で構造的な空白整理のみを行い、コメ�
 === "JSON"
     ```json title="bxsites.json"
     { "extraCss": ["assets/custom.css", "https://cdn.example.com/lib.css"] }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    extraCss = [ "assets/custom.css", "https://cdn.example.com/lib.css" ]
     ```
 
 この機能が存在する以前とまったく同じく、バンドルされない 2 つの個別な

@@ -47,6 +47,17 @@ BoxLang ヘルパーである**マジック関数**です。
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [variables]
+    company = "Ortus Solutions"
+
+    [variables.product]
+    name = "BoxLang"
+    supportEmail = "support@example.com"
+    ```
+
 その後、どの Markdown ページからでも、ドット区切りのパスで参照できます:
 
 ```markdown title="docs/index.md"

@@ -69,6 +69,18 @@ en su lugar un par explícito `from`/`to`:
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+
+    [[redirects]]
+    from = "old-guide"
+    to = "guides/new-guide/"
+
+    [[redirects]]
+    from = "moved-to-another-site"
+    to = "https://example.com/docs"
+    ```
+
 - `from` - el segmento de URL bonita antiguo, la misma forma que
   `redirect_from` arriba
 - `to` - una ruta relativa a la raíz (resuelta contra el propio `baseURL`

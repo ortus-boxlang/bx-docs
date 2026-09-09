@@ -131,6 +131,13 @@ Mermaid）は、このモジュールに同梱（バンドル）された状態�
     { "theme": { "name": "material" } }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [theme]
+    name = "material"
+    ```
+
 ## 公開済みテーマのインストール
 
 ForgeBox に公開されたテーマは、`bxSites` バイナリ自体だけでインストールできます -
@@ -155,6 +162,13 @@ bxSites install:theme --name=bx-sites-theme-blog1 [--version=1.0.0]
 === "JSON"
     ```json title="bxsites.json"
     { "theme": { "name": "bx-sites-theme-blog1" } }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [theme]
+    name = "bx-sites-theme-blog1"
     ```
 
 テーマは（プラグインとは異なり）BoxLang モジュール/クラスローダーの関与を一切必要と
@@ -266,6 +280,11 @@ highlight.js、Alpine.js、lunr.js はすべてこのモジュールに同梱さ
 === "JSON"
     ```json title="bxsites.json"
     { "extraCss": ["assets/brand.css"] }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    extraCss = [ "assets/brand.css" ]
     ```
 
 ```css title="docs/assets/brand.css" linenums="1"

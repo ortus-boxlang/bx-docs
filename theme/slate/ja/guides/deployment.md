@@ -312,6 +312,11 @@ GitHub の *プロジェクト* Pages サイト（*ユーザー* サイトとは
     { "baseURL": "https://<user>.github.io/<repo>/" }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    baseURL = "https://<user>.github.io/<repo>/"
+    ```
+
 `baseURL` が何をするかの完全な詳細については [設定](../configuration.md#baseurl) を参照してください。
 `<user>.github.io` ユーザーサイト、またはサイトルートにマッピングされたカスタムドメインの
 場合は、`baseURL` をデフォルト（`/`）のままにしておけます。

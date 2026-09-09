@@ -52,6 +52,11 @@ Cloud, non qualcosa che questo modulo fa da solo.
     { "mcp": true }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    mcp = true
+    ```
+
 `false` (predefinito) salta l'intero passaggio - non viene scritto
 nessuno tra `mcp-index.json`, `mcp-nav.json` o `mcp-manifest.json`, e
 `build` non ha alcun costo aggiuntivo oltre al controllo del flag.

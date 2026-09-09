@@ -27,6 +27,11 @@ project opts one in explicitly by BoxLang module name, via `bxsites.yaml`'s
     { "plugins": ["myBxSitesPlugin"] }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    plugins = [ "myBxSitesPlugin" ]
+    ```
+
 ## Installing a published plugin
 
 A plugin published to ForgeBox installs with nothing but the `bxSites`

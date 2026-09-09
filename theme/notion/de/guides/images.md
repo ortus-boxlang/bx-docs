@@ -108,6 +108,15 @@ AVIF upstream hinzufügt.
     { "assets": { "images": { "enabled": false } } }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [assets]
+
+    [assets.images]
+    enabled = false
+    ```
+
 Fällt zurück auf das schlichte, unverarbeitete Kopieren von
 `docs/assets/**` - genau so, wie jedes Bild behandelt wurde, bevor es
 diese Funktion gab.
@@ -132,6 +141,16 @@ diese Funktion gab.
     		}
     	}
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+
+    [assets]
+
+    [assets.images]
+    widths = [ 480, 960, 1440 ]
+    formats = [ "webp" ]
     ```
 
 `widths` ist standardmäßig `[400, 800, 1200, 1600]`; `formats` ist
@@ -161,6 +180,12 @@ aktiv (`assets.bundle`):
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+    extraCss = [ "assets/a.css", "assets/b.css" ]
+    extraJs = [ "assets/app.js" ]
+    ```
+
 baut ein einzelnes, fingerprint-versehenes `assets/bundle.<hash>.css`
 (in der aufgeführten Reihenfolge) und ein `assets/bundle.<hash>.js`,
 statt eines `<link>`-/`<script>`-Tags pro Eintrag. CSS werden dabei
@@ -188,6 +213,11 @@ umzusortieren, auf die sich ein Projekt verlassen hat:
 === "JSON"
     ```json title="bxsites.json"
     { "extraCss": ["assets/custom.css", "https://cdn.example.com/lib.css"] }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    extraCss = [ "assets/custom.css", "https://cdn.example.com/lib.css" ]
     ```
 
 rendert zwei separate `<link>`-Tags, ungebündelt, genau wie vor

@@ -72,6 +72,11 @@ DocSearch 自体から Cmd+K を無料で得られ（`keyboardShortcuts` のデ�
     { "search": false }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    search = false
+    ```
+
 `search-index.json` のビルドを完全にスキップし、すべてのレンダリングされたページから
 検索ボックス、同梱された（バンドルされた）`lunr.js` スクリプト、共有 `search.js` ウィジェットをスキップします。
 検索をオフにしたプロジェクトは検索関連のものを一切送信しません。これはマスタースイッチです -
@@ -125,6 +130,20 @@ mkdocs-material、VitePress、Starlight、Docusaurus がいずれもサポート
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+    search = true
+
+    [searchProvider]
+    provider = "algolia"
+
+    [searchProvider.algolia]
+    appId = "ABC123"
+    apiKey = "a1b2c3d4e5f6..."
+    indexName = "my-docs"
+    insights = false
+    ```
+
 `appId`、`apiKey`、`indexName` は必須です - `apiKey` は DocSearch が発行する
 **検索専用**の公開 API キーです（管理キーでは決してありません。すべての
 レンダリング済みページにそのまま出荷されます）。`insights`（デフォルトは
@@ -169,6 +188,18 @@ mkdocs-material、VitePress、Starlight、Docusaurus がいずれもサポート
     		"pagefind": { "bin": "pagefind", "options": [] }
     	}
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+    search = true
+
+    [searchProvider]
+    provider = "pagefind"
+
+    [searchProvider.pagefind]
+    bin = "pagefind"
+    options = []
     ```
 
 `pagefind` の両方のキーは任意です - `bin`（デフォルト `"pagefind"`）は実行

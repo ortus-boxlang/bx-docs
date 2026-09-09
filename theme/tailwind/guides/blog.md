@@ -185,6 +185,21 @@ the auto-appended one entirely, so there's never a duplicate:
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+
+    [[nav]]
+    path = "index.md"
+
+    [[nav]]
+    title = "Blog"
+    url = "blog/index.html"
+    icon = "lucide:newspaper"
+
+    [[nav]]
+    path = "about.md"
+    ```
+
 Individual posts aren't added to the nav themselves (same as the tags
 index) - they're reachable from `/blog/`, their own category page, their
 own year archive, their author's page, search, and each other's prev/next
@@ -215,6 +230,15 @@ to `0` for every post, uncapped:
 === "JSON"
     ```json title="bxsites.json"
     { "blog": { "postsPerPage": 10, "feed": true, "feedLimit": 25 } }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [blog]
+    postsPerPage = 10
+    feed = true
+    feedLimit = 25
     ```
 
 ## Previewing drafts

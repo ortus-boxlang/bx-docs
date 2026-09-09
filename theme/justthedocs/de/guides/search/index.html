@@ -204,9 +204,11 @@ seine eigene <code>PagefindUI</code> zu fokussieren, da diese Bibliothek es nich
 von selbst bindet - keiner der beiden öffnet die eigene Palette dieses
 Moduls.</p>
 <h2 id="ausschalten"><a href="#ausschalten" id="ausschalten" name="ausschalten" class="anchor"></a>Ausschalten</h2>
-<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">search: false
+<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="3">TOML</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">search: false
 </code></pre>
 </div><div class="bxsites-tab-panel" data-bxsites-tab="2"><pre><code class="language-json">{ &quot;search&quot;: false }
+</code></pre>
+</div><div class="bxsites-tab-panel" data-bxsites-tab="3"><pre><code class="language-toml">search = false
 </code></pre>
 </div></div></div>
 <p>Überspringt den Aufbau von <code>search-index.json</code> vollständig und
@@ -230,7 +232,7 @@ keiner der beiden ihn jemals nutzt.</p>
 <a href="https://docsearch.algolia.com/">Algolia DocSearch</a> auszutauschen -
 dieselbe crawler-gehostete Suche, die mkdocs-material, VitePress,
 Starlight und Docusaurus alle unterstützen:</p>
-<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">search: true
+<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="3">TOML</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">search: true
 searchProvider:
   provider: algolia
   algolia:
@@ -251,6 +253,17 @@ searchProvider:
 		}
 	}
 }
+</code></pre>
+</div><div class="bxsites-tab-panel" data-bxsites-tab="3"><pre><code class="language-toml">search = true
+
+[searchProvider]
+provider = &quot;algolia&quot;
+
+[searchProvider.algolia]
+appId = &quot;ABC123&quot;
+apiKey = &quot;a1b2c3d4e5f6...&quot;
+indexName = &quot;my-docs&quot;
+insights = false
 </code></pre>
 </div></div></div>
 <p><code>appId</code>, <code>apiKey</code> und <code>indexName</code> sind erforderlich - <code>apiKey</code> ist der
@@ -280,7 +293,7 @@ eigenes Modal in diesen Container.</li>
 <a href="https://pagefind.app/">Pagefind</a> auszutauschen - eine weitere
 vollständig statische Suchmaschine ohne Server, aber indiziert aus dem
 <em>gebauten</em> <code>site/</code>-HTML statt gecrawlt wie bei Algolia:</p>
-<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">search: true
+<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="3">TOML</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">search: true
 searchProvider:
   provider: pagefind
   pagefind: { bin: pagefind, options: [] }
@@ -292,6 +305,15 @@ searchProvider:
 		&quot;pagefind&quot;: { &quot;bin&quot;: &quot;pagefind&quot;, &quot;options&quot;: [] }
 	}
 }
+</code></pre>
+</div><div class="bxsites-tab-panel" data-bxsites-tab="3"><pre><code class="language-toml">search = true
+
+[searchProvider]
+provider = &quot;pagefind&quot;
+
+[searchProvider.pagefind]
+bin = &quot;pagefind&quot;
+options = []
 </code></pre>
 </div></div></div>
 <p>Beide <code>pagefind</code>-Schlüssel sind optional - <code>bin</code> (Standard <code>&quot;pagefind&quot;</code>)
@@ -353,7 +375,7 @@ Moduls bereits für <code>algolia</code>/<code>pagefind</code> verwendet.</p>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/de/guides/search.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Diese Seite bearbeiten</a><a href="/theme/justthedocs/de/guides/search.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Markdown herunterladen</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Zuletzt aktualisiert Sep 9, 2026, 9&#x3a;01&#x3a;35 PM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/de/guides/search.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Diese Seite bearbeiten</a><a href="/theme/justthedocs/de/guides/search.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Markdown herunterladen</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Zuletzt aktualisiert Sep 9, 2026, 10&#x3a;27&#x3a;18 PM</span></div>
 
 			</article>
 

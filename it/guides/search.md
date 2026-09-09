@@ -82,6 +82,11 @@ palette propria di questo modulo.
     { "search": false }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    search = false
+    ```
+
 Salta del tutto la compilazione di `search-index.json`, e salta il box di
 ricerca, lo script incluso `lunr.js`, e il widget condiviso `search.js` in
 ogni pagina renderizzata - un progetto con la ricerca disattivata non
@@ -138,6 +143,20 @@ VitePress, Starlight e Docusaurus:
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+    search = true
+
+    [searchProvider]
+    provider = "algolia"
+
+    [searchProvider.algolia]
+    appId = "ABC123"
+    apiKey = "a1b2c3d4e5f6..."
+    indexName = "my-docs"
+    insights = false
+    ```
+
 `appId`, `apiKey` e `indexName` sono obbligatori - `apiKey` è la chiave
 API pubblica **solo per la ricerca** che ti fornisce DocSearch (mai una
 chiave da amministratore; viene distribuita direttamente in ogni pagina
@@ -184,6 +203,18 @@ dall'HTML *compilato* di `site/` invece che esplorato come Algolia:
     		"pagefind": { "bin": "pagefind", "options": [] }
     	}
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+    search = true
+
+    [searchProvider]
+    provider = "pagefind"
+
+    [searchProvider.pagefind]
+    bin = "pagefind"
+    options = []
     ```
 
 Entrambe le chiavi `pagefind` sono opzionali - `bin` (predefinito

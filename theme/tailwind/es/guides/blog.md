@@ -204,6 +204,21 @@ añadida automáticamente, así que nunca hay una duplicada:
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+
+    [[nav]]
+    path = "index.md"
+
+    [[nav]]
+    title = "Blog"
+    url = "blog/index.html"
+    icon = "lucide:newspaper"
+
+    [[nav]]
+    path = "about.md"
+    ```
+
 Las entradas individuales no se añaden a la nav por sí mismas (igual que
 el índice de etiquetas) - son accesibles desde `/blog/`, su propia
 página de categoría, su propio archivo por año, la página de su autor,
@@ -238,6 +253,15 @@ cada sondeo; establécelo en `0` para no tener límite:
 === "JSON"
     ```json title="bxsites.json"
     { "blog": { "postsPerPage": 10, "feed": true, "feedLimit": 25 } }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [blog]
+    postsPerPage = 10
+    feed = true
+    feedLimit = 25
     ```
 
 ## Vista previa de borradores

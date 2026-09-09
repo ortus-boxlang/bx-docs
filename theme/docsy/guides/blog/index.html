@@ -279,7 +279,7 @@ it somewhere specific instead, add your own entry with an explicit <code>url</co
 (bypasses the usual <code>path</code>-must-match-a-real-page rule, since the blog isn't
 a <code>docs/</code> page) to your <code>nav</code> array or <code>docs/nav.json</code> - doing so suppresses
 the auto-appended one entirely, so there's never a duplicate:</p>
-<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">nav:
+<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="3">TOML</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">nav:
   - path: index.md
   - title: Blog
     url: blog/index.html
@@ -293,6 +293,18 @@ the auto-appended one entirely, so there's never a duplicate:</p>
 		{ &quot;path&quot;: &quot;about.md&quot; }
 	]
 }
+</code></pre>
+</div><div class="bxsites-tab-panel" data-bxsites-tab="3"><pre><code class="language-toml">
+[[nav]]
+path = &quot;index.md&quot;
+
+[[nav]]
+title = &quot;Blog&quot;
+url = &quot;blog/index.html&quot;
+icon = &quot;lucide:newspaper&quot;
+
+[[nav]]
+path = &quot;about.md&quot;
 </code></pre>
 </div></div></div>
 <p>Individual posts aren't added to the nav themselves (same as the tags
@@ -313,9 +325,15 @@ Every category also gets its own filtered feed at
 (default <code>25</code>) - most feed readers only care about what's new, so an
 unbounded feed on a large blog just wastes bandwidth on every poll; set it
 to <code>0</code> for every post, uncapped:</p>
-<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">blog: { postsPerPage: 10, feed: true, feedLimit: 25 }
+<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="3">TOML</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">blog: { postsPerPage: 10, feed: true, feedLimit: 25 }
 </code></pre>
 </div><div class="bxsites-tab-panel" data-bxsites-tab="2"><pre><code class="language-json">{ &quot;blog&quot;: { &quot;postsPerPage&quot;: 10, &quot;feed&quot;: true, &quot;feedLimit&quot;: 25 } }
+</code></pre>
+</div><div class="bxsites-tab-panel" data-bxsites-tab="3"><pre><code class="language-toml">
+[blog]
+postsPerPage = 10
+feed = true
+feedLimit = 25
 </code></pre>
 </div></div></div>
 <h2 id="previewing-drafts"><a href="#previewing-drafts" id="previewing-drafts" name="previewing-drafts" class="anchor"></a>Previewing drafts</h2>
@@ -397,7 +415,7 @@ supported path rather than a per-component override.</p>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/blog.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/theme/docsy/guides/blog.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 9, 2026, 9&#x3a;01&#x3a;35 PM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/blog.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/theme/docsy/guides/blog.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 9, 2026, 10&#x3a;27&#x3a;18 PM</span></div>
 
 			</article>
 

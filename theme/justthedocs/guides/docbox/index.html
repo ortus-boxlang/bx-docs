@@ -174,7 +174,7 @@ conventional BoxLang source folders your project actually has - <code>models</co
 <h2 id="configuration"><a href="#configuration" id="configuration" name="configuration" class="anchor"></a>Configuration</h2>
 <p>Everything is optional. See <a href="/theme/justthedocs/configuration/index.html#docbox"><code>docbox</code></a> for the
 full schema.</p>
-<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">docbox:
+<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="3">TOML</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">docbox:
   projectTitle: &quot;My API&quot;
   mappings:
     models: models
@@ -192,6 +192,17 @@ full schema.</p>
 		&quot;tags&quot;: [ &quot;api&quot;, &quot;docbox&quot; ]
 	}
 }
+</code></pre>
+</div><div class="bxsites-tab-panel" data-bxsites-tab="3"><pre><code class="language-toml">
+[docbox]
+projectTitle = &quot;My API&quot;
+excludes = &quot;tests|build&quot;
+pagePathPrefix = &quot;api/docbox&quot;
+tags = [ &quot;api&quot;, &quot;docbox&quot; ]
+
+[docbox.mappings]
+models = &quot;models&quot;
+bifs = &quot;bifs&quot;
 </code></pre>
 </div></div></div>
 <p>Every key has a flag that overrides it for one run:</p>
@@ -257,7 +268,7 @@ Find a user by its id.
 <p>Generated pages are ordinary content, so they appear in the automatic
 directory nav on their own. To place them deliberately, name the index in
 your own <a href="/theme/justthedocs/configuration/index.html#nav"><code>nav</code></a>:</p>
-<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">nav:
+<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="3">TOML</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">nav:
   - title: Reference
     children:
       - api/docbox/index.md
@@ -267,6 +278,11 @@ your own <a href="/theme/justthedocs/configuration/index.html#nav"><code>nav</co
 		{ &quot;title&quot;: &quot;Reference&quot;, &quot;children&quot;: [ &quot;api/docbox/index.md&quot; ] }
 	]
 }
+</code></pre>
+</div><div class="bxsites-tab-panel" data-bxsites-tab="3"><pre><code class="language-toml">
+[[nav]]
+title = &quot;Reference&quot;
+children = [ &quot;api/docbox/index.md&quot; ]
 </code></pre>
 </div></div></div>
 <h2 id="what-it-deliberately-doesnt-do"><a href="#what-it-deliberately-doesnt-do" id="what-it-deliberately-doesnt-do" name="what-it-deliberately-doesnt-do" class="anchor"></a>What it deliberately doesn't do</h2>
@@ -301,7 +317,7 @@ end to end.</p>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/docbox.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/theme/justthedocs/guides/docbox.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 9, 2026, 9&#x3a;01&#x3a;35 PM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/docbox.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/theme/justthedocs/guides/docbox.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 9, 2026, 10&#x3a;27&#x3a;18 PM</span></div>
 
 			</article>
 

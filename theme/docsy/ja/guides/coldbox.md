@@ -59,6 +59,16 @@ bxSites coldbox --appRoot=app
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [coldbox]
+    appRoot = "."
+    pagePathPrefix = "api/coldbox"
+    tags = [ "api", "coldbox" ]
+    include = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
+    ```
+
 `include` は生成するページ群を決めます。トークンを外すと、そのページ群は
 まったく生成されません。各キーにはフラグがあります。
 

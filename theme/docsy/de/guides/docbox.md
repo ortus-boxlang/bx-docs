@@ -77,6 +77,20 @@ Alles ist optional; das vollständige Schema steht unter
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [docbox]
+    projectTitle = "Meine API"
+    excludes = "tests|build"
+    pagePathPrefix = "api/docbox"
+    tags = [ "api", "docbox" ]
+
+    [docbox.mappings]
+    models = "models"
+    bifs = "bifs"
+    ```
+
 Zu jedem Schlüssel gibt es ein Flag, das ihn für einen Lauf überschreibt:
 
 ```bash frame="terminal" title="Terminal"
@@ -131,6 +145,14 @@ Index in deine eigene [`nav`](../configuration.md#nav) auf:
     		{ "title": "Referenz", "children": [ "api/docbox/index.md" ] }
     	]
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [[nav]]
+    title = "Referenz"
+    children = [ "api/docbox/index.md" ]
     ```
 
 ## Was bewusst fehlt

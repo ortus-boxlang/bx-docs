@@ -64,6 +64,18 @@ section, an old domain's path, anything not naturally a single page's own
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+
+    [[redirects]]
+    from = "old-guide"
+    to = "guides/new-guide/"
+
+    [[redirects]]
+    from = "moved-to-another-site"
+    to = "https://example.com/docs"
+    ```
+
 - `from` - the old pretty-URL segment, same shape as `redirect_from` above
 - `to` - either a root-relative path (resolved against the site's own
   `baseURL`, same convention `theme.logo`/`ogImage` already use) or a full

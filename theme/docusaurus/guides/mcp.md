@@ -47,6 +47,11 @@ Cloud's job, not something this module does on its own.
     { "mcp": true }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    mcp = true
+    ```
+
 `false` (the default) skips the whole step - none of `mcp-index.json`,
 `mcp-nav.json`, or `mcp-manifest.json` are written, and `build` pays no
 extra cost beyond checking the flag.

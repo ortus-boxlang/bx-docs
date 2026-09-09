@@ -104,6 +104,15 @@ adds AVIF upstream.
     { "assets": { "images": { "enabled": false } } }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [assets]
+
+    [assets.images]
+    enabled = false
+    ```
+
 Falls back to plain, unprocessed `docs/assets/**` copying - exactly how
 every image was handled before this feature existed.
 
@@ -127,6 +136,16 @@ every image was handled before this feature existed.
     		}
     	}
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+
+    [assets]
+
+    [assets.images]
+    widths = [ 480, 960, 1440 ]
+    formats = [ "webp" ]
     ```
 
 `widths` defaults to `[400, 800, 1200, 1600]`; `formats` defaults to
@@ -155,6 +174,12 @@ every `assets.images` key.
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+    extraCss = [ "assets/a.css", "assets/b.css" ]
+    extraJs = [ "assets/app.js" ]
+    ```
+
 builds one fingerprinted `assets/bundle.<hash>.css` (in the order
 listed) and one `assets/bundle.<hash>.js`, instead of one `<link>`/
 `<script>` tag per entry. CSS gets its comments stripped and whitespace
@@ -179,6 +204,11 @@ reordering a CSS cascade a project depended on:
 === "JSON"
     ```json title="bxsites.json"
     { "extraCss": ["assets/custom.css", "https://cdn.example.com/lib.css"] }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    extraCss = [ "assets/custom.css", "https://cdn.example.com/lib.css" ]
     ```
 
 renders two separate `<link>` tags, unbundled, exactly as before this

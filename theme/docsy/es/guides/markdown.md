@@ -393,6 +393,11 @@ Opcional mediante la clave
     { "mermaid": true }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    mermaid = true
+    ```
+
 Una vez activado, cualquier bloque de código con fence ` ```mermaid ` se
 renderiza como un diagrama [Mermaid](https://mermaid.js.org/) en vivo en
 lugar de un listado de código:
@@ -422,6 +427,11 @@ Opcional mediante la clave [`math`](../configuration.md#math) de
 === "JSON"
     ```json title="bxsites.json"
     { "math": true }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    math = true
     ```
 
 Una vez activado, [KaTeX](https://katex.org/) compone `$...$` para

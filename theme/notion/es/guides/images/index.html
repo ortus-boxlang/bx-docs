@@ -216,15 +216,21 @@ a día de hoy. Solo WebP ya consigue la mayor parte de la reducción de
 tamaño, con un soporte de herramientas/navegadores mucho más amplio; vale
 la pena revisar esto si bx-image añade AVIF en el futuro.</p>
 <h2 id="desactivarlo"><a href="#desactivarlo" id="desactivarlo" name="desactivarlo" class="anchor"></a>Desactivarlo</h2>
-<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">assets: { images: { enabled: false } }
+<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="3">TOML</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">assets: { images: { enabled: false } }
 </code></pre>
 </div><div class="bxsites-tab-panel" data-bxsites-tab="2"><pre><code class="language-json">{ &quot;assets&quot;: { &quot;images&quot;: { &quot;enabled&quot;: false } } }
+</code></pre>
+</div><div class="bxsites-tab-panel" data-bxsites-tab="3"><pre><code class="language-toml">
+[assets]
+
+[assets.images]
+enabled = false
 </code></pre>
 </div></div></div>
 <p>Recurre a la copia simple y sin procesar de <code>docs/assets/**</code> - exactamente
 como se manejaba cada imagen antes de que existiera esta función.</p>
 <h2 id="elegir-tus-propios-puntos-de-ruptura"><a href="#elegir-tus-propios-puntos-de-ruptura" id="elegir-tus-propios-puntos-de-ruptura" name="elegir-tus-propios-puntos-de-ruptura" class="anchor"></a>Elegir tus propios puntos de ruptura</h2>
-<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">assets:
+<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="3">TOML</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">assets:
   images:
     widths: [ 480, 960, 1440 ]
     formats: [ webp ]
@@ -238,6 +244,13 @@ como se manejaba cada imagen antes de que existiera esta función.</p>
 	}
 }
 </code></pre>
+</div><div class="bxsites-tab-panel" data-bxsites-tab="3"><pre><code class="language-toml">
+[assets]
+
+[assets.images]
+widths = [ 480, 960, 1440 ]
+formats = [ &quot;webp&quot; ]
+</code></pre>
 </div></div></div>
 <p><code>widths</code> por defecto es <code>[400, 800, 1200, 1600]</code>; <code>formats</code> por defecto
 es <code>[&quot;original&quot;, &quot;webp&quot;]</code> - elimina <code>&quot;original&quot;</code> para omitir por
@@ -249,13 +262,16 @@ para cada clave de <code>assets.images</code>.</p>
 <h2 id="empaquetado-de-cssjs"><a href="#empaquetado-de-cssjs" id="empaquetado-de-cssjs" name="empaquetado-de-cssjs" class="anchor"></a>Empaquetado de CSS/JS</h2>
 <p><code>extraCss</code>/<code>extraJs</code> se empaquetan de la misma forma, activado por
 defecto (<code>assets.bundle</code>):</p>
-<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">extraCss: [ assets/a.css, assets/b.css ]
+<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="3">TOML</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">extraCss: [ assets/a.css, assets/b.css ]
 extraJs: [ assets/app.js ]
 </code></pre>
 </div><div class="bxsites-tab-panel" data-bxsites-tab="2"><pre><code class="language-json">{
 	&quot;extraCss&quot;: [&quot;assets/a.css&quot;, &quot;assets/b.css&quot;],
 	&quot;extraJs&quot;: [&quot;assets/app.js&quot;]
 }
+</code></pre>
+</div><div class="bxsites-tab-panel" data-bxsites-tab="3"><pre><code class="language-toml">extraCss = [ &quot;assets/a.css&quot;, &quot;assets/b.css&quot; ]
+extraJs = [ &quot;assets/app.js&quot; ]
 </code></pre>
 </div></div></div>
 <p>construye un <code>assets/bundle.&lt;hash&gt;.css</code> con huella digital único (en el
@@ -275,9 +291,11 @@ archivo local del proyecto. Una URL externa (un enlace de CDN) mezclada
 en la lista hace que toda ella recurra al comportamiento actual exacto
 por URL, en lugar de arriesgarse a reordenar silenciosamente una cascada
 CSS de la que dependía un proyecto:</p>
-<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">extraCss: [ assets/custom.css, &quot;https://cdn.example.com/lib.css&quot; ]
+<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="3">TOML</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">extraCss: [ assets/custom.css, &quot;https://cdn.example.com/lib.css&quot; ]
 </code></pre>
 </div><div class="bxsites-tab-panel" data-bxsites-tab="2"><pre><code class="language-json">{ &quot;extraCss&quot;: [&quot;assets/custom.css&quot;, &quot;https://cdn.example.com/lib.css&quot;] }
+</code></pre>
+</div><div class="bxsites-tab-panel" data-bxsites-tab="3"><pre><code class="language-toml">extraCss = [ &quot;assets/custom.css&quot;, &quot;https://cdn.example.com/lib.css&quot; ]
 </code></pre>
 </div></div></div>
 <p>renderiza dos etiquetas <code>&lt;link&gt;</code> separadas, sin empaquetar, exactamente
@@ -305,7 +323,7 @@ cada captura de pantalla del proyecto, solo las que realmente cambiaron.</p>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/es/guides/images.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Editar esta p&aacute;gina</a><a href="/theme/notion/es/guides/images.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Descargar Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> &Uacute;ltima actualizaci&oacute;n Sep 9, 2026, 9&#x3a;01&#x3a;35 PM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/es/guides/images.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Editar esta p&aacute;gina</a><a href="/theme/notion/es/guides/images.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Descargar Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> &Uacute;ltima actualizaci&oacute;n Sep 9, 2026, 10&#x3a;27&#x3a;18 PM</span></div>
 
 			</article>
 

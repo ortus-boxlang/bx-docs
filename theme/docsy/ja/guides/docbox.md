@@ -76,6 +76,20 @@ bxSites build
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [docbox]
+    projectTitle = "My API"
+    excludes = "tests|build"
+    pagePathPrefix = "api/docbox"
+    tags = [ "api", "docbox" ]
+
+    [docbox.mappings]
+    models = "models"
+    bifs = "bifs"
+    ```
+
 各キーには、その実行だけ上書きするフラグがあります。
 
 ```bash frame="terminal" title="Terminal"
@@ -129,6 +143,14 @@ Alpine.js のフィルターツールバーの中に置かれるため、長い�
     		{ "title": "リファレンス", "children": [ "api/docbox/index.md" ] }
     	]
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [[nav]]
+    title = "リファレンス"
+    children = [ "api/docbox/index.md" ]
     ```
 
 ## 意図的に行わないこと

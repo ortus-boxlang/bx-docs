@@ -26,6 +26,11 @@ BoxLang 独自のモジュールシステムが*そのまま*プラグインシ�
     { "plugins": ["myBxSitesPlugin"] }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    plugins = [ "myBxSitesPlugin" ]
+    ```
+
 ## 公開済みプラグインのインストール
 
 ForgeBox に公開されたプラグインは、`bxSites` バイナリ自体だけでインストールできます -

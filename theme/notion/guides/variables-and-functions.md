@@ -47,6 +47,17 @@ nested:
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [variables]
+    company = "Ortus Solutions"
+
+    [variables.product]
+    name = "BoxLang"
+    supportEmail = "support@example.com"
+    ```
+
 Then reference any of it, by dotted path, from any Markdown page:
 
 ```markdown title="docs/index.md"

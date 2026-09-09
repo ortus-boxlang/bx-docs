@@ -69,6 +69,18 @@ liste stattdessen ein explizites `from`/`to`-Paar auf:
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+
+    [[redirects]]
+    from = "old-guide"
+    to = "guides/new-guide/"
+
+    [[redirects]]
+    from = "moved-to-another-site"
+    to = "https://example.com/docs"
+    ```
+
 - `from` - das alte hübsche URL-Segment, dieselbe Form wie `redirect_from` oben
 - `to` - entweder ein root-relativer Pfad (aufgelöst gegen die eigene
   `baseURL` der Site, dieselbe Konvention, die `theme.logo`/`ogImage`

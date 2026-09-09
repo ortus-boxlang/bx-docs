@@ -58,6 +58,16 @@ the full schema.
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [coldbox]
+    appRoot = "."
+    pagePathPrefix = "api/coldbox"
+    tags = [ "api", "coldbox" ]
+    include = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
+    ```
+
 `include` decides which page sets get generated; leave a token out and that
 set is skipped entirely. Each key has a flag that overrides it for one run:
 

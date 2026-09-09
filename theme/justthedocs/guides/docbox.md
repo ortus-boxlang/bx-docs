@@ -77,6 +77,20 @@ full schema.
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [docbox]
+    projectTitle = "My API"
+    excludes = "tests|build"
+    pagePathPrefix = "api/docbox"
+    tags = [ "api", "docbox" ]
+
+    [docbox.mappings]
+    models = "models"
+    bifs = "bifs"
+    ```
+
 Every key has a flag that overrides it for one run:
 
 ```bash frame="terminal" title="Terminal"
@@ -168,6 +182,14 @@ your own [`nav`](../configuration.md#nav):
     		{ "title": "Reference", "children": [ "api/docbox/index.md" ] }
     	]
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [[nav]]
+    title = "Reference"
+    children = [ "api/docbox/index.md" ]
     ```
 
 ## What it deliberately doesn't do

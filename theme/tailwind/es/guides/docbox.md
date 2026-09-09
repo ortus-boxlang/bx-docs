@@ -78,6 +78,20 @@ Todo es opcional; el esquema completo está en
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [docbox]
+    projectTitle = "Mi API"
+    excludes = "tests|build"
+    pagePathPrefix = "api/docbox"
+    tags = [ "api", "docbox" ]
+
+    [docbox.mappings]
+    models = "models"
+    bifs = "bifs"
+    ```
+
 Cada clave tiene un flag que la sobrescribe para una ejecución:
 
 ```bash frame="terminal" title="Terminal"
@@ -132,6 +146,14 @@ nombra el índice en tu propia [`nav`](../configuration.md#nav):
     		{ "title": "Referencia", "children": [ "api/docbox/index.md" ] }
     	]
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [[nav]]
+    title = "Referencia"
+    children = [ "api/docbox/index.md" ]
     ```
 
 ## Lo que deliberadamente no hace

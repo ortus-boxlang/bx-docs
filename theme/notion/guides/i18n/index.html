@@ -169,7 +169,7 @@ exactly as it is today - adding <code>docs/i18n/</code> doesn't change anything 
 it.</p>
 <p>Give each locale a display label (and, for a right-to-left language, its
 own direction) in <code>bxsites.yaml</code>:</p>
-<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">i18n:
+<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="3">TOML</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">i18n:
   defaultLocale: { code: en, label: English }
   locales:
     - { code: es, label: Español }
@@ -186,6 +186,27 @@ own direction) in <code>bxsites.yaml</code>:</p>
 		]
 	}
 }
+</code></pre>
+</div><div class="bxsites-tab-panel" data-bxsites-tab="3"><pre><code class="language-toml">
+[i18n]
+
+[i18n.defaultLocale]
+code = &quot;en&quot;
+label = &quot;English&quot;
+
+[[i18n.locales]]
+code = &quot;es&quot;
+label = &quot;Español&quot;
+
+[[i18n.locales]]
+code = &quot;ar&quot;
+label = &quot;العربية&quot;
+dir = &quot;rtl&quot;
+
+[[i18n.locales]]
+code = &quot;pt-BR&quot;
+label = &quot;Português (Brasil)&quot;
+flag = &quot;🇧🇷&quot;
 </code></pre>
 </div></div></div>
 <p><code>defaultLocale</code> only needs setting if your default locale isn't English;
@@ -260,7 +281,7 @@ automatically, nothing to configure. Any other locale code (or a page you'd
 rather word differently) falls back to English - override just the keys
 you care about with your own <code>strings</code> on that locale's own entry in
 <code>bxsites.yaml</code>:</p>
-<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">i18n:
+<div class="bxsites-tabs" data-bxsites-tabgroup role="tablist"><div class="bxsites-tabs__nav"><button type="button" class="bxsites-tab-btn bxsites-tab-btn--active" data-bxsites-tab="1">YAML</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="2">JSON</button><button type="button" class="bxsites-tab-btn" data-bxsites-tab="3">TOML</button></div><div class="bxsites-tabs__panels"><div class="bxsites-tab-panel bxsites-tab-panel--active" data-bxsites-tab="1"><pre><code class="language-yaml">i18n:
   defaultLocale: { code: en, label: English }
   locales:
     - code: fr
@@ -292,6 +313,28 @@ you care about with your own <code>strings</code> on that locale's own entry in
 		]
 	}
 }
+</code></pre>
+</div><div class="bxsites-tab-panel" data-bxsites-tab="3"><pre><code class="language-toml">
+[i18n]
+
+[i18n.defaultLocale]
+code = &quot;en&quot;
+label = &quot;English&quot;
+
+[[i18n.locales]]
+code = &quot;fr&quot;
+label = &quot;Français&quot;
+
+[i18n.locales.strings]
+searchPlaceholder = &quot;Rechercher dans la documentation...&quot;
+onThisPage = &quot;Sur cette page&quot;
+
+[[i18n.locales]]
+code = &quot;es&quot;
+label = &quot;Español&quot;
+
+[i18n.locales.strings]
+toggleDarkMode = &quot;Cambiar a modo nocturno&quot;
 </code></pre>
 </div></div></div>
 <p>A locale with a built-in translation (like <code>es</code> above) can still override
@@ -335,7 +378,7 @@ pages are.</p>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/i18n.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/theme/notion/guides/i18n.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 9, 2026, 9&#x3a;01&#x3a;35 PM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/i18n.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/theme/notion/guides/i18n.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 9, 2026, 10&#x3a;27&#x3a;18 PM</span></div>
 
 			</article>
 

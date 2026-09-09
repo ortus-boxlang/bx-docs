@@ -157,6 +157,13 @@ Imposta quale tema usa un progetto in `bxsites.yaml`:
     { "theme": { "name": "material" } }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [theme]
+    name = "material"
+    ```
+
 ## Installare un tema pubblicato
 
 Un tema pubblicato su ForgeBox si installa con nient'altro che il
@@ -183,6 +190,13 @@ questo modo e passare dall'uno all'altro semplicemente per nome:
 === "JSON"
     ```json title="bxsites.json"
     { "theme": { "name": "bx-sites-theme-blog1" } }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [theme]
+    name = "bx-sites-theme-blog1"
     ```
 
 Un tema non necessita di alcun coinvolgimento del modulo BoxLang/
@@ -307,6 +321,11 @@ toccare affatto `resources/themes/`:
 === "JSON"
     ```json title="bxsites.json"
     { "extraCss": ["assets/brand.css"] }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    extraCss = [ "assets/brand.css" ]
     ```
 
 ```css title="docs/assets/brand.css" linenums="1"

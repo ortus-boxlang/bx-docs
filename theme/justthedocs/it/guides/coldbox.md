@@ -59,6 +59,16 @@ Tutto è opzionale; lo schema completo è in
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [coldbox]
+    appRoot = "."
+    pagePathPrefix = "api/coldbox"
+    tags = [ "api", "coldbox" ]
+    include = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
+    ```
+
 `include` decide quali gruppi di pagine generare; se ometti un valore quel
 gruppo viene saltato del tutto. Ogni chiave ha il suo flag:
 

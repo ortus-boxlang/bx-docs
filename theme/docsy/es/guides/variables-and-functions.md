@@ -49,6 +49,17 @@ plana o anidada:
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [variables]
+    company = "Ortus Solutions"
+
+    [variables.product]
+    name = "BoxLang"
+    supportEmail = "support@example.com"
+    ```
+
 Luego referencia cualquiera de sus valores, por ruta con puntos, desde
 cualquier página de Markdown:
 

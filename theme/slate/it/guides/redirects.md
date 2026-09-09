@@ -69,6 +69,18 @@ elenca invece una coppia esplicita `from`/`to`:
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+
+    [[redirects]]
+    from = "old-guide"
+    to = "guides/new-guide/"
+
+    [[redirects]]
+    from = "moved-to-another-site"
+    to = "https://example.com/docs"
+    ```
+
 - `from` - il vecchio segmento URL "pretty", stessa forma di
   `redirect_from` sopra
 - `to` - un percorso relativo alla radice (risolto rispetto al proprio

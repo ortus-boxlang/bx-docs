@@ -184,6 +184,21 @@ lmajano:
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+
+    [[nav]]
+    path = "index.md"
+
+    [[nav]]
+    title = "Blog"
+    url = "blog/index.html"
+    icon = "lucide:newspaper"
+
+    [[nav]]
+    path = "about.md"
+    ```
+
 個々の投稿自体はナビには追加されません（タグ索引と同様）- それらは
 `/blog/`、自分のカテゴリページ、自分の年次アーカイブページ、著者ページ、
 検索、そして互いの前後リンク（通常のナビ自体の前後チェーンとは独立した、
@@ -213,6 +228,15 @@ lmajano:
 === "JSON"
     ```json title="bxsites.json"
     { "blog": { "postsPerPage": 10, "feed": true, "feedLimit": 25 } }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [blog]
+    postsPerPage = 10
+    feed = true
+    feedLimit = 25
     ```
 
 ## ドラフトのプレビュー

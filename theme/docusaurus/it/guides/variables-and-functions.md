@@ -49,6 +49,17 @@ preferisca, piatta o annidata:
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [variables]
+    company = "Ortus Solutions"
+
+    [variables.product]
+    name = "BoxLang"
+    supportEmail = "support@example.com"
+    ```
+
 Poi fai riferimento a uno qualsiasi dei suoi valori, per percorso puntato,
 da qualsiasi pagina Markdown:
 

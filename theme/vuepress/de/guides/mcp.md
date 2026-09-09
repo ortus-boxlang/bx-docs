@@ -53,6 +53,11 @@ ist Aufgabe von bxSites Cloud, nicht etwas, das dieses Modul selbst
     { "mcp": true }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    mcp = true
+    ```
+
 `false` (Standard) überspringt den gesamten Schritt - es werden weder
 `mcp-index.json`, `mcp-nav.json` noch `mcp-manifest.json` geschrieben,
 und `build` verursacht über die reine Prüfung des Flags hinaus keine

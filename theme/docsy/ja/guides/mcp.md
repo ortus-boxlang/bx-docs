@@ -50,6 +50,11 @@ bxSites Cloud の仕事であり、このモジュール自体が行うもので
     { "mcp": true }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    mcp = true
+    ```
+
 `false`(デフォルト)はこのステップ全体をスキップします - `mcp-index.json`、
 `mcp-nav.json`、`mcp-manifest.json` のいずれも書き出されず、`build` は
 フラグの確認以上の追加コストを負いません。

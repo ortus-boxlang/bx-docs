@@ -76,6 +76,20 @@ Tutto è opzionale; lo schema completo è in
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [docbox]
+    projectTitle = "La mia API"
+    excludes = "tests|build"
+    pagePathPrefix = "api/docbox"
+    tags = [ "api", "docbox" ]
+
+    [docbox.mappings]
+    models = "models"
+    bifs = "bifs"
+    ```
+
 Ogni chiave ha un flag che la sovrascrive per una singola esecuzione:
 
 ```bash frame="terminal" title="Terminal"
@@ -130,6 +144,14 @@ indica l'indice nella tua [`nav`](../configuration.md#nav):
     		{ "title": "Riferimento", "children": [ "api/docbox/index.md" ] }
     	]
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [[nav]]
+    title = "Riferimento"
+    children = [ "api/docbox/index.md" ]
     ```
 
 ## Cosa non fa di proposito

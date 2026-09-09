@@ -349,6 +349,11 @@ das nötige `/<repo>/`-Präfix bekommt - und damit auch eine echte
     { "baseURL": "https://<user>.github.io/<repo>/" }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    baseURL = "https://<user>.github.io/<repo>/"
+    ```
+
 Siehe [Konfiguration](../configuration.md#baseurl) für die vollständige
 Aufschlüsselung dessen, was `baseURL` bewirkt. Eine
 `<user>.github.io`-Benutzer-Website, oder jede eigene Domain, die auf die

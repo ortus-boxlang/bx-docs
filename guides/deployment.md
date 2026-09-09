@@ -354,6 +354,11 @@ and so a real `sitemap.xml` gets generated too:
     { "baseURL": "https://<user>.github.io/<repo>/" }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    baseURL = "https://<user>.github.io/<repo>/"
+    ```
+
 See [Configuration](../configuration.md#baseurl) for the full breakdown of
 what `baseURL` does. A `<user>.github.io` user site, or any custom domain
 mapped to the site root, can leave `baseURL` at its default (`/`).

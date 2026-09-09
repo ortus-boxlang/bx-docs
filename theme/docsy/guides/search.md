@@ -80,6 +80,11 @@ own - neither opens this module's own palette.
     { "search": false }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    search = false
+    ```
+
 Skips building `search-index.json` entirely, and skips the search box, the
 vendored MiniSearch script, and the shared `search.js` widget in every
 rendered page - a project with search off ships nothing search-related at
@@ -135,6 +140,20 @@ all support:
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+    search = true
+
+    [searchProvider]
+    provider = "algolia"
+
+    [searchProvider.algolia]
+    appId = "ABC123"
+    apiKey = "a1b2c3d4e5f6..."
+    indexName = "my-docs"
+    insights = false
+    ```
+
 `appId`, `apiKey` and `indexName` are required - `apiKey` is the
 **search-only** public API key DocSearch gives you (never an admin key; it's
 shipped straight into every rendered page). `insights` (`false` by default)
@@ -178,6 +197,18 @@ Algolia:
     		"pagefind": { "bin": "pagefind", "options": [] }
     	}
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+    search = true
+
+    [searchProvider]
+    provider = "pagefind"
+
+    [searchProvider.pagefind]
+    bin = "pagefind"
+    options = []
     ```
 
 Both `pagefind` keys are optional - `bin` (default `"pagefind"`) is the

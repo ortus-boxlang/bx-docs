@@ -28,6 +28,11 @@ ein Projekt bindet eines explizit über den BoxLang-Modulnamen im Array
     { "plugins": ["myBxSitesPlugin"] }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    plugins = [ "myBxSitesPlugin" ]
+    ```
+
 ## Ein veröffentlichtes Plugin installieren
 
 Ein auf ForgeBox veröffentlichtes Plugin installiert sich mit nichts

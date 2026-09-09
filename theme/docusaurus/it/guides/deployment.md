@@ -346,6 +346,11 @@ bisogno - e così che venga generato anche un vero `sitemap.xml`:
     { "baseURL": "https://<user>.github.io/<repo>/" }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    baseURL = "https://<user>.github.io/<repo>/"
+    ```
+
 Vedi [Configurazione](../configuration.md#baseurl) per il quadro completo
 di cosa fa `baseURL`. Un sito utente `<user>.github.io`, o qualsiasi
 dominio personalizzato mappato sulla radice del sito, può lasciare

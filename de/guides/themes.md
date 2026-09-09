@@ -156,6 +156,13 @@ Lege in `bxsites.yaml` fest, welches Theme ein Projekt verwendet:
     { "theme": { "name": "material" } }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [theme]
+    name = "material"
+    ```
+
 ## Ein veröffentlichtes Theme installieren
 
 Ein auf ForgeBox veröffentlichtes Theme installiert sich mit nichts
@@ -182,6 +189,13 @@ nebeneinander vorhalten und rein per Name zwischen ihnen wechseln:
 === "JSON"
     ```json title="bxsites.json"
     { "theme": { "name": "bx-sites-theme-blog1" } }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [theme]
+    name = "bx-sites-theme-blog1"
     ```
 
 Ein Theme braucht überhaupt keine BoxLang-Modul-/Klassenlader-Beteiligung
@@ -302,6 +316,11 @@ Deklaration mit gleicher Spezifität darin gewinnt, ohne `resources/themes/`
 === "JSON"
     ```json title="bxsites.json"
     { "extraCss": ["assets/brand.css"] }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    extraCss = [ "assets/brand.css" ]
     ```
 
 ```css title="docs/assets/brand.css" linenums="1"

@@ -58,6 +58,16 @@ Todo es opcional; el esquema completo está en
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [coldbox]
+    appRoot = "."
+    pagePathPrefix = "api/coldbox"
+    tags = [ "api", "coldbox" ]
+    include = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
+    ```
+
 `include` decide qué conjuntos de páginas se generan; si dejas fuera un
 token, ese conjunto se omite por completo. Cada clave tiene su flag:
 

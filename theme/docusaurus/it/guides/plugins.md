@@ -28,6 +28,11 @@ l'array [`plugins`](../configuration.md#plugins) di `bxsites.yaml`:
     { "plugins": ["myBxSitesPlugin"] }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    plugins = [ "myBxSitesPlugin" ]
+    ```
+
 ## Installare un plugin pubblicato
 
 Un plugin pubblicato su ForgeBox si installa con nient'altro che il

@@ -110,6 +110,15 @@ la pena revisar esto si bx-image añade AVIF en el futuro.
     { "assets": { "images": { "enabled": false } } }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [assets]
+
+    [assets.images]
+    enabled = false
+    ```
+
 Recurre a la copia simple y sin procesar de `docs/assets/**` - exactamente
 como se manejaba cada imagen antes de que existiera esta función.
 
@@ -133,6 +142,16 @@ como se manejaba cada imagen antes de que existiera esta función.
     		}
     	}
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+
+    [assets]
+
+    [assets.images]
+    widths = [ 480, 960, 1440 ]
+    formats = [ "webp" ]
     ```
 
 `widths` por defecto es `[400, 800, 1200, 1600]`; `formats` por defecto
@@ -162,6 +181,12 @@ defecto (`assets.bundle`):
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+    extraCss = [ "assets/a.css", "assets/b.css" ]
+    extraJs = [ "assets/app.js" ]
+    ```
+
 construye un `assets/bundle.<hash>.css` con huella digital único (en el
 orden indicado) y un `assets/bundle.<hash>.js`, en lugar de una etiqueta
 `<link>`/`<script>` por entrada. El CSS obtiene sus comentarios
@@ -189,6 +214,11 @@ CSS de la que dependía un proyecto:
 === "JSON"
     ```json title="bxsites.json"
     { "extraCss": ["assets/custom.css", "https://cdn.example.com/lib.css"] }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    extraCss = [ "assets/custom.css", "https://cdn.example.com/lib.css" ]
     ```
 
 renderiza dos etiquetas `<link>` separadas, sin empaquetar, exactamente

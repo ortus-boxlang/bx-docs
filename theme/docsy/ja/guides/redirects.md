@@ -66,6 +66,18 @@ redirect_from:
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+
+    [[redirects]]
+    from = "old-guide"
+    to = "guides/new-guide/"
+
+    [[redirects]]
+    from = "moved-to-another-site"
+    to = "https://example.com/docs"
+    ```
+
 - `from` - 上記の `redirect_from` と同じ形式の古いプリティ URL セグメント
 - `to` - ルート相対パス（サイト自身の `baseURL` に対して解決されます、
   `theme.logo`/`ogImage` がすでに使用しているのと同じ規約）、または
