@@ -16,6 +16,7 @@
 	<url><loc>https://bxsites.io/theme/justthedocs/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/guides/gradle-plugin/index.html</loc></url>
@@ -25,6 +26,9 @@
 	<url><loc>https://bxsites.io/theme/justthedocs/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/contribute/index.html</loc></url>
@@ -352,6 +356,7 @@
 	<url><loc>https://bxsites.io/theme/justthedocs/es/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/es/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/es/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/es/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/es/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/es/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/es/guides/gradle-plugin/index.html</loc></url>
@@ -361,6 +366,9 @@
 	<url><loc>https://bxsites.io/theme/justthedocs/es/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/es/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/es/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/es/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/es/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/es/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/es/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/es/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/es/contribute/index.html</loc></url>
@@ -413,6 +421,7 @@
 	<url><loc>https://bxsites.io/theme/justthedocs/it/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/it/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/it/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/it/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/it/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/it/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/it/guides/gradle-plugin/index.html</loc></url>
@@ -422,6 +431,9 @@
 	<url><loc>https://bxsites.io/theme/justthedocs/it/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/it/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/it/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/it/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/it/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/it/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/it/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/it/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/it/contribute/index.html</loc></url>
@@ -474,6 +486,7 @@
 	<url><loc>https://bxsites.io/theme/justthedocs/de/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/de/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/de/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/de/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/de/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/de/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/de/guides/gradle-plugin/index.html</loc></url>
@@ -483,6 +496,9 @@
 	<url><loc>https://bxsites.io/theme/justthedocs/de/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/de/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/de/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/de/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/de/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/de/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/de/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/de/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/de/contribute/index.html</loc></url>
@@ -535,6 +551,7 @@
 	<url><loc>https://bxsites.io/theme/justthedocs/ja/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/ja/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/ja/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/ja/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/ja/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/ja/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/ja/guides/gradle-plugin/index.html</loc></url>
@@ -544,6 +561,9 @@
 	<url><loc>https://bxsites.io/theme/justthedocs/ja/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/ja/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/ja/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/ja/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/ja/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/justthedocs/ja/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/ja/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/ja/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/justthedocs/ja/contribute/index.html</loc></url>

@@ -16,6 +16,7 @@
 	<url><loc>https://bxsites.io/theme/notion/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/guides/gradle-plugin/index.html</loc></url>
@@ -25,6 +26,9 @@
 	<url><loc>https://bxsites.io/theme/notion/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/contribute/index.html</loc></url>
@@ -352,6 +356,7 @@
 	<url><loc>https://bxsites.io/theme/notion/es/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/es/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/es/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/es/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/es/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/es/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/es/guides/gradle-plugin/index.html</loc></url>
@@ -361,6 +366,9 @@
 	<url><loc>https://bxsites.io/theme/notion/es/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/es/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/es/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/es/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/es/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/es/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/es/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/es/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/es/contribute/index.html</loc></url>
@@ -413,6 +421,7 @@
 	<url><loc>https://bxsites.io/theme/notion/it/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/it/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/it/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/it/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/it/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/it/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/it/guides/gradle-plugin/index.html</loc></url>
@@ -422,6 +431,9 @@
 	<url><loc>https://bxsites.io/theme/notion/it/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/it/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/it/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/it/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/it/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/it/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/it/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/it/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/it/contribute/index.html</loc></url>
@@ -474,6 +486,7 @@
 	<url><loc>https://bxsites.io/theme/notion/de/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/de/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/de/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/de/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/de/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/de/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/de/guides/gradle-plugin/index.html</loc></url>
@@ -483,6 +496,9 @@
 	<url><loc>https://bxsites.io/theme/notion/de/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/de/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/de/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/de/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/de/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/de/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/de/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/de/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/de/contribute/index.html</loc></url>
@@ -535,6 +551,7 @@
 	<url><loc>https://bxsites.io/theme/notion/ja/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/ja/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/ja/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/ja/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/ja/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/ja/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/ja/guides/gradle-plugin/index.html</loc></url>
@@ -544,6 +561,9 @@
 	<url><loc>https://bxsites.io/theme/notion/ja/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/ja/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/ja/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/ja/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/ja/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/notion/ja/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/ja/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/ja/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/notion/ja/contribute/index.html</loc></url>

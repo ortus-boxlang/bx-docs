@@ -1192,3 +1192,80 @@ ignora.
 
 `sitemap.xml` y `llms.txt` incluyen las páginas de todas las versiones
 junto a las del sitio principal.
+
+
+## `docbox`
+
+Ajustes de [`bxSites docbox`](cli-reference.md#docbox), que genera una
+referencia de API BoxLang/CFML desde DocBox - consulta
+[Referencia de API con DocBox](guides/docbox.md). Todas las claves son
+opcionales; sin bloque `docbox` se documentan las carpetas convencionales
+(`models`, `handlers`, `bifs`, `components`, `interceptors`).
+
+- `projectTitle` - título de la página de resumen. Por defecto, el `name`
+  del sitio más `" API"`.
+- `mappings` - nombre de mapping a directorio de fuentes. El nombre es lo
+  que aparece como paquete en las páginas generadas.
+- `excludes` - regex de rutas que DocBox omite.
+- `pagePathPrefix` - dónde se escriben las páginas. Por defecto
+  `api/docbox`.
+- `tags` - tags de frontmatter en cada página generada. Por defecto
+  `[ "api", "docbox" ]`.
+
+=== "YAML"
+    ```yaml title="bxsites.yaml"
+    docbox:
+      projectTitle: "Mi API"
+      mappings:
+        models: models
+      pagePathPrefix: api/docbox
+      tags: [ api, docbox ]
+    ```
+
+=== "JSON"
+    ```json title="bxsites.json"
+    {
+    	"docbox": {
+    		"projectTitle": "Mi API",
+    		"mappings": { "models": "models" },
+    		"pagePathPrefix": "api/docbox",
+    		"tags": [ "api", "docbox" ]
+    	}
+    }
+    ```
+
+## `coldbox`
+
+Ajustes de [`bxSites coldbox`](cli-reference.md#coldbox), que documenta una
+aplicación ColdBox a partir de sus convenciones - consulta
+[Aplicaciones ColdBox](guides/coldbox.md). Todas las claves son opcionales.
+
+- `appRoot` - dónde vive la aplicación ColdBox, relativo a la raíz del
+  proyecto. Por defecto, la propia raíz.
+- `pagePathPrefix` - dónde se escriben las páginas. Por defecto
+  `api/coldbox`.
+- `tags` - tags de frontmatter en cada página generada. Por defecto
+  `[ "api", "coldbox" ]`.
+- `include` - qué conjuntos de páginas generar: `routes`, `handlers`,
+  `models`, `modules`, `interceptors`, `scheduler`. Todos por defecto.
+
+=== "YAML"
+    ```yaml title="bxsites.yaml"
+    coldbox:
+      appRoot: "."
+      pagePathPrefix: api/coldbox
+      tags: [ api, coldbox ]
+      include: [ routes, handlers, models, modules, interceptors, scheduler ]
+    ```
+
+=== "JSON"
+    ```json title="bxsites.json"
+    {
+    	"coldbox": {
+    		"appRoot": ".",
+    		"pagePathPrefix": "api/coldbox",
+    		"tags": [ "api", "coldbox" ],
+    		"include": [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
+    	}
+    }
+    ```

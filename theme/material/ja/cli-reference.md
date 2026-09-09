@@ -529,3 +529,58 @@ bxSites lint
 ```
 
 いずれかのチェックで何か見つかれば `1`、それ以外は `0` で終了します。
+
+
+## `docbox`
+
+[DocBox](https://docbox.ortusbooks.com) 自身の JSON 出力から、BoxLang/CFML
+の API リファレンスをコンテンツディレクトリに生成します。Java プラグインの
+Javadoc ジェネレーターに対応する BoxLang 版です。
+[DocBox APIリファレンス](guides/docbox.md) と
+[`docbox`](configuration.md#docbox) を参照してください。
+
+```bash frame="terminal" title="Terminal"
+bxSites docbox
+bxSites docbox --mappings:models=models --projectTitle="My API"
+bxSites docbox --pagePathPrefix=api/classes --tags=api,classes
+bxSites docbox --jsonDir=build/docbox-json
+```
+
+| フラグ | 用途 |
+|---|---|
+| `--mappings:<名前>=<パス>` | ドキュメント化するソースツリー（繰り返し可） |
+| `--projectTitle` | 概要ページのタイトル |
+| `--excludes` | DocBox が除外するパスの正規表現 |
+| `--pagePathPrefix` | ページの出力先 |
+| `--tags` | frontmatter のタグ（カンマ区切り） |
+| `--jsonDir` | DocBox の JSON 出力を破棄せず保持する |
+
+マッピング未指定の場合は慣例的なフォルダー（`models`、`handlers`、`bifs`、
+`components`、`interceptors`）が対象になります。`bx-docbox` モジュールが
+必要です（`install-bx-module bx-docbox`）。
+
+## `coldbox`
+
+ColdBox アプリケーションを規約からドキュメント化します。ルート、ハンドラー、
+モデルと WireBox マッピング、モジュール、インターセプター、スケジュール
+タスクが対象で、アプリの起動は行いません。
+[ColdBoxアプリケーション](guides/coldbox.md) と
+[`coldbox`](configuration.md#coldbox) を参照してください。
+
+```bash frame="terminal" title="Terminal"
+bxSites coldbox
+bxSites coldbox --appRoot=app
+bxSites coldbox --include=routes,handlers
+```
+
+| フラグ | 用途 |
+|---|---|
+| `--appRoot` | ColdBox アプリの場所（プロジェクトルートからの相対） |
+| `--pagePathPrefix` | ページの出力先 |
+| `--tags` | frontmatter のタグ（カンマ区切り） |
+| `--include` | 生成するページ群: `routes`、`handlers`、`models`、`modules`、`interceptors`、`scheduler` |
+
+解決されたルートに `handlers/`、`config/ColdBox`、`config/Router`、
+`modules_app/` のいずれもない場合は `BxSites.NotAColdBoxApp` で失敗します。
+クラス単位の詳細は DocBox から取得するため、`bx-docbox` を入れるとこれらの
+ページはより充実します。

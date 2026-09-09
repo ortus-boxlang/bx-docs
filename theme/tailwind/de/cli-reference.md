@@ -593,3 +593,58 @@ bxSites lint
 
 Beendet sich mit `1`, wenn eine der beiden Prüfungen etwas findet, sonst
 mit `0`.
+
+
+## `docbox`
+
+Erzeugt aus [DocBox](https://docbox.ortusbooks.com)' eigener JSON-Ausgabe
+eine BoxLang-/CFML-API-Referenz im Content-Verzeichnis - das
+BoxLang-Gegenstück zum Javadoc-Generator der Java-Plugins. Siehe
+[DocBox-API-Referenz](guides/docbox.md) und
+[`docbox`](configuration.md#docbox).
+
+```bash frame="terminal" title="Terminal"
+bxSites docbox
+bxSites docbox --mappings:models=models --projectTitle="Meine API"
+bxSites docbox --pagePathPrefix=api/classes --tags=api,classes
+bxSites docbox --jsonDir=build/docbox-json
+```
+
+| Flag | Zweck |
+|---|---|
+| `--mappings:<name>=<pfad>` | Ein zu dokumentierender Quellbaum, wiederholbar |
+| `--projectTitle` | Titel der Überblicksseite |
+| `--excludes` | Regex für Pfade, die DocBox überspringt |
+| `--pagePathPrefix` | Wohin die Seiten geschrieben werden |
+| `--tags` | Frontmatter-Tags, kommagetrennt |
+| `--jsonDir` | DocBox' JSON-Ausgabe behalten statt verwerfen |
+
+Ohne Mappings werden die üblichen Ordner dokumentiert: `models`,
+`handlers`, `bifs`, `components`, `interceptors`. Benötigt das Modul
+`bx-docbox` (`install-bx-module bx-docbox`).
+
+## `coldbox`
+
+Dokumentiert eine ColdBox-Anwendung anhand ihrer Konventionen - Routen,
+Handler, Models und WireBox-Mappings, Module, Interceptors und geplante
+Tasks - ohne sie zu starten. Siehe
+[ColdBox-Anwendungen](guides/coldbox.md) und
+[`coldbox`](configuration.md#coldbox).
+
+```bash frame="terminal" title="Terminal"
+bxSites coldbox
+bxSites coldbox --appRoot=app
+bxSites coldbox --include=routes,handlers
+```
+
+| Flag | Zweck |
+|---|---|
+| `--appRoot` | Wo die ColdBox-App liegt, relativ zum Projektstamm |
+| `--pagePathPrefix` | Wohin die Seiten geschrieben werden |
+| `--tags` | Frontmatter-Tags, kommagetrennt |
+| `--include` | Seitengruppen: `routes`, `handlers`, `models`, `modules`, `interceptors`, `scheduler` |
+
+Bricht mit `BxSites.NotAColdBoxApp` ab, wenn dort weder `handlers/`,
+`config/ColdBox`, `config/Router` noch `modules_app/` liegen. Details je
+Klasse kommen aus DocBox, `bx-docbox` macht diese Seiten also
+reichhaltiger.

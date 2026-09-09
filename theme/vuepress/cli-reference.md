@@ -619,3 +619,59 @@ bxSites lint
 ```
 
 Exits `1` when either check finds anything, `0` otherwise.
+
+## `docbox`
+
+Generates a BoxLang/CFML API reference into the content directory from
+[DocBox](https://docbox.ortusbooks.com)' own JSON output - the BoxLang
+counterpart of the Java plugins' Javadoc generator. See
+[DocBox API Reference](guides/docbox.md) for the full walkthrough and
+[`docbox`](configuration.md#docbox) for the config block.
+
+```bash frame="terminal" title="Terminal"
+bxSites docbox
+bxSites docbox --mappings:models=models --projectTitle="My API"
+bxSites docbox --pagePathPrefix=api/classes --tags=api,classes
+bxSites docbox --jsonDir=build/docbox-json
+```
+
+| Flag | Purpose |
+|---|---|
+| `--mappings:<name>=<path>` | A source tree to document, repeatable. Overrides `docbox.mappings` |
+| `--projectTitle` | Title on the generated overview page |
+| `--excludes` | A regex of paths for DocBox to skip |
+| `--pagePathPrefix` | Where pages go, relative to the content dir |
+| `--tags` | Comma-separated frontmatter tags for every generated page |
+| `--jsonDir` | Keep DocBox's JSON output at this path instead of discarding it |
+
+With no mappings configured or passed, it documents whichever conventional
+folders the project has: `models`, `handlers`, `bifs`, `components`,
+`interceptors`. Needs the `bx-docbox` module installed
+(`install-bx-module bx-docbox`), and says so plainly when it isn't.
+
+## `coldbox`
+
+Documents a ColdBox application from its conventions on disk - routes,
+handlers, models and WireBox mappings, modules, interceptors and scheduled
+tasks - without booting it. See
+[ColdBox Applications](guides/coldbox.md) for the full walkthrough and
+[`coldbox`](configuration.md#coldbox) for the config block.
+
+```bash frame="terminal" title="Terminal"
+bxSites coldbox
+bxSites coldbox --appRoot=app
+bxSites coldbox --include=routes,handlers
+```
+
+| Flag | Purpose |
+|---|---|
+| `--appRoot` | Where the ColdBox app lives, relative to the project root |
+| `--pagePathPrefix` | Where pages go, relative to the content dir |
+| `--tags` | Comma-separated frontmatter tags for every generated page |
+| `--include` | Which page sets to generate: `routes`, `handlers`, `models`, `modules`, `interceptors`, `scheduler` |
+
+Fails with `BxSites.NotAColdBoxApp` when the resolved root holds no
+`handlers/`, `config/ColdBox`, `config/Router` or `modules_app/`.
+Per-class detail (a handler's actions, a model's methods) comes from
+DocBox, so `bx-docbox` makes those pages richer; without it every page is
+still generated and says what's missing.

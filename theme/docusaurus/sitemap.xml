@@ -16,6 +16,7 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/guides/gradle-plugin/index.html</loc></url>
@@ -25,6 +26,9 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/contribute/index.html</loc></url>
@@ -352,6 +356,7 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/gradle-plugin/index.html</loc></url>
@@ -361,6 +366,9 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/es/contribute/index.html</loc></url>
@@ -413,6 +421,7 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/gradle-plugin/index.html</loc></url>
@@ -422,6 +431,9 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/it/contribute/index.html</loc></url>
@@ -474,6 +486,7 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/gradle-plugin/index.html</loc></url>
@@ -483,6 +496,9 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/de/contribute/index.html</loc></url>
@@ -535,6 +551,7 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/gradle-plugin/index.html</loc></url>
@@ -544,6 +561,9 @@
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/docusaurus/ja/contribute/index.html</loc></url>

@@ -94,3 +94,19 @@ bxSites {
 Maven 側の対応物については [Maven プラグイン](maven-plugin.md) のガイドを
 参照してください - どちらのプラグインも同じ基盤ロジックをラップしている
 ため、verb のカバレッジと挙動は両方のビルドツールで同一に保たれます。
+
+## BoxLang ドキュメント生成
+
+`bxSitesDocBoxDoc` は [DocBox](https://docbox.ortusbooks.com) から BoxLang/CFML の API
+リファレンスを生成します。対象は `.bx`/`.cfc` クラスをソースに含む JVM
+プロジェクトです。Spring Boot 系のジェネレーターと異なり、JVM 内で動く
+ジェネレーターではなく `docbox` verb の薄いラッパーです。実装は BoxLang
+側にあり、両方のビルドツールが同じ実装を呼ぶため、実装がずれることは
+ありません。実際に設定したオプションだけが渡され、それ以外は
+`bxsites.yaml` の内容に従います。
+[DocBox APIリファレンス](docbox.md) を参照してください。用意された BoxLang
+ランタイムに `bx-docbox` モジュールが必要です。
+
+**ColdBox 用のタスクは意図的にありません。** ColdBox アプリケーションは
+CommandBox でビルド・実行するものであり、Gradle で扱うものではないため、
+[`bxSites coldbox`](coldbox.md) は bx-sites CLI の役割のままです。

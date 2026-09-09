@@ -72,6 +72,7 @@ schema, it only wires up *how* and *when* bx-sites runs from your build.
 | `bxsites:package` | Builds the site and zips it to `site.zip`. |
 | `bxsites:stats` | Reports page/word counts and other stats for the built site. |
 | `bxsites:doctor` | Runs bx-sites' own project health diagnostics. |
+| `bxsites:docbox` | Generates a BoxLang/CFML API reference from DocBox - see [BoxLang doc generation](#boxlang-doc-generation) below. |
 
 Each goal provisions (downloads/caches) what it needs itself, on first
 run - unlike the Gradle plugin, there's no separate "provision" goal to
@@ -223,6 +224,45 @@ annotation built on `@Controller` isn't); only directly annotated
 are skipped; and since reflection has no access to source-level doc
 comments, generated pages list endpoints (method, path, handler
 signature) with no per-endpoint description text.
+
+## BoxLang doc generation
+
+`bxsites:docbox` generates a BoxLang/CFML API reference from
+[DocBox](https://docbox.ortusbooks.com), for a JVM project whose sources
+include `.bx`/`.cfc` classes. Unlike the Spring Boot goals above it's a
+thin wrapper around the bx-sites `docbox` verb rather than an in-JVM
+generator - the implementation lives on the BoxLang side, and one
+implementation both build tools drive can't drift the way two would.
+
+```xml title="pom.xml"
+<plugin>
+	<groupId>io.boxlang</groupId>
+	<artifactId>bxsites-maven-plugin</artifactId>
+	<configuration>
+		<mappings>
+			<models>models</models>
+		</mappings>
+		<projectTitle>Bookshelf API</projectTitle>
+		<excludes>tests|build</excludes>
+		<pagePathPrefix>api/docbox</pagePathPrefix>
+		<tags>
+			<tag>api</tag>
+			<tag>docbox</tag>
+		</tags>
+	</configuration>
+</plugin>
+```
+
+Only parameters you actually set are passed through, so anything left out
+still falls through to `bxsites.yaml` - the config file stays the single
+source of truth and this block only overrides it. See
+[DocBox API Reference](docbox.md) for what the pages look like, and note
+that the `bx-docbox` module has to be installed in the provisioned BoxLang
+runtime.
+
+**There is deliberately no ColdBox goal.** A ColdBox application is built
+and run through CommandBox, never Maven, so
+[`bxSites coldbox`](coldbox.md) stays a bx-sites CLI concern.
 
 ## What's not built yet
 

@@ -16,6 +16,7 @@
 	<url><loc>https://bxsites.io/theme/vuepress/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/guides/gradle-plugin/index.html</loc></url>
@@ -25,6 +26,9 @@
 	<url><loc>https://bxsites.io/theme/vuepress/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/contribute/index.html</loc></url>
@@ -352,6 +356,7 @@
 	<url><loc>https://bxsites.io/theme/vuepress/es/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/es/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/guides/gradle-plugin/index.html</loc></url>
@@ -361,6 +366,9 @@
 	<url><loc>https://bxsites.io/theme/vuepress/es/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/es/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/es/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/es/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/es/contribute/index.html</loc></url>
@@ -413,6 +421,7 @@
 	<url><loc>https://bxsites.io/theme/vuepress/it/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/it/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/guides/gradle-plugin/index.html</loc></url>
@@ -422,6 +431,9 @@
 	<url><loc>https://bxsites.io/theme/vuepress/it/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/it/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/it/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/it/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/it/contribute/index.html</loc></url>
@@ -474,6 +486,7 @@
 	<url><loc>https://bxsites.io/theme/vuepress/de/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/de/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/guides/gradle-plugin/index.html</loc></url>
@@ -483,6 +496,9 @@
 	<url><loc>https://bxsites.io/theme/vuepress/de/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/de/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/de/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/de/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/de/contribute/index.html</loc></url>
@@ -535,6 +551,7 @@
 	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/images/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/plugins/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/releases/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/coldbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/cli-providers/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/ai-agent-skills/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/gradle-plugin/index.html</loc></url>
@@ -544,6 +561,9 @@
 	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/java-openapi-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/java-javadoc-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/java-controller-scan-example/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/docbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/coldbox/index.html</loc></url>
+	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/docbox-example/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/guides/migrating-from-gitbook/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/troubleshooting/index.html</loc></url>
 	<url><loc>https://bxsites.io/theme/vuepress/ja/contribute/index.html</loc></url>

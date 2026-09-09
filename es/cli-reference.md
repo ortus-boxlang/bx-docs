@@ -590,3 +590,58 @@ bxSites lint
 
 Sale con `1` cuando cualquiera de las dos verificaciones encuentra algo,
 `0` en caso contrario.
+
+
+## `docbox`
+
+Genera una referencia de API BoxLang/CFML en el directorio de contenido a
+partir de la salida JSON de [DocBox](https://docbox.ortusbooks.com): el
+equivalente en BoxLang del generador de Javadoc de los plugins Java.
+Consulta [Referencia de API con DocBox](guides/docbox.md) y
+[`docbox`](configuration.md#docbox).
+
+```bash frame="terminal" title="Terminal"
+bxSites docbox
+bxSites docbox --mappings:models=models --projectTitle="Mi API"
+bxSites docbox --pagePathPrefix=api/classes --tags=api,classes
+bxSites docbox --jsonDir=build/docbox-json
+```
+
+| Flag | Propósito |
+|---|---|
+| `--mappings:<nombre>=<ruta>` | Un árbol de fuentes a documentar, repetible |
+| `--projectTitle` | Título de la página de resumen |
+| `--excludes` | Regex de rutas que DocBox omite |
+| `--pagePathPrefix` | Dónde se escriben las páginas |
+| `--tags` | Tags de frontmatter, separados por comas |
+| `--jsonDir` | Conservar la salida JSON de DocBox en lugar de descartarla |
+
+Sin mappings documenta las carpetas convencionales: `models`, `handlers`,
+`bifs`, `components`, `interceptors`. Necesita el módulo `bx-docbox`
+(`install-bx-module bx-docbox`).
+
+## `coldbox`
+
+Documenta una aplicación ColdBox a partir de sus convenciones - rutas,
+handlers, modelos y mappings de WireBox, módulos, interceptores y tareas
+programadas - sin arrancarla. Consulta
+[Aplicaciones ColdBox](guides/coldbox.md) y
+[`coldbox`](configuration.md#coldbox).
+
+```bash frame="terminal" title="Terminal"
+bxSites coldbox
+bxSites coldbox --appRoot=app
+bxSites coldbox --include=routes,handlers
+```
+
+| Flag | Propósito |
+|---|---|
+| `--appRoot` | Dónde vive la app ColdBox, relativo a la raíz del proyecto |
+| `--pagePathPrefix` | Dónde se escriben las páginas |
+| `--tags` | Tags de frontmatter, separados por comas |
+| `--include` | Conjuntos de páginas: `routes`, `handlers`, `models`, `modules`, `interceptors`, `scheduler` |
+
+Falla con `BxSites.NotAColdBoxApp` cuando la raíz resuelta no contiene
+`handlers/`, `config/ColdBox`, `config/Router` ni `modules_app/`. El
+detalle por clase viene de DocBox, así que `bx-docbox` enriquece esas
+páginas.

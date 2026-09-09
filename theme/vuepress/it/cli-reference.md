@@ -589,3 +589,57 @@ bxSites lint
 ```
 
 Esce con `1` quando uno dei due controlli trova qualcosa, `0` altrimenti.
+
+
+## `docbox`
+
+Genera un riferimento API BoxLang/CFML nella directory dei contenuti a
+partire dall'output JSON di [DocBox](https://docbox.ortusbooks.com): la
+controparte BoxLang del generatore Javadoc dei plugin Java. Vedi
+[Riferimento API con DocBox](guides/docbox.md) e
+[`docbox`](configuration.md#docbox).
+
+```bash frame="terminal" title="Terminal"
+bxSites docbox
+bxSites docbox --mappings:models=models --projectTitle="La mia API"
+bxSites docbox --pagePathPrefix=api/classes --tags=api,classes
+bxSites docbox --jsonDir=build/docbox-json
+```
+
+| Flag | Scopo |
+|---|---|
+| `--mappings:<nome>=<percorso>` | Un albero di sorgenti da documentare, ripetibile |
+| `--projectTitle` | Titolo della pagina di panoramica |
+| `--excludes` | Regex dei percorsi che DocBox salta |
+| `--pagePathPrefix` | Dove finiscono le pagine |
+| `--tags` | Tag di frontmatter, separati da virgola |
+| `--jsonDir` | Conserva l'output JSON di DocBox invece di scartarlo |
+
+Senza mapping documenta le cartelle convenzionali: `models`, `handlers`,
+`bifs`, `components`, `interceptors`. Richiede il modulo `bx-docbox`
+(`install-bx-module bx-docbox`).
+
+## `coldbox`
+
+Documenta un'applicazione ColdBox a partire dalle sue convenzioni - rotte,
+handler, model e mapping WireBox, moduli, interceptor e task pianificati -
+senza avviarla. Vedi [Applicazioni ColdBox](guides/coldbox.md) e
+[`coldbox`](configuration.md#coldbox).
+
+```bash frame="terminal" title="Terminal"
+bxSites coldbox
+bxSites coldbox --appRoot=app
+bxSites coldbox --include=routes,handlers
+```
+
+| Flag | Scopo |
+|---|---|
+| `--appRoot` | Dove si trova l'app ColdBox, relativo alla radice del progetto |
+| `--pagePathPrefix` | Dove finiscono le pagine |
+| `--tags` | Tag di frontmatter, separati da virgola |
+| `--include` | Gruppi di pagine: `routes`, `handlers`, `models`, `modules`, `interceptors`, `scheduler` |
+
+Fallisce con `BxSites.NotAColdBoxApp` se la radice risolta non contiene
+`handlers/`, `config/ColdBox`, `config/Router` o `modules_app/`. Il
+dettaglio per classe arriva da DocBox, quindi `bx-docbox` arricchisce
+quelle pagine.

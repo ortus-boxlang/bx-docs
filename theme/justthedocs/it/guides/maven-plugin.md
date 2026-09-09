@@ -131,3 +131,20 @@ Vedi la guida al [Plugin Gradle](gradle-plugin.md) per l'equivalente sul
 lato Gradle - entrambi i plugin racchiudono la stessa logica sottostante,
 quindi la copertura dei verbi e il comportamento restano identici tra i
 due build tool.
+
+## Generazione della documentazione BoxLang
+
+`bxsites:docbox` genera un riferimento API BoxLang/CFML da
+[DocBox](https://docbox.ortusbooks.com), per un progetto JVM le cui
+sorgenti includano classi `.bx`/`.cfc`. A differenza dei generatori Spring
+Boot è un wrapper sottile attorno al verbo `docbox` e non un generatore
+interno alla JVM: l'implementazione vive sul lato BoxLang, e una sola
+implementazione guidata da entrambi gli strumenti non può divergere.
+Vengono passate solo le opzioni effettivamente impostate; il resto resta
+come dice `bxsites.yaml`. Vedi
+[Riferimento API con DocBox](docbox.md); il modulo `bx-docbox` deve essere
+installato nel runtime BoxLang predisposto.
+
+**Non esiste un task ColdBox, di proposito.** Un'applicazione ColdBox si
+costruisce e si esegue con CommandBox, mai con Maven, quindi
+[`bxSites coldbox`](coldbox.md) resta una questione della CLI di bx-sites.

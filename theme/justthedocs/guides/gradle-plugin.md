@@ -181,6 +181,42 @@ are skipped; and since reflection has no access to source-level doc
 comments, generated pages list endpoints (method, path, handler
 signature) with no per-endpoint description text.
 
+## BoxLang doc generation
+
+`bxSitesDocBoxDoc` generates a BoxLang/CFML API reference from
+[DocBox](https://docbox.ortusbooks.com), for a JVM project whose sources
+include `.bx`/`.cfc` classes. Unlike the three Spring Boot generators
+above it's a thin wrapper around the bx-sites `docbox` verb rather than an
+in-JVM generator - the implementation lives on the BoxLang side, and one
+implementation both build tools drive can't drift the way two would. Opt
+in, and it's wired into no lifecycle by default:
+
+```kotlin title="build.gradle.kts"
+bxSites {
+    boxlang {
+        docbox {
+            enabled.set(true)
+            mappings.put("models", "models")
+            projectTitle.set("Bookshelf API")   // default: the site's own name + " API"
+            excludes.set("tests|build")
+            pagePathPrefix.set("api/docbox")    // this is the default
+            tags.set(listOf("api", "docbox"))   // this is the default
+        }
+    }
+}
+```
+
+Only options you actually set are passed through, so anything left out
+still falls through to `bxsites.yaml` - the config file stays the single
+source of truth and this block only overrides it. See
+[DocBox API Reference](docbox.md) for what the pages look like, and note
+that the `bx-docbox` module has to be installed in the provisioned BoxLang
+runtime.
+
+**There is deliberately no ColdBox task.** A ColdBox application is built
+and run through CommandBox, never Gradle, so
+[`bxSites coldbox`](coldbox.md) stays a bx-sites CLI concern.
+
 ## What's not built yet
 
 - **`bxSitesServe`'s live output streaming** - currently buffers output with a 30-minute timeout, both wrong for a task meant to run indefinitely.

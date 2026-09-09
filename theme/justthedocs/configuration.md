@@ -1379,6 +1379,89 @@ never from `bxsites.yaml`, so this file always stays safe to commit.
     }
     ```
 
+## `docbox`
+
+Settings for [`bxSites docbox`](cli-reference.md#docbox), which generates a
+BoxLang/CFML API reference from DocBox - see
+[DocBox API Reference](guides/docbox.md). Every key is optional; with no
+`docbox` block at all the verb documents whichever conventional source
+folders the project has (`models`, `handlers`, `bifs`, `components`,
+`interceptors`).
+
+- `projectTitle` - the title on the generated overview page. Defaults to
+  the site's own `name` with `" API"` appended.
+- `mappings` - mapping name to source directory. Each becomes a BoxLang
+  mapping DocBox resolves classes through, so the name is what appears as
+  the package on generated pages.
+- `excludes` - a regex of paths for DocBox to skip.
+- `pagePathPrefix` - where pages go, relative to the content dir. Defaults
+  to `api/docbox`.
+- `tags` - frontmatter tags on every generated page. Defaults to
+  `[ "api", "docbox" ]`.
+
+=== "YAML"
+    ```yaml title="bxsites.yaml"
+    docbox:
+      projectTitle: "My API"
+      mappings:
+        models: models
+        bifs: bifs
+      excludes: "tests|build"
+      pagePathPrefix: api/docbox
+      tags: [ api, docbox ]
+    ```
+
+=== "JSON"
+    ```json title="bxsites.json"
+    {
+    	"docbox": {
+    		"projectTitle": "My API",
+    		"mappings": { "models": "models", "bifs": "bifs" },
+    		"excludes": "tests|build",
+    		"pagePathPrefix": "api/docbox",
+    		"tags": [ "api", "docbox" ]
+    	}
+    }
+    ```
+
+## `coldbox`
+
+Settings for [`bxSites coldbox`](cli-reference.md#coldbox), which documents
+a ColdBox application from its conventions - see
+[ColdBox Applications](guides/coldbox.md). Every key is optional.
+
+- `appRoot` - where the ColdBox application lives, relative to the project
+  root. Defaults to the project root itself, which is the common case: a
+  site documenting the app it sits in.
+- `pagePathPrefix` - where pages go, relative to the content dir. Defaults
+  to `api/coldbox`.
+- `tags` - frontmatter tags on every generated page. Defaults to
+  `[ "api", "coldbox" ]`.
+- `include` - which page sets to generate, any of `routes`, `handlers`,
+  `models`, `modules`, `interceptors`, `scheduler`. All of them by default;
+  leave one out and it's skipped entirely.
+
+=== "YAML"
+    ```yaml title="bxsites.yaml"
+    coldbox:
+      appRoot: "."
+      pagePathPrefix: api/coldbox
+      tags: [ api, coldbox ]
+      include: [ routes, handlers, models, modules, interceptors, scheduler ]
+    ```
+
+=== "JSON"
+    ```json title="bxsites.json"
+    {
+    	"coldbox": {
+    		"appRoot": ".",
+    		"pagePathPrefix": "api/coldbox",
+    		"tags": [ "api", "coldbox" ],
+    		"include": [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
+    	}
+    }
+    ```
+
   === "TOML"
     ```toml title="bxsites.toml" linenums="1"
     [cloud]

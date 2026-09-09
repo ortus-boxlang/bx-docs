@@ -1090,3 +1090,80 @@ Welcome to {{ company }}! We build {{ product.name }}.
 新しいバージョンを切り出す方法、バージョンがどのように並び替えられビルドされるか、
 そして対象外の部分（ツリーごとの検索スコープ、非推奨/EOL フラグがないことなど）を
 含む全体像については [バージョニング](guides/versioning.md) を参照してください。
+
+
+## `docbox`
+
+DocBox から BoxLang/CFML の API リファレンスを生成する
+[`bxSites docbox`](cli-reference.md#docbox) の設定です。
+[DocBox APIリファレンス](guides/docbox.md) を参照してください。すべてのキーは
+省略可能で、`docbox` ブロックがない場合は慣例的なソースフォルダー
+（`models`、`handlers`、`bifs`、`components`、`interceptors`）が対象に
+なります。
+
+- `projectTitle` - 概要ページのタイトル。既定はサイトの `name` に
+  `" API"` を付けたもの。
+- `mappings` - マッピング名とソースディレクトリ。この名前が生成ページ上の
+  パッケージ名になります。
+- `excludes` - DocBox が除外するパスの正規表現。
+- `pagePathPrefix` - ページの出力先。既定は `api/docbox`。
+- `tags` - 生成される各ページの frontmatter タグ。既定は
+  `[ "api", "docbox" ]`。
+
+=== "YAML"
+    ```yaml title="bxsites.yaml"
+    docbox:
+      projectTitle: "My API"
+      mappings:
+        models: models
+      pagePathPrefix: api/docbox
+      tags: [ api, docbox ]
+    ```
+
+=== "JSON"
+    ```json title="bxsites.json"
+    {
+    	"docbox": {
+    		"projectTitle": "My API",
+    		"mappings": { "models": "models" },
+    		"pagePathPrefix": "api/docbox",
+    		"tags": [ "api", "docbox" ]
+    	}
+    }
+    ```
+
+## `coldbox`
+
+ColdBox アプリケーションを規約からドキュメント化する
+[`bxSites coldbox`](cli-reference.md#coldbox) の設定です。
+[ColdBoxアプリケーション](guides/coldbox.md) を参照してください。すべての
+キーは省略可能です。
+
+- `appRoot` - ColdBox アプリケーションの場所（プロジェクトルートからの
+  相対）。既定はプロジェクトルート自身。
+- `pagePathPrefix` - ページの出力先。既定は `api/coldbox`。
+- `tags` - 生成される各ページの frontmatter タグ。既定は
+  `[ "api", "coldbox" ]`。
+- `include` - 生成するページ群: `routes`、`handlers`、`models`、
+  `modules`、`interceptors`、`scheduler`。既定ではすべて。
+
+=== "YAML"
+    ```yaml title="bxsites.yaml"
+    coldbox:
+      appRoot: "."
+      pagePathPrefix: api/coldbox
+      tags: [ api, coldbox ]
+      include: [ routes, handlers, models, modules, interceptors, scheduler ]
+    ```
+
+=== "JSON"
+    ```json title="bxsites.json"
+    {
+    	"coldbox": {
+    		"appRoot": ".",
+    		"pagePathPrefix": "api/coldbox",
+    		"tags": [ "api", "coldbox" ],
+    		"include": [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
+    	}
+    }
+    ```
