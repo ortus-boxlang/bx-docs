@@ -73,15 +73,26 @@ tags: [api, controllers]
 | Method | Path | Handler |
 |---|---|---|
 | GET | `/api/books` | `String list()` |
-| GET | `/api/books/{id}` | `String getOne(String)` |
 | POST | `/api/books` | `String create(String)` |
+| GET | `/api/books/{id}` | `String getOne(String)` |
 
 ---
 
 クラスレベルの `@RequestMapping("/api/books")` というベースパスが各
 メソッド自身のマッピングと組み合わされて、各行の完全なパスを生成して
 いる点に注目してください - これは推測による文字列連結ではなく、実際の
-パス合成です。
+パス合成です。行の順序は、コンパイル済みクラスに対する
+JVM 自身のリフレクションからそのまま来ています（必ずしもソース順とは
+限りません - この例のために整えたものではなく、実際の挙動です）。
+
+エンドポイントは意図的に素の Markdown パイプテーブルとして描画されま
+す。bx-sites は 10 行以上のテーブルに独自のライブフィルターボックスを
+付けるため、エンドポイントの多いコントローラーは検索とフィルターを自動
+的に得られます。同時にパイプテーブルは生の Markdown のままでも読みやす
+く、あらゆるテーマで表示され、検索インデックスにもそのまま入ります。
+メンバーがテーブル行ではなくセクションである
+[Javadoc](java-javadoc-example.md) のページには、ジェネレーター自身の
+Alpine.js チップツールバーが付いています。
 
 ## これがカバーしないもの
 

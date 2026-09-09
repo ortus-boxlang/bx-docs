@@ -9,34 +9,34 @@ tags: [リファレンス, 設定]
 # 設定
 
 === "TOML"
-  ```toml title="bxsites.toml" linenums="1"
-  name = "My Docs"
-  description = ""
-  baseURL = "/"
-  search = true
-  mcp = false
-  nav = []
-  social = []
-  footer = false
-  lastUpdated = false
-  extraCss = []
-  extraJs = []
-  plugins = []
-  variables = {}
+    ```toml title="bxsites.toml" linenums="1"
+    name = "My Docs"
+    description = ""
+    baseURL = "/"
+    search = true
+    mcp = false
+    nav = []
+    social = []
+    footer = false
+    lastUpdated = false
+    extraCss = []
+    extraJs = []
+    plugins = []
+    variables = {}
 
-  [theme]
-  name = "bootstrap"
-  options = {}
-  logo = ""
-  favicon = ""
+    [theme]
+    name = "bootstrap"
+    options = {}
+    logo = ""
+    favicon = ""
 
-  [markdown]
-  enableAdmonition = true
+    [markdown]
+    enableAdmonition = true
 
-  [repo]
-  url = ""
-  editUri = ""
-  ```
+    [repo]
+    url = ""
+    editUri = ""
+    ```
 
 すべてのプロジェクトはルートに1つのサイト設定ファイルを持ちます - デフォルトかつ推奨の形式である
 `bxsites.yaml`（または `.yml`）か、そのまま使い続けたいプロジェクト向けの `bxsites.json` の
@@ -1132,6 +1132,17 @@ DocBox から BoxLang/CFML の API リファレンスを生成する
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    [docbox]
+    projectTitle = "My API"
+    pagePathPrefix = "api/docbox"
+    tags = [ "api", "docbox" ]
+
+    [docbox.mappings]
+    models = "models"
+    ```
+
 ## `coldbox`
 
 ColdBox アプリケーションを規約からドキュメント化する
@@ -1166,4 +1177,13 @@ ColdBox アプリケーションを規約からドキュメント化する
     		"include": [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
     	}
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    [coldbox]
+    appRoot = "."
+    pagePathPrefix = "api/coldbox"
+    tags = [ "api", "coldbox" ]
+    include = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
     ```

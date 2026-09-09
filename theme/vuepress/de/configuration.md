@@ -885,16 +885,16 @@ Datei gebündelt, statt einem `<link>`/`<script>`-Tag pro Eintrag - siehe
 ## `assets`
 
 === "TOML"
-  ```toml title="bxsites.toml" linenums="1"
-  [assets]
-  fingerprint = true
-  bundle = true
+    ```toml title="bxsites.toml" linenums="1"
+    [assets]
+    fingerprint = true
+    bundle = true
 
-  [assets.images]
-  enabled = true
-  widths = [ 400, 800, 1200, 1600 ]
-  formats = [ "original", "webp" ]
-  ```
+    [assets.images]
+    enabled = true
+    widths = [ 400, 800, 1200, 1600 ]
+    formats = [ "original", "webp" ]
+    ```
 
 === "YAML"
     ```yaml title="bxsites.yaml" linenums="1"
@@ -1213,6 +1213,17 @@ DocBox eine BoxLang-/CFML-API-Referenz erzeugt - siehe
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    [docbox]
+    projectTitle = "Meine API"
+    pagePathPrefix = "api/docbox"
+    tags = [ "api", "docbox" ]
+
+    [docbox.mappings]
+    models = "models"
+    ```
+
 ## `coldbox`
 
 Einstellungen für [`bxSites coldbox`](cli-reference.md#coldbox), das eine
@@ -1247,4 +1258,13 @@ ColdBox-Anwendung anhand ihrer Konventionen dokumentiert - siehe
     		"include": [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
     	}
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    [coldbox]
+    appRoot = "."
+    pagePathPrefix = "api/coldbox"
+    tags = [ "api", "coldbox" ]
+    include = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
     ```

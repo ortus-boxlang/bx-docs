@@ -60,8 +60,7 @@ tags: [api, controllers]
 
 And this body, reproduced below not as a code block but rendered for real -
 this *is* the generated page's actual body, live, confirmed against this
-exact controller class in the plugin's own test suite. Try the GET chip,
-or type "create" into the search box:
+exact controller class in the plugin's own test suite:
 
 ---
 
@@ -69,33 +68,11 @@ or type "create" into the search box:
 
 `com.example.BookController`
 
-<style>
-.bx-filter-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 1.5rem 0; }
-.bx-filter-search { flex: 1 1 12rem; min-width: 8rem; padding: 0.4rem 0.75rem; border: 1px solid var(--bxsites-border); border-radius: 999px; background: var(--bxsites-bg); color: var(--bxsites-text); font-size: 0.9rem; }
-.bx-filter-chip { padding: 0.35rem 0.9rem; border: 1px solid var(--bxsites-border); border-radius: 999px; background: transparent; color: var(--bxsites-muted); font-size: 0.85rem; cursor: pointer; transition: all 0.15s ease; }
-.bx-filter-chip:hover { border-color: var(--bxsites-accent); color: var(--bxsites-text); }
-.bx-filter-chip.bx-filter-chip-on { background: var(--bxsites-accent); border-color: var(--bxsites-accent); color: var(--bxsites-bg); }
-</style>
-
-<div class="bx-filter" x-data="{ q: '', k: 'all' }">
-
-<div class="bx-filter-toolbar">
-<input type="search" class="bx-filter-search" x-model="q" placeholder="Search...">
-<button type="button" class="bx-filter-chip" :class="{ 'bx-filter-chip-on': k==='all' }" @click="k='all'">All</button>
-<button type="button" class="bx-filter-chip" :class="{ 'bx-filter-chip-on': k==='get' }" @click="k='get'">GET</button>
-<button type="button" class="bx-filter-chip" :class="{ 'bx-filter-chip-on': k==='post' }" @click="k='post'">POST</button>
-</div>
-
-<div class="bxsites-table-wrap"><table class="table">
-<thead><tr><th>Method</th><th>Path</th><th>Handler</th></tr></thead>
-<tbody>
-<tr data-k="get" data-n="/api/books String list()" x-show="(k==='all'||k===$el.dataset.k)&&(!q||$el.dataset.n.toLowerCase().includes(q.toLowerCase()))"><td>GET</td><td><code>/api/books</code></td><td><code>String list()</code></td></tr>
-<tr data-k="post" data-n="/api/books String create(String)" x-show="(k==='all'||k===$el.dataset.k)&&(!q||$el.dataset.n.toLowerCase().includes(q.toLowerCase()))"><td>POST</td><td><code>/api/books</code></td><td><code>String create(String)</code></td></tr>
-<tr data-k="get" data-n="/api/books/{id} String getOne(String)" x-show="(k==='all'||k===$el.dataset.k)&&(!q||$el.dataset.n.toLowerCase().includes(q.toLowerCase()))"><td>GET</td><td><code>/api/books/{id}</code></td><td><code>String getOne(String)</code></td></tr>
-</tbody>
-</table></div>
-
-</div>
+| Method | Path | Handler |
+|---|---|---|
+| GET | `/api/books` | `String list()` |
+| POST | `/api/books` | `String create(String)` |
+| GET | `/api/books/{id}` | `String getOne(String)` |
 
 ---
 
@@ -104,10 +81,14 @@ with each method's own mapping to produce the full path in each row - real
 path composition, not string concatenation guesswork. Row order comes
 straight from the JVM's own reflection over the compiled class (not
 necessarily source order - real behavior, not tidied up for this example).
-The toolbar/chips/search box above are real, working Alpine.js, built
-entirely from plain HTML attributes and a small inline stylesheet driven by
-this theme's own `--bxsites-*` variables, exactly like the Javadoc
-generator's toolbar.
+
+The endpoints render as a plain Markdown pipe table, deliberately. bx-sites
+gives any table of ten or more rows its own live filter box, so a controller
+with a long endpoint list gets searching and filtering for free, while a
+pipe table stays readable in the raw Markdown, themed everywhere, and fully
+in the search index. The [Javadoc](java-javadoc-example.md) pages, whose
+members are sections rather than table rows, do carry the generator's own
+Alpine.js chip toolbar.
 
 ## What this doesn't cover
 

@@ -199,15 +199,27 @@ suite de pruebas del plugin:</p>
 </thead>
 <tbody>
 <tr><td>GET</td><td><code>/api/books</code></td><td><code>String list()</code></td></tr>
-<tr><td>GET</td><td><code>/api/books/{id}</code></td><td><code>String getOne(String)</code></td></tr>
 <tr><td>POST</td><td><code>/api/books</code></td><td><code>String create(String)</code></td></tr>
+<tr><td>GET</td><td><code>/api/books/{id}</code></td><td><code>String getOne(String)</code></td></tr>
 </tbody>
 </table></div>
 <hr />
 <p>Fíjate en que la ruta base a nivel de clase <code>@RequestMapping(&quot;/api/books&quot;)</code>
 se combina con el mapeo propio de cada método para producir la ruta
 completa en cada fila - composición real de rutas, no una concatenación
-de cadenas por conjetura.</p>
+de cadenas por conjetura. El orden de las filas viene
+directamente de la propia reflexión de la JVM sobre la clase compilada (no
+necesariamente el orden del código fuente - comportamiento real, sin
+retoques para este ejemplo).</p>
+<p>Los endpoints se renderizan como una tabla de pipes de Markdown, a
+propósito. bx-sites da a cualquier tabla de diez filas o más su propio
+campo de filtrado en vivo, así que un controlador con una lista larga de
+endpoints obtiene búsqueda y filtrado gratis, mientras que una tabla de
+pipes sigue siendo legible en el Markdown en crudo, se tematiza en todas
+partes y entra entera en el índice de búsqueda. Las páginas de
+<a href="/theme/docsy/es/guides/java-javadoc-example/index.html">Javadoc</a>, cuyos miembros son secciones y no
+filas de tabla, sí llevan la barra de chips de Alpine.js del propio
+generador.</p>
 <h2 id="lo-que-esto-no-cubre"><a href="#lo-que-esto-no-cubre" id="lo-que-esto-no-cubre" name="lo-que-esto-no-cubre" class="anchor"></a>Lo que esto no cubre</h2>
 <p><strong>Alcance deliberadamente reducido</strong>, en el mismo espíritu que el
 generador de Javadoc: solo se reconocen las clases anotadas directamente
@@ -224,7 +236,7 @@ completo.</p>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/es/guides/java-controller-scan-example.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Editar esta p&aacute;gina</a><a href="/theme/docsy/es/guides/java-controller-scan-example.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Descargar Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> &Uacute;ltima actualizaci&oacute;n Sep 9, 2026, 4&#x3a;56&#x3a;00 PM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/es/guides/java-controller-scan-example.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Editar esta p&aacute;gina</a><a href="/theme/docsy/es/guides/java-controller-scan-example.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Descargar Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> &Uacute;ltima actualizaci&oacute;n Sep 9, 2026, 8&#x3a;29&#x3a;13 PM</span></div>
 
 			</article>
 

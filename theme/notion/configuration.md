@@ -513,6 +513,18 @@ Which search UI `search: true` wires up:
       }
       ```
 
+  === "TOML"
+      ```toml title="bxsites.toml" linenums="1"
+      search = true
+
+      [searchProvider]
+      provider = "pagefind"
+
+      [searchProvider.pagefind]
+      bin = "pagefind"
+      options = []
+      ```
+
 ## `mcp`
 
 `false` (the default) skips it entirely. `true` writes three files on
@@ -1225,6 +1237,22 @@ switcher.
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+    [i18n.defaultLocale]
+    code = "en"
+    label = "English"
+
+    [[i18n.locales]]
+    code = "es"
+    label = "Español"
+
+    [[i18n.locales]]
+    code = "ar"
+    label = "العربية"
+    dir = "rtl"
+    ```
+
 See [Internationalization](guides/i18n.md) for the full picture -
 untranslated-page fallback, the language switcher, and what isn't
 translated yet.
@@ -1291,10 +1319,10 @@ featured images, and SEO/social metadata.
     ```
 
 === "TOML"
-  ```toml title="bxsites.toml"
-  [versions]
-  default = "1.0.x"
-  ```
+    ```toml title="bxsites.toml"
+    [versions]
+    default = "1.0.x"
+    ```
 
 See [Versioning](guides/versioning.md#publishing-a-default-version-at-the-site-root)
 for what publishing a default version actually changes (the `/next/` tree,
@@ -1379,6 +1407,16 @@ never from `bxsites.yaml`, so this file always stays safe to commit.
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    [cloud]
+    siteId = "3f2b1c9a-....-....-............"
+    apiUrl = "https://cloud.bxsites.app"
+    ```
+
+See [Deployment](guides/deployment.md#the-publish-command) for the full
+`publish` workflow.
+
 ## `docbox`
 
 Settings for [`bxSites docbox`](cli-reference.md#docbox), which generates a
@@ -1424,6 +1462,19 @@ folders the project has (`models`, `handlers`, `bifs`, `components`,
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    [docbox]
+    projectTitle = "My API"
+    excludes = "tests|build"
+    pagePathPrefix = "api/docbox"
+    tags = [ "api", "docbox" ]
+
+    [docbox.mappings]
+    models = "models"
+    bifs = "bifs"
+    ```
+
 ## `coldbox`
 
 Settings for [`bxSites coldbox`](cli-reference.md#coldbox), which documents
@@ -1462,15 +1513,14 @@ a ColdBox application from its conventions - see
     }
     ```
 
-  === "TOML"
-    ```toml title="bxsites.toml" linenums="1"
-    [cloud]
-    siteId = "3f2b1c9a-....-....-............"
-    apiUrl = "https://cloud.bxsites.app"
+=== "TOML"
+    ```toml title="bxsites.toml"
+    [coldbox]
+    appRoot = "."
+    pagePathPrefix = "api/coldbox"
+    tags = [ "api", "coldbox" ]
+    include = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
     ```
-
-See [Deployment](guides/deployment.md#the-publish-command) for the full
-`publish` workflow.
 
 ## Versioning
 

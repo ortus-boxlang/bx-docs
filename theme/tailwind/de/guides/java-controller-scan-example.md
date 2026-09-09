@@ -73,15 +73,27 @@ genau dieser Controller-Klasse in der eigenen Testsuite des Plugins:
 | Method | Path | Handler |
 |---|---|---|
 | GET | `/api/books` | `String list()` |
-| GET | `/api/books/{id}` | `String getOne(String)` |
 | POST | `/api/books` | `String create(String)` |
+| GET | `/api/books/{id}` | `String getOne(String)` |
 
 ---
 
 Man beachte: Der klassenweite Basispfad `@RequestMapping("/api/books")`
 wird mit dem jeweils eigenen Mapping jeder Methode kombiniert, um den
 vollständigen Pfad in jeder Zeile zu erzeugen - echte Pfadzusammensetzung,
-kein geratenes String-Zusammenfügen.
+kein geratenes String-Zusammenfügen. Die Zeilenreihenfolge stammt direkt
+aus der Reflection der JVM über die kompilierte Klasse (nicht zwingend die
+Quellcode-Reihenfolge - echtes Verhalten, für dieses Beispiel nicht
+zurechtgerückt).
+
+Die Endpunkte werden bewusst als schlichte Markdown-Pipe-Tabelle
+gerendert. bx-sites gibt jeder Tabelle ab zehn Zeilen ein eigenes
+Live-Filterfeld, ein Controller mit langer Endpunktliste bekommt Suche und
+Filter also geschenkt, während eine Pipe-Tabelle im rohen Markdown lesbar
+bleibt, überall gethemt wird und vollständig im Suchindex landet. Die
+[Javadoc](java-javadoc-example.md)-Seiten, deren Mitglieder Abschnitte
+statt Tabellenzeilen sind, tragen sehr wohl die eigene
+Alpine.js-Chip-Leiste des Generators.
 
 ## Was das nicht abdeckt
 

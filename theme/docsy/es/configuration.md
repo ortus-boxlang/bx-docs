@@ -876,16 +876,16 @@ prefijo `baseURL`; una URL absoluta se usa tal cual). Las entradas de
 === "YAML"
 
 === "TOML"
-  ```toml title="bxsites.toml" linenums="1"
-  [assets]
-  fingerprint = true
-  bundle = true
+    ```toml title="bxsites.toml" linenums="1"
+    [assets]
+    fingerprint = true
+    bundle = true
 
-  [assets.images]
-  enabled = true
-  widths = [ 400, 800, 1200, 1600 ]
-  formats = [ "original", "webp" ]
-  ```
+    [assets.images]
+    enabled = true
+    widths = [ 400, 800, 1200, 1600 ]
+    formats = [ "original", "webp" ]
+    ```
     ```yaml title="bxsites.yaml" linenums="1"
     assets:
       fingerprint: true
@@ -1234,6 +1234,17 @@ opcionales; sin bloque `docbox` se documentan las carpetas convencionales
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    [docbox]
+    projectTitle = "Mi API"
+    pagePathPrefix = "api/docbox"
+    tags = [ "api", "docbox" ]
+
+    [docbox.mappings]
+    models = "models"
+    ```
+
 ## `coldbox`
 
 Ajustes de [`bxSites coldbox`](cli-reference.md#coldbox), que documenta una
@@ -1268,4 +1279,13 @@ aplicación ColdBox a partir de sus convenciones - consulta
     		"include": [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
     	}
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    [coldbox]
+    appRoot = "."
+    pagePathPrefix = "api/coldbox"
+    tags = [ "api", "coldbox" ]
+    include = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
     ```
