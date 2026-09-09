@@ -230,6 +230,20 @@ class singleton {
 				expect( page ).notToInclude( "helper(" );
 			} );
 
+			it( "never advises installing bx-docbox when it is already installed and working", function() {
+				if ( !new "models.build.DocBoxRunner@bxsites"().isAvailable() ) {
+					return;
+				}
+
+				var projectRoot = newProjectRoot();
+				var result = verb.run( { projectRoot : projectRoot } );
+
+				// The pages have real metadata, so nothing should be telling
+				// the reader to go install what they already have.
+				expect( result.message ).notToInclude( "bx-docbox" );
+				expect( fileRead( projectRoot & "/docs/api/coldbox/handlers/Main.md" ) ).notToInclude( "bx-docbox" );
+			} );
+
 			it( "keeps a module's handler metadata separate from the app's own", function() {
 				if ( !new "models.build.DocBoxRunner@bxsites"().isAvailable() ) {
 					return;

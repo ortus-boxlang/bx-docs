@@ -63,6 +63,7 @@ class {
 
 		var routes = collectRoutes( app )
 		var pagePathPrefix = pagePathPrefixFor( settings, arguments.options )
+		var metadata = classDocs( app, include )
 
 		var generated = new "models.build.ColdBoxDocGenerator@bxsites"().generate(
 			app            = app,
@@ -71,7 +72,8 @@ class {
 			pagePathPrefix = pagePathPrefix,
 			tags           = tagsFor( settings, arguments.options ),
 			include        = include,
-			classDocs      = classDocs( app, include ),
+			classDocs      = metadata.docs,
+			metadataAdvice = metadata.advice,
 			mappings       = include.findNoCase( "models" ) || include.findNoCase( "modules" ) ? collectMappings( app ) : [],
 			interceptors   = include.findNoCase( "interceptors" ) ? configParser.interceptorDeclarations( app.configFile ) : [],
 			tasks          = include.findNoCase( "scheduler" ) ? collectTasks( app ) : []
@@ -79,7 +81,7 @@ class {
 
 		return {
 			exitCode : 0,
-			message  : report( app, routes, generated, contentDir, pagePathPrefix )
+			message  : report( app, routes, generated, contentDir, pagePathPrefix, metadata.warnings )
 		}
 	}
 
@@ -93,12 +95,22 @@ class {
 	 * with the run: the pages are the deliverable, not the metadata
 	 * behind them.
 	 *
-	 * Returns an empty struct rather than throwing when bx-docbox isn't
-	 * installed. The generator says so on the page, and every other page
-	 * set is unaffected.
+	 * Never throws: a metadata problem degrades the handler, model and
+	 * interceptor pages, it doesn't fail the run, and every other page set
+	 * is unaffected either way.
+	 *
+	 * The two ways it can come back empty are deliberately not the same
+	 * thing. bx-docbox not being installed is the ordinary case, and the
+	 * generator's own default advice ("install it") is right. A DocBox run
+	 * that fails with the module installed is not: telling that reader to
+	 * install what they already have sends them the wrong way, so the
+	 * failure travels back as `advice` (what the pages say) and as a
+	 * `warnings` entry (what the verb prints), carrying the real error.
 	 *
 	 * @app A `ColdBoxAppScanner.scan()` result
 	 * @include The page sets being generated
+	 *
+	 * @return `{ docs, advice, warnings }` - `advice` is "" to keep the generator's default
 	 */
 	private struct function classDocs( required struct app, required array include ) {
 		// Captured first: an arrow closure has its own `arguments` scope,
@@ -107,13 +119,13 @@ class {
 		var kinds = [ "handler", "model", "interceptor" ].filter( ( kind ) => requested.findNoCase( kind & "s" ) > 0 )
 
 		if ( !kinds.len() ) {
-			return {}
+			return noClassDocs()
 		}
 
 		var runner = new "models.build.DocBoxRunner@bxsites"()
 
 		if ( !runner.isAvailable() ) {
-			return {}
+			return noClassDocs()
 		}
 
 		var sources = []
@@ -142,7 +154,7 @@ class {
 		}
 
 		if ( !sources.len() ) {
-			return {}
+			return noClassDocs()
 		}
 
 		var jsonDir = createTempDirectory( prefix = "bxsites-coldbox-" )
@@ -150,14 +162,27 @@ class {
 		try {
 			runner.run( sources = sources, outputDir = jsonDir, projectTitle = "ColdBox Application" )
 
-			return indexClassDocs( jsonDir, rootsByMapping )
+			return { "docs" : indexClassDocs( jsonDir, rootsByMapping ), "advice" : "", "warnings" : [] }
 		} catch ( any e ) {
-			return {}
+			// Installed, but it failed - say that, and say why, rather than
+			// letting the pages advise an install that has already happened.
+			var failure = "The bx-docbox module is installed, but reading this application's classes failed: #e.message#"
+
+			return { "docs" : {}, "advice" : failure, "warnings" : [ failure ] }
 		} finally {
 			if ( directoryExists( jsonDir ) ) {
 				directoryDelete( jsonDir, true )
 			}
 		}
+	}
+
+	/**
+	 * No class metadata, for a reason the generator's own default advice
+	 * already covers - bx-docbox isn't installed, or there is nothing of
+	 * that kind to document.
+	 */
+	private struct function noClassDocs() {
+		return { "docs" : {}, "advice" : "", "warnings" : [] }
 	}
 
 	/**
@@ -365,13 +390,15 @@ class {
 	 * @generated ColdBoxDocGenerator's result struct
 	 * @contentDir The project's content directory
 	 * @pagePathPrefix Where pages were written, relative to `contentDir`
+	 * @metadataWarnings Anything that went wrong reading class metadata
 	 */
 	private string function report(
 		required struct app,
 		required array routes,
 		required struct generated,
 		required string contentDir,
-		required string pagePathPrefix
+		required string pagePathPrefix,
+		array metadataWarnings = []
 	) {
 		var handlerCount = arguments.app.handlers.len()
 			+ arguments.app.modules.reduce( ( total, module ) => total + module.handlers.len(), 0 )
@@ -379,7 +406,19 @@ class {
 			"Documented #arguments.routes.len()# route(s), #handlerCount# handler(s), #arguments.app.models.len()# model(s) and #arguments.app.modules.len()# module(s) into #arguments.generated.pageFiles.len()# page(s) under #arguments.contentDir#/#arguments.pagePathPrefix#"
 		]
 
-		for ( var warning in arguments.generated.warnings ) {
+		// A metadata failure reaches the generator as its `metadataAdvice`,
+		// so each affected page set already reports it in its own warning.
+		// Only print it on its own when nothing else picked it up - an app
+		// with no handlers and no models, say.
+		var reported = arguments.generated.warnings
+
+		for ( var warning in arguments.metadataWarnings ) {
+			if ( !reported.some( ( existing ) => existing.findNoCase( warning ) > 0 ) ) {
+				lines.append( "  - " & warning )
+			}
+		}
+
+		for ( var warning in reported ) {
 			lines.append( "  - " & warning )
 		}
 

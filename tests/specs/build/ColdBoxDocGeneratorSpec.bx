@@ -378,6 +378,52 @@ class extends="testbox.system.BaseSpec" {
 				expect( index ).toInclude( "| [`Orders`](api/Orders.md) | `api` | 1 | 1 |" );
 			} );
 
+			it( "uses a caller-supplied metadataAdvice instead of the install advice, everywhere it explains missing metadata", function() {
+				var contentDir = newTempDir();
+				// What the coldbox verb passes when bx-docbox IS installed but
+				// the DocBox run failed: telling that reader to install it
+				// would send them the wrong way.
+				var failure = "The bx-docbox module is installed, but reading this application's classes failed: boom";
+
+				var app = fixtureApp();
+				app.interceptors = [ { "name" : "Tracker", "file" : "/app/interceptors/Tracker.bx" } ];
+
+				var result = generator.generate(
+					app            = app,
+					routes         = fixtureRoutes(),
+					contentDir     = contentDir,
+					include        = [ "handlers", "models", "interceptors" ],
+					metadataAdvice = failure
+				);
+
+				var handlerPage = fileRead( contentDir & "/api/coldbox/handlers/Main.md" );
+				expect( handlerPage ).toInclude( failure );
+				expect( handlerPage ).notToInclude( "Install the `bx-docbox` module and re-run." );
+
+				expect( fileRead( contentDir & "/api/coldbox/models/UserService.md" ) ).toInclude( failure );
+				expect( fileRead( contentDir & "/api/coldbox/interceptors.md" ) ).toInclude( failure );
+
+				var advised = result.warnings.filter( ( warning ) => warning.findNoCase( failure ) > 0 );
+				expect( advised.len() ).toBeGT( 0, "the run's own warnings should carry the real cause too" );
+				expect( result.warnings.filter( ( warning ) => warning.findNoCase( "install the `bx-docbox`" ) > 0 ).len() ).toBe( 0 );
+			} );
+
+			it( "falls back to the install advice when metadataAdvice is blank", function() {
+				var contentDir = newTempDir();
+
+				var result = generator.generate(
+					app            = fixtureApp(),
+					routes         = fixtureRoutes(),
+					contentDir     = contentDir,
+					include        = [ "handlers" ],
+					metadataAdvice = "   "
+				);
+
+				expect( result.warnings[ 1 ] ).toInclude( "Install the `bx-docbox` module and re-run." );
+				expect( fileRead( contentDir & "/api/coldbox/handlers/Main.md" ) )
+					.toInclude( "Install the `bx-docbox` module and re-run." );
+			} );
+
 			it( "links the handlers index from the app index", function() {
 				var contentDir = newTempDir();
 				generator.generate( app = fixtureApp(), routes = fixtureRoutes(), contentDir = contentDir, classDocs = handlerDocs() );

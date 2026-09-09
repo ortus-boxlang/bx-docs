@@ -30,6 +30,16 @@ class {
 		sections = [ "routes", "handlers", "models", "modules", "interceptors", "scheduler" ]
 
 		/**
+		 * What to tell a reader when a class' metadata is missing. Missing
+		 * metadata almost always means bx-docbox isn't installed, so that's
+		 * the default - but it is not the only cause (a DocBox run can fail
+		 * with the module installed), and saying "install bx-docbox" to
+		 * someone who already has it sends them the wrong way. `generate()`
+		 * takes a `metadataAdvice` override for exactly that case.
+		 */
+		defaultMetadataAdvice = "Install the `bx-docbox` module and re-run."
+
+		/**
 		 * ColdBox's own handler lifecycle methods - implicit hooks the
 		 * framework calls, not actions a URL can reach. Listed in their
 		 * own section so a reader isn't left wondering which of a
@@ -54,6 +64,7 @@ class {
 	 * @pagePathPrefix Where pages go, relative to `contentDir`
 	 * @tags Frontmatter tags applied to every generated page
 	 * @include Which page sets to emit
+	 * @metadataAdvice What to tell a reader when a class' metadata is missing; defaults to `static.defaultMetadataAdvice`
 	 *
 	 * @return `{ pageFiles, warnings }`
 	 */
@@ -67,8 +78,10 @@ class {
 		struct classDocs = {},
 		array mappings = [],
 		array interceptors = [],
-		array tasks = []
+		array tasks = [],
+		string metadataAdvice = ""
 	) {
+		var advice = len( trim( arguments.metadataAdvice ) ) ? trim( arguments.metadataAdvice ) : static.defaultMetadataAdvice
 		var pagesRoot = arguments.contentDir & "/" & arguments.pagePathPrefix.reReplace( "^/+|/+$", "", "all" )
 		var pageFiles = []
 		var warnings = []
@@ -86,7 +99,7 @@ class {
 		}
 
 		if ( arguments.include.findNoCase( "handlers" ) ) {
-			var handlerResult = writeHandlerPages( arguments.app, arguments.routes, pagesRoot, arguments.tags, arguments.classDocs )
+			var handlerResult = writeHandlerPages( arguments.app, arguments.routes, pagesRoot, arguments.tags, arguments.classDocs, advice )
 			pageFiles.append( handlerResult.pageFiles, true )
 			warnings.append( handlerResult.warnings, true )
 
@@ -96,7 +109,7 @@ class {
 		}
 
 		if ( arguments.include.findNoCase( "models" ) ) {
-			var modelResult = writeModelPages( arguments.app, arguments.mappings, pagesRoot, arguments.tags, arguments.classDocs )
+			var modelResult = writeModelPages( arguments.app, arguments.mappings, pagesRoot, arguments.tags, arguments.classDocs, advice )
 			pageFiles.append( modelResult.pageFiles, true )
 			warnings.append( modelResult.warnings, true )
 
@@ -113,7 +126,7 @@ class {
 
 		if ( arguments.include.findNoCase( "interceptors" ) && ( arguments.interceptors.len() || arguments.app.interceptors.len() ) ) {
 			var interceptorsFile = pagesRoot & "/interceptors.md"
-			writePage( interceptorsFile, renderInterceptorsPage( arguments.app, arguments.interceptors, arguments.classDocs, arguments.tags ) )
+			writePage( interceptorsFile, renderInterceptorsPage( arguments.app, arguments.interceptors, arguments.classDocs, arguments.tags, advice ) )
 			pageFiles.append( interceptorsFile )
 			sectionLinks.append( { "title" : "Interceptors", "link" : "interceptors.md" } )
 		}
@@ -141,6 +154,7 @@ class {
 	 * @pagesRoot Absolute path of this generator's page root
 	 * @tags Frontmatter tags
 	 * @classDocs DocBox class metadata, keyed by `classKey()`
+	 * @advice What to tell a reader when a handler's metadata is missing
 	 *
 	 * @return `{ pageFiles, warnings }`
 	 */
@@ -149,7 +163,8 @@ class {
 		required array routes,
 		required string pagesRoot,
 		required array tags,
-		required struct classDocs
+		required struct classDocs,
+		required string advice
 	) {
 		var handlers = arguments.app.handlers.duplicate()
 
@@ -174,7 +189,7 @@ class {
 			}
 
 			var pageFile = arguments.pagesRoot & "/handlers/" & handlerPagePath( handler.module, handler.name )
-			writePage( pageFile, renderHandlerPage( handler, doc, arguments.routes, arguments.tags ) )
+			writePage( pageFile, renderHandlerPage( handler, doc, arguments.routes, arguments.tags, arguments.advice ) )
 			pageFiles.append( pageFile )
 		}
 
@@ -183,9 +198,7 @@ class {
 		pageFiles.append( indexFile )
 
 		if ( undocumented == handlers.len() ) {
-			warnings.append(
-				"Handler pages list no actions - handler metadata comes from DocBox, so install the bx-docbox module to document each handler's actions"
-			)
+			warnings.append( "Handler pages list no actions - handler metadata comes from DocBox. " & arguments.advice )
 		} else if ( undocumented ) {
 			warnings.append( "#undocumented# handler(s) had no readable metadata and list no actions" )
 		}
@@ -487,12 +500,14 @@ class {
 	 * @declared Interceptors registered in `config/ColdBox`
 	 * @classDocs DocBox class metadata keyed by `classKey()`
 	 * @tags Frontmatter tags
+	 * @advice What to tell a reader when an interceptor's metadata is missing
 	 */
 	private string function renderInterceptorsPage(
 		required struct app,
 		required array declared,
 		required struct classDocs,
-		required array tags
+		required array tags,
+		required string advice
 	) {
 		var lines = [
 			frontMatter( "Interceptors", "The interceptors this application registers, and the interception points each one listens for.", arguments.tags ),
@@ -530,7 +545,7 @@ class {
 					lines.append( "" )
 				}
 
-				lines.append( points.len() ? "Listens for " & points.toList( ", " ) : "No interception points found - install the `bx-docbox` module to read them." )
+				lines.append( points.len() ? "Listens for " & points.toList( ", " ) : "No interception points found. " & arguments.advice )
 				lines.append( "" )
 			}
 		}
@@ -576,6 +591,7 @@ class {
 	 * @pagesRoot Absolute path of this generator's page root
 	 * @tags Frontmatter tags
 	 * @classDocs DocBox class metadata, keyed by `classKey()`
+	 * @advice What to tell a reader when a model's metadata is missing
 	 *
 	 * @return `{ pageFiles, warnings }`
 	 */
@@ -584,7 +600,8 @@ class {
 		required array mappings,
 		required string pagesRoot,
 		required array tags,
-		required struct classDocs
+		required struct classDocs,
+		required string advice
 	) {
 		var models = arguments.app.models.map( ( model ) => {
 			return { "name" : model.name, "file" : model.file, "module" : "" };
@@ -612,7 +629,7 @@ class {
 			}
 
 			var pageFile = arguments.pagesRoot & "/models/" & handlerPagePath( model.module, model.name )
-			writePage( pageFile, renderModelPage( model, doc, arguments.mappings, arguments.tags ) )
+			writePage( pageFile, renderModelPage( model, doc, arguments.mappings, arguments.tags, arguments.advice ) )
 			pageFiles.append( pageFile )
 		}
 
@@ -621,9 +638,7 @@ class {
 		pageFiles.append( indexFile )
 
 		if ( models.len() && undocumented == models.len() ) {
-			warnings.append(
-				"Model pages list no members - model metadata comes from DocBox, so install the bx-docbox module to document them"
-			)
+			warnings.append( "Model pages list no members - model metadata comes from DocBox. " & arguments.advice )
 		} else if ( undocumented ) {
 			warnings.append( "#undocumented# model(s) had no readable metadata and list no members" )
 		}
@@ -711,12 +726,14 @@ class {
 	 * @doc Its DocBox class metadata, or an empty struct when there is none
 	 * @mappings Every parsed WireBox mapping
 	 * @tags Frontmatter tags
+	 * @advice What to tell a reader when the metadata is missing
 	 */
 	private string function renderModelPage(
 		required struct model,
 		required struct doc,
 		required array mappings,
-		required array tags
+		required array tags,
+		required string advice
 	) {
 		var hint = trim( arguments.doc.hint ?: "" )
 		var lines = [
@@ -776,7 +793,7 @@ class {
 		}
 
 		if ( arguments.doc.isEmpty() ) {
-			lines.append( "No metadata was readable for this model, so its members aren't listed. Install the `bx-docbox` module and re-run to document them." )
+			lines.append( "No metadata was readable for this model, so its members aren't listed. " & arguments.advice )
 			lines.append( "" )
 		}
 
@@ -953,12 +970,14 @@ class {
 	 * @doc Its DocBox class metadata, or an empty struct when there is none
 	 * @routes Every parsed route
 	 * @tags Frontmatter tags
+	 * @advice What to tell a reader when the metadata is missing
 	 */
 	private string function renderHandlerPage(
 		required struct handler,
 		required struct doc,
 		required array routes,
-		required array tags
+		required array tags,
+		required string advice
 	) {
 		var hint = trim( arguments.doc.hint ?: "" )
 		var lines = [
@@ -982,7 +1001,7 @@ class {
 		if ( !actions.len() && !lifecycle.len() ) {
 			lines.append(
 				arguments.doc.isEmpty()
-					? "No metadata was readable for this handler, so its actions aren't listed. Install the `bx-docbox` module and re-run to document them."
+					? "No metadata was readable for this handler, so its actions aren't listed. " & arguments.advice
 					: "This handler declares no public actions."
 			)
 			lines.append( "" )
