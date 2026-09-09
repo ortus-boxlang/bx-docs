@@ -2089,7 +2089,7 @@ class {
 	 * ThemeRenderer.bx uses for its built-in themes folder.
 	 */
 	private string function moduleAssetsDir() {
-		return getDirectoryFromPath( getCurrentTemplatePath() ).reReplace( "[\/]models[\/]build[\/]?$", "" ) & "/resources/assets"
+		return getDirectoryFromPath( getCurrentTemplatePath() ).reReplace( "[\\/]models[\\/]build[\\/]?$", "" ) & "/resources/assets"
 	}
 
 	/**

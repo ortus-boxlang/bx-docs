@@ -123,7 +123,7 @@ class {
 	 * ThemeRenderer.bx's `computeModuleAssetsDir()`.
 	 */
 	private string function moduleAssetsDir() {
-		return getDirectoryFromPath( getCurrentTemplatePath() ).reReplace( "[\/]models[\/]build[\/]?$", "" ) & "/resources/assets"
+		return getDirectoryFromPath( getCurrentTemplatePath() ).reReplace( "[\\/]models[\\/]build[\\/]?$", "" ) & "/resources/assets"
 	}
 
 }

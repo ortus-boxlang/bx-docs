@@ -46,7 +46,7 @@ class {
 	 * not the project being scaffolded into.
 	 */
 	private string function moduleThemesDir() {
-		return getDirectoryFromPath( getCurrentTemplatePath() ).reReplace( "[\/]models[\/]build[\/]?$", "" ) & "/resources/themes"
+		return getDirectoryFromPath( getCurrentTemplatePath() ).reReplace( "[\\/]models[\\/]build[\\/]?$", "" ) & "/resources/themes"
 	}
 
 }

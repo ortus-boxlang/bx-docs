@@ -1416,6 +1416,13 @@ class extends="testbox.system.BaseSpec" {
 				expect( html ).toInclude( "assets/copy-code.js" );
 			} );
 
+			it( "strips /models/build from Windows-style module paths when computing shared assets paths", function() {
+				var windowsBuildDir = "C:\boxlang\home\modules\bx-sites\models\build\";
+				var assetsDir = windowsBuildDir.reReplace( "[\\/]models[\\/]build[\\/]?$", "" ) & "/resources/assets";
+
+				expect( assetsDir.replace( char( 92 ), "/", "all" ) ).toBe( "C:/boxlang/home/modules/bx-sites/resources/assets" );
+			} );
+
 			it( "copies the shared prompt-init.js widget unconditionally, same as conditional-content-init.js", function() {
 				var root = newProject();
 				fileWrite( root & "/docs/index.md", "Home" );
