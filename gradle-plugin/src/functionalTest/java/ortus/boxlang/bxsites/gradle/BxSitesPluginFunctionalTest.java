@@ -310,8 +310,13 @@ class BxSitesPluginFunctionalTest {
                 .resolve("com").resolve("example").resolve("BookController.md");
         String content = Files.readString(page);
         assertTrue(content.contains("title: \"BookController\""));
-        assertTrue(content.contains("data-k=\"get\""));
-        assertTrue(content.contains("<td><code>/api/books</code></td>"));
+        // A plain Markdown pipe table: the class-level @RequestMapping base
+        // path composed with the method's own bare @GetMapping. Deliberately
+        // not raw <table> markup with per-row Alpine attributes - see
+        // ControllerScanGenerator#appendFilterableTable for why that cannot
+        // work in this pipeline.
+        assertTrue(content.contains("| Method | Path | Handler |"));
+        assertTrue(content.contains("| GET | `/api/books` | `String list()` |"));
     }
 
     private static void deleteRecursively(Path root) {
