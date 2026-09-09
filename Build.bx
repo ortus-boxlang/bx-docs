@@ -18,6 +18,7 @@ class{
 			"^server-.*\.json$",
 			"^tests$",
 			"^site$",
+			"^docs$",
 			"^\.cache$",
 			"^examples$",
 			"^apidocs$",

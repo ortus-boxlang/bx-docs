@@ -53,6 +53,7 @@
         "/examples/**",
         "/apidocs/**",
         "/site/**",
+        "/docs/**",
         "/core/**",
         "/gradle-plugin/**",
         "/maven-plugin/**"
