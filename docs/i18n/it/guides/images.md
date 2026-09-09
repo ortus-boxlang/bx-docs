@@ -108,6 +108,15 @@ vale la pena rivederlo se bx-image aggiunge AVIF a monte.
     { "assets": { "images": { "enabled": false } } }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+
+    [assets]
+
+    [assets.images]
+    enabled = false
+    ```
+
 Ricade sulla semplice copia non elaborata di `docs/assets/**` - esattamente
 come veniva gestita ogni immagine prima che questa funzionalità esistesse.
 
@@ -131,6 +140,16 @@ come veniva gestita ogni immagine prima che questa funzionalità esistesse.
     		}
     	}
     }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+
+    [assets]
+
+    [assets.images]
+    widths = [ 480, 960, 1440 ]
+    formats = [ "webp" ]
     ```
 
 `widths` ha come predefinito `[400, 800, 1200, 1600]`; `formats` ha come
@@ -160,6 +179,12 @@ default (`assets.bundle`):
     }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml" linenums="1"
+    extraCss = [ "assets/a.css", "assets/b.css" ]
+    extraJs = [ "assets/app.js" ]
+    ```
+
 compila un unico `assets/bundle.<hash>.css` con impronta digitale
 (nell'ordine elencato) e un unico `assets/bundle.<hash>.js`, invece di un
 tag `<link>`/`<script>` per ogni voce. Il CSS ha i propri commenti
@@ -186,6 +211,11 @@ un progetto dipendeva:
 === "JSON"
     ```json title="bxsites.json"
     { "extraCss": ["assets/custom.css", "https://cdn.example.com/lib.css"] }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    extraCss = [ "assets/custom.css", "https://cdn.example.com/lib.css" ]
     ```
 
 renderizza due tag `<link>` separati, non raggruppati, esattamente come

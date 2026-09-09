@@ -372,6 +372,11 @@ Opt-in via `bxsites.yaml`'s [`mermaid`](../configuration.md#mermaid) key:
     { "mermaid": true }
     ```
 
+=== "TOML"
+    ```toml title="bxsites.toml"
+    mermaid = true
+    ```
+
 Once enabled, any ` ```mermaid ` fenced code block renders as a live
 [Mermaid](https://mermaid.js.org/) diagram instead of a code listing:
 
@@ -398,6 +403,11 @@ Opt-in via `bxsites.yaml`'s [`math`](../configuration.md#math) key:
 === "JSON"
     ```json title="bxsites.json"
     { "math": true }
+    ```
+
+=== "TOML"
+    ```toml title="bxsites.toml"
+    math = true
     ```
 
 Once enabled, [KaTeX](https://katex.org/) typesets `$...$` for inline math
