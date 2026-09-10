@@ -1,0 +1,59 @@
+/**
+ * Derives a base-dir-relative path from an absolute file path, without
+ * ever treating the base directory as a regex pattern.
+ *
+ * `filePath.reReplace( baseDir, "", "one" )` - the idiom this replaces -
+ * works fine on a Unix-style `baseDir` (`/home/user/project/docs`), but
+ * `baseDir` is exactly what a Windows checkout's `user.dir`/`File.
+ * lastModified()`/watcher paths look like: `C:\Users\name\project\docs`.
+ * Handed to `reReplace()` as a *pattern*, `\U`, `\p`, `\a` and friends are
+ * regex escapes, not literal backslashes - `PatternSyntaxException:
+ * Illegal/unsupported escape sequence` on the very first Windows build
+ * that reaches it (verified by compiling a real Windows-shaped path as a
+ * pattern, not assumed). `normalize()`/`relativeTo()` below never compile
+ * `baseDir` as anything - only plain string comparison - so the same code
+ * path behaves identically on both platforms.
+ *
+ * DocsLoader.bx carried its own private copy of exactly this fix first;
+ * this is that same logic, shared, so a future caller reaches for `new
+ * PathRelativizer()` instead of writing a fourth copy - which is how the
+ * bug survived in BlogDiscoverer.bx, ContentLinter.bx and
+ * ImageVariantGenerator.bx after DocsLoader.bx had already fixed it once.
+ */
+class {
+
+	/**
+	 * Normalizes path separators to "/" for consistent cross-platform path
+	 * comparisons and prefix stripping. A no-op on a path that already
+	 * only uses "/".
+	 *
+	 * @value The path to normalize
+	 */
+	string function normalize( required string value ) {
+		return arguments.value.replace( char( 92 ), "/", "all" )
+	}
+
+	/**
+	 * `filePath`'s own path relative to `basePath`, both normalized first
+	 * so a Windows-style backslash and a Unix-style forward slash compare
+	 * equal. Falls back to the normalized `filePath` itself (leading
+	 * slashes stripped) when it isn't actually under `basePath` - the same
+	 * graceful behavior the callers this replaces already relied on,
+	 * rather than throwing over a path that doesn't nest as expected.
+	 *
+	 * @basePath Absolute base directory
+	 * @filePath Absolute path to a file under (expected to be under) basePath
+	 */
+	string function relativeTo( required string basePath, required string filePath ) {
+		var normalizedBase = normalize( arguments.basePath ).reReplace( "[\/]+$", "" )
+		var normalizedPath = normalize( arguments.filePath )
+
+		if ( normalizedPath.startsWith( normalizedBase ) ) {
+			var relativePath = normalizedPath.right( normalizedPath.len() - normalizedBase.len() )
+			return relativePath.reReplace( "^[\/]+", "" )
+		}
+
+		return normalizedPath.reReplace( "^[\/]+", "" )
+	}
+
+}

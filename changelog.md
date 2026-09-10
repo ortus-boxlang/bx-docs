@@ -30,6 +30,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+* `build`/`serve` crashed on Windows with a `PatternSyntaxException` in any
+  project with a blog post or with responsive images enabled -
+  `BlogDiscoverer`, `ContentLinter` and `ImageVariantGenerator` derived a
+  file's docs-relative path by handing an absolute directory straight to
+  `reReplace()` as its *pattern*; a Windows path's backslashes (`\U`, `\d`,
+  ...) are regex escapes, not literal separators. Fixed via a shared
+  `PathRelativizer`, the same safe substring-based approach `DocsLoader`
+  already used. `serve`'s live-reload watcher had the same root cause in a
+  milder form - a mixed-separator prefix check that silently always missed
+  on Windows, degrading every edit to a full cache-clearing rebuild instead
+  of the fast single-page path.
+* The Gradle/Maven plugins' subprocess launcher never found `java.home`'s
+  own `java` launcher on Windows (only `java.exe` exists there), so every
+  Windows invocation of `build`/`serve`/every other verb silently fell back
+  to a bare `java` PATH lookup instead of guaranteed relaunching on the
+  same JVM.
+* The OpenAPI output example guide (and its four translations) linked to
+  `../assets/openapi/example.yaml`, one directory level too shallow for the
+  page's own built (clean-URL) location - broken since the guide was
+  added.
+
 * `coldbox` told a reader to install `bx-docbox` whenever class metadata was
   missing, including when the module was installed and the DocBox run had
   simply failed. The failure is now reported with its real cause, on the

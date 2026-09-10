@@ -1,0 +1,91 @@
+/**
+ * PathRelativizer.bx exists specifically to fix a real, reproduced crash:
+ * `filePath.reReplace( baseDir, "", "one" )` compiles `baseDir` as a regex
+ * *pattern* - fine on a Unix path, a `PatternSyntaxException` the moment
+ * `baseDir` is a Windows absolute path (`C:\Users\name\docs`), since `\U`,
+ * `\a`, `\d` and friends are regex escapes there. Every spec below uses a
+ * real Windows-shaped path, not a stand-in, so a regression here fails
+ * for the same reason the original bug did.
+ */
+class extends="testbox.system.BaseSpec" {
+
+	function run() {
+		describe( "build.PathRelativizer", function() {
+
+			beforeEach( function() {
+				variables.relativizer = new "models.build.PathRelativizer@bxsites"();
+			} );
+
+			describe( "normalize()", function() {
+
+				it( "turns every backslash into a forward slash", function() {
+					expect( relativizer.normalize( "C:\Users\name\project\docs" ) )
+						.toBe( "C:/Users/name/project/docs" );
+				} );
+
+				it( "leaves an already-forward-slash path untouched", function() {
+					expect( relativizer.normalize( "/home/user/project/docs" ) )
+						.toBe( "/home/user/project/docs" );
+				} );
+
+			} );
+
+			describe( "relativeTo()", function() {
+
+				it( "never throws on a Windows-shaped base path, unlike the reReplace(path, baseDir, ...) idiom it replaces", function() {
+					var baseDir = "C:\Users\name\project\docs";
+					var filePath = baseDir & "\guides\setup.md";
+
+					expect( function() {
+						relativizer.relativeTo( baseDir, filePath );
+					} ).notToThrow();
+				} );
+
+				it( "strips a Windows-style base path and returns a forward-slash-relative result", function() {
+					var relative = relativizer.relativeTo(
+						"C:\Users\name\project\docs",
+						"C:\Users\name\project\docs\guides\setup.md"
+					);
+
+					expect( relative ).toBe( "guides/setup.md" );
+				} );
+
+				it( "strips a Unix-style base path the same way", function() {
+					var relative = relativizer.relativeTo(
+						"/home/user/project/docs",
+						"/home/user/project/docs/guides/setup.md"
+					);
+
+					expect( relative ).toBe( "guides/setup.md" );
+				} );
+
+				it( "matches a base path even when one side uses backslashes and the other forward slashes", function() {
+					// Exactly DevServer.bx's own onWatchEvent() shape: docsDir
+					// built with a plain "/" join, the watcher's own event
+					// path a native (backslash, on Windows) Path.toString().
+					var mixedBase = "C:\Users\name\project" & "/docs";
+					var nativeEventPath = "C:\Users\name\project\docs\guides\setup.md";
+
+					expect( relativizer.relativeTo( mixedBase, nativeEventPath ) ).toBe( "guides/setup.md" );
+				} );
+
+				it( "is insensitive to a trailing slash on the base path", function() {
+					expect( relativizer.relativeTo( "/docs/", "/docs/guides/setup.md" ) )
+						.toBe( "guides/setup.md" );
+				} );
+
+				it( "handles a file directly under the base path with no subfolder", function() {
+					expect( relativizer.relativeTo( "/docs", "/docs/index.md" ) ).toBe( "index.md" );
+				} );
+
+				it( "falls back to the normalized path itself, leading slashes stripped, when filePath isn't under basePath", function() {
+					expect( relativizer.relativeTo( "/docs", "/elsewhere/index.md" ) )
+						.toBe( "elsewhere/index.md" );
+				} );
+
+			} );
+
+		} );
+	}
+
+}

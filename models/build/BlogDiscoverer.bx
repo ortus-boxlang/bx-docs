@@ -35,6 +35,7 @@
 class {
 
 	variables.frontmatterParser = new "models.build.FrontmatterParser@bxsites"()
+	variables.pathRelativizer = new "models.build.PathRelativizer@bxsites"()
 
 	/**
 	 * Loads every post under `docs/blog/posts/`, at any subfolder depth
@@ -83,9 +84,11 @@ class {
 	private struct function loadFile( required string postsDir, required string filePath ) {
 		// The file's own path relative to postsDir, subfolder segments
 		// (if any) included - e.g. "hello-world.md", or "2026/hello-world.md"
-		// when authored under a subfolder. Same reReplace-the-base-dir-off
-		// idiom DocsLoader.bx's own relativePath uses.
-		var relativeToPostsDir = arguments.filePath.reReplace( arguments.postsDir, "", "one" ).reReplace( "^[\/]", "" )
+		// when authored under a subfolder. PathRelativizer.bx, not a raw
+		// reReplace(filePath, postsDir, ...) - postsDir is an absolute path,
+		// and on Windows that's backslash-separated, which reReplace() would
+		// compile as a regex *pattern* rather than treat as literal text.
+		var relativeToPostsDir = variables.pathRelativizer.relativeTo( arguments.postsDir, arguments.filePath )
 		var fileName = getFileFromPath( arguments.filePath ).reReplaceNoCase( "\.md$", "" )
 		var parsed = variables.frontmatterParser.parse( fileRead( arguments.filePath ) )
 		var fm = parsed.frontmatter

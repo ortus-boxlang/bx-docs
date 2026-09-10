@@ -174,10 +174,33 @@ public final class BxSitesInvoker {
         }
     }
 
-    private static String javaExecutable() {
+    /**
+     * The {@code java} launcher inside {@code java.home}'s own {@code bin}
+     * directory - preferred over a bare {@code "java"} so this always
+     * relaunches with the exact same JVM Gradle/Maven itself is running on,
+     * never a possibly-different one a PATH lookup might find instead.
+     *
+     * <p>Tries {@code java.exe} before the extension-less {@code java}:
+     * every Windows JDK/JRE ships only the former, every Unix one only the
+     * latter, so trying both (rather than branching on {@code os.name})
+     * resolves correctly on either OS with no OS-name sniffing at all.
+     * {@code Files.isExecutable} on the wrong-OS name simply reports the
+     * file doesn't exist and falls through - confirmed empirically to
+     * matter: {@code Path.of(javaHome, "bin", "java")} alone (the form this
+     * method used to be) never exists on Windows, so it silently fell
+     * through to the bare {@code "java"} PATH-lookup fallback on every
+     * single Windows invocation, never actually using this JVM's own
+     * launcher there.
+     */
+    static String javaExecutable() {
         String javaHome = System.getProperty("java.home");
-        Path candidate = Path.of(javaHome, "bin", "java");
-        return Files.isExecutable(candidate) ? candidate.toString() : "java";
+        for (String name : new String[] { "java.exe", "java" }) {
+            Path candidate = Path.of(javaHome, "bin", name);
+            if (Files.isExecutable(candidate)) {
+                return candidate.toString();
+            }
+        }
+        return "java";
     }
 
     /** The outcome of one verb invocation. */

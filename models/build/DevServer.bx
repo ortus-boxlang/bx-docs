@@ -32,6 +32,7 @@ class {
 	variables.buildPipeline = new "models.build.BuildPipeline@bxsites"()
 	variables.configLoader  = new "models.config.ConfigLoader@bxsites"()
 	variables.sourceDirResolver = new "models.config.SourceDirResolver@bxsites"()
+	variables.pathRelativizer = new "models.build.PathRelativizer@bxsites"()
 	variables.projectRoot   = ""
 	variables.fileFingerprint = { count : 0, maxModified : 0 }
 	variables.buildVersion  = 0
@@ -132,7 +133,15 @@ class {
 			watchPaths.append( themeDir )
 		}
 
-		variables.watchedDocsDir = docsDir
+		// Normalized once here so onWatchEvent()'s own startsWith() compares
+		// like separators against like - the watcher hands back a native
+		// java.nio.file.Path's toString(), backslash-separated on Windows,
+		// while docsDir was built with a plain "/" join; left un-normalized
+		// on either side, that prefix check never matches on Windows and
+		// every edit looks like a non-page change (a correctness downgrade,
+		// not a crash - see PathRelativizer.bx for the sibling bug that
+		// actually did crash the build).
+		variables.watchedDocsDir = variables.pathRelativizer.normalize( docsDir )
 		variables.dirty = false
 		variables.needsCacheClear = false
 
@@ -184,7 +193,7 @@ class {
 	 * @event { kind, path } - see BoxLang's own watcherNew() docs
 	 */
 	private void function onWatchEvent( required struct event ) {
-		var path = arguments.event.path ?: ""
+		var path = variables.pathRelativizer.normalize( arguments.event.path ?: "" )
 		var isPageEdit = len( path ) && path.startsWith( variables.watchedDocsDir ) && path.reFindNoCase( "\.md$" )
 		if ( !isPageEdit ) {
 			variables.needsCacheClear = true
