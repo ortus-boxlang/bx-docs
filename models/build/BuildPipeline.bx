@@ -1977,6 +1977,7 @@ class {
 		fileCopy( moduleAssetsDir() & "/conditional-content-init.js", arguments.siteDir & "/assets/conditional-content-init.js" )
 		fileCopy( moduleAssetsDir() & "/course-progress.js", arguments.siteDir & "/assets/course-progress.js" )
 		fileCopy( moduleAssetsDir() & "/prompt-init.js", arguments.siteDir & "/assets/prompt-init.js" )
+		fileCopy( moduleAssetsDir() & "/contact-form-init.js", arguments.siteDir & "/assets/contact-form-init.js" )
 		fileCopy( moduleAssetsDir() & "/code-lines.js", arguments.siteDir & "/assets/code-lines.js" )
 		directoryCopy( moduleAssetsDir() & "/fonts", arguments.siteDir & "/assets/fonts", true )
 		directoryCopy( moduleAssetsDir() & "/vendor/highlight", arguments.siteDir & "/assets/vendor/highlight", true )

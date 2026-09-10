@@ -2864,3 +2864,72 @@ a.button.primary {
 		display: none !important;
 	}
 }
+.bxsites-contact-form {
+	display: flex;
+	flex-direction: column;
+	gap: 1.1rem;
+	max-width: 32rem;
+	margin: 1.5rem 0;
+}
+
+.bxsites-contact-form--invalid {
+	opacity: 0.7;
+	font-style: italic;
+}
+
+.bxsites-contact-form__field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+}
+
+.bxsites-contact-form__label {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--bxsites-text);
+}
+
+.bxsites-contact-form__required {
+	color: #dc2626;
+}
+
+.bxsites-contact-form__input {
+	font: inherit;
+	color: var(--bxsites-text);
+	background: var(--bxsites-bg);
+	border: 1px solid var(--bxsites-border);
+	border-radius: 8px;
+	padding: 0.6rem 0.75rem;
+}
+
+.bxsites-contact-form__input:focus-visible {
+	outline: 2px solid var(--bxsites-accent);
+	outline-offset: 1px;
+}
+
+.bxsites-contact-form__textarea {
+	min-height: 6.5rem;
+	resize: vertical;
+}
+
+.bxsites-contact-form__field-error {
+	font-size: 0.8rem;
+	color: #dc2626;
+}
+
+.bxsites-contact-form__status {
+	font-size: 0.9rem;
+}
+
+.bxsites-contact-form__status--success {
+	color: #15803d;
+}
+
+.bxsites-contact-form__status--error {
+	color: #dc2626;
+}
+
+.bxsites-contact-form__status--upgrade {
+	color: var(--bxsites-accent);
+	font-weight: 600;
+}
