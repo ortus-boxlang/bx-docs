@@ -534,6 +534,77 @@ class extends="testbox.system.BaseSpec" {
 				expect( html ).notToInclude( "bxsites-prompt__toggle" );
 			} );
 
+			it( "renders a ::: contact-form with a labeled input per field, required marked, and a working honeypot + submit button", function() {
+				var html = render( '::: contact-form id="demo-request" to="sales@acme.com" fields="name:text,email*:email,message:textarea" submitLabel="Send" :::' );
+
+				expect( html ).toInclude( '<form class="bxsites-contact-form" data-bx-form data-form-id="demo-request" data-form-to="sales@acme.com" action="/api/forms/submit" method="POST">' );
+
+				// name: text, not required
+				expect( html ).toInclude( '<label class="bxsites-contact-form__label" for="bxsites-contact-form-demo-request-name">Name</label>' );
+				expect( html ).toInclude( '<input class="bxsites-contact-form__input" type="text" id="bxsites-contact-form-demo-request-name" name="name">' );
+
+				// email: required
+				expect( html ).toInclude( 'for="bxsites-contact-form-demo-request-email">Email <span class="bxsites-contact-form__required" aria-hidden="true">*</span></label>' );
+				expect( html ).toInclude( '<input class="bxsites-contact-form__input" type="email" id="bxsites-contact-form-demo-request-email" name="email" required>' );
+
+				// message: textarea
+				expect( html ).toInclude( '<textarea class="bxsites-contact-form__input bxsites-contact-form__textarea" id="bxsites-contact-form-demo-request-message" name="message"></textarea>' );
+
+				// honeypot - off-screen, not display:none/hidden
+				expect( html ).toInclude( 'type="text" name="_hp" tabindex="-1" autocomplete="off"' );
+				expect( html ).toInclude( "position:absolute;left:-9999px" );
+
+				// submit button reuses the shared ::: button styling/markup
+				expect( html ).toInclude( '<button type="submit" class="bxsites-button bxsites-button--primary bxsites-button--medium">' );
+				expect( html ).toInclude( '<span class="bxsites-button__label">Send</span>' );
+
+				expect( html ).toInclude( '<div class="bxsites-contact-form__status" data-bx-form-status hidden></div>' );
+			} );
+
+			it( "defaults a ::: contact-form's [id] to ""contact"" and [submitLabel] to ""Send"" when omitted, and omits data-form-to when [to] is omitted", function() {
+				var html = render( '::: contact-form fields="email:email" :::' );
+
+				expect( html ).toInclude( 'data-form-id="contact"' );
+				expect( html ).notToInclude( "data-form-to" );
+				expect( html ).toInclude( '<span class="bxsites-button__label">Send</span>' );
+			} );
+
+			it( "falls back an unrecognized ::: contact-form field type to text rather than erroring", function() {
+				var html = render( '::: contact-form fields="phone:tel" :::' );
+
+				expect( html ).toInclude( '<input class="bxsites-contact-form__input" type="text" id="bxsites-contact-form-contact-phone" name="phone">' );
+			} );
+
+			it( "humanizes a ::: contact-form field's dashed/underscored name into its own label", function() {
+				var html = render( '::: contact-form fields="full-name:text,company_size:text" :::' );
+
+				expect( html ).toInclude( ">Full Name</label>" );
+				expect( html ).toInclude( ">Company Size</label>" );
+			} );
+
+			it( "renders a ::: contact-form invalid placeholder when fields is missing", function() {
+				var html = render( "::: contact-form" & char( 10 ) & ":::" );
+
+				expect( html ).toInclude( "bxsites-contact-form--invalid" );
+				expect( html ).toInclude( "missing required" );
+			} );
+
+			it( "renders a ::: contact-form invalid placeholder when fields has no valid name:type entries", function() {
+				var html = render( '::: contact-form fields="nonsense"' & char( 10 ) & ":::" );
+
+				expect( html ).toInclude( "bxsites-contact-form--invalid" );
+			} );
+
+			it( "parses the ::: contact-form fields DSL - required marker, type fallback, and skipping a malformed segment", function() {
+				var html = render( '::: contact-form fields="name:text, email*:email , nonsense , phone:tel" :::' );
+
+				expect( html ).toInclude( 'name="name"' );
+				expect( html ).notToInclude( 'name="name" required' );
+				expect( html ).toInclude( 'name="email" required' );
+				expect( html ).toInclude( 'type="text" id="bxsites-contact-form-contact-phone" name="phone"' );
+				expect( html ).notToInclude( 'name="nonsense"' );
+			} );
+
 			it( "::: for item, index in <path> iterates an array, binding item+1-based index per iteration", function() {
 				var md = "::: for item, idx in data.products" & char( 10 ) &
 					"{{ item.name }} at position {{ idx }}" & char( 10 ) & ":::";

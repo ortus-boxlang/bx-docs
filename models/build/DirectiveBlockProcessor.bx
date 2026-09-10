@@ -3,7 +3,7 @@
  * the shared foundation for every GitBook-style block Flexmark has no
  * native concept of: expandable, cards/card, columns/column,
  * stepper/step, updates/update, file, embed, page-link, link-preview,
- * buttons/button, prompt, for, if/elseif/else, and pagebreak (see each block's own `render*()` docblock below). Nests arbitrarily deep (a
+ * buttons/button, prompt, contact-form, for, if/elseif/else, and pagebreak (see each block's own `render*()` docblock below). Nests arbitrarily deep (a
  * `::: cards` block's own content is itself re-scanned for `::: card`
  * children, recursively) using the same two-phase pre/post-processing
  * shape as TabsProcessor.bx - `extract()` runs before `Markdown()`,
@@ -45,6 +45,12 @@ class {
 	variables.openApiSrcPattern = createObject( "java", "java.util.regex.Pattern" ).compile( '(<div class="bxsites-openapi[^"]*" data-openapi-src=")([^"]*)("[^>]*>)' )
 	variables.openApiOperationPattern = createObject( "java", "java.util.regex.Pattern" ).compile( "^(\S+)\s+(/\S*)$" )
 	variables.forSpecPattern = createObject( "java", "java.util.regex.Pattern" ).compile( "^(\w+)\s*,\s*(\w+)\s+in\s+(.+)$" )
+	// `::: contact-form`'s own `fields="name:type,..."` DSL - matched
+	// against each comma-separated segment *after* parseContactFields()
+	// strips a leading field's own trailing `*` (its own required marker),
+	// so this pattern itself never needs an optional group (renderContactForm()'s
+	// own docblock explains why that's deliberately avoided).
+	variables.contactFieldPattern = createObject( "java", "java.util.regex.Pattern" ).compile( "^([\w-]+):(\w+)$" )
 	// Matches a trailing bare `:::` at the end of a `::: name attrs...`
 	// line's own attrs text (with at least one preceding whitespace char,
 	// or nothing before it at all) - extract()'s own self-closing
@@ -566,6 +572,8 @@ class {
 				return renderPageLinkStub( attrs )
 			case "link-preview":
 				return renderLinkPreview( attrs )
+			case "contact-form":
+				return renderContactForm( attrs )
 			case "prompt":
 				return renderPrompt( block, attrs, renderer, markdownOptions )
 			case "conditional":
@@ -1500,6 +1508,151 @@ class {
 			return '<div class="bxsites-course-index bxsites-course-index--invalid">::: course - missing required id="..."</div>'
 		}
 		return '<div class="bxsites-course-index" data-bxsites-course-index data-bxsites-course-id="' & attrEscape( id ) & '"></div>'
+	}
+
+	/**
+	 * `::: contact-form id="demo-request" to="sales@acme.com" fields="name:text,email*:email,message:textarea" submitLabel="Send" :::` -
+	 * a real, working-once-deployed contact/lead-gen form. Premium: this
+	 * module has no backend, no visitor identity, and no server-side
+	 * evaluation of any kind at build time (see "Conditional content"
+	 * above for the same reality applied to a different block) - whether
+	 * this project's own plan is even entitled to a *working* form at all
+	 * is entirely a bxSites Cloud concern, decided at submit time, not
+	 * build time. This block always renders the full, real-looking form
+	 * markup regardless - `contact-form-init.js` (copied unconditionally,
+	 * same as `conditional-content-init.js`) wires up its submit handler
+	 * at runtime, `POST`ing JSON to `/api/forms/submit` and rendering
+	 * whatever that endpoint's own response implies: success, a
+	 * validation error, a 429 rate-limit, or - on a free/unentitled plan -
+	 * a 403 "Upgrade to enable this form" fallback. None of that is this
+	 * build's concern beyond emitting markup real enough to drive it.
+	 *
+	 * - `id` - this form's own slug, matching a form configuration that
+	 *   lives entirely server-side (bxSites Cloud) - never validated here,
+	 *   just passed through as `data-form-id`. Defaults to `"contact"`.
+	 * - `to` - informational only (real delivery routing is configured by
+	 *   the account admin server-side); still parsed and stamped as
+	 *   `data-form-to` as a hint, with no effect on behavior here.
+	 * - `fields` - required; parseContactFields()'s own small DSL, e.g.
+	 *   `"name:text,email*:email,message:textarea"`.
+	 * - `submitLabel` - the submit button's own label; defaults to `"Send"`.
+	 *
+	 * Every field gets its own labeled `<input>`/`<textarea>` (`required`
+	 * when marked so in `fields`), and a hidden honeypot input
+	 * (`name="_hp"`) rides along regardless of `fields` - positioned
+	 * off-screen with an inline style rather than `hidden`/`display:none`,
+	 * since a spam bot's own automated form-fill is more likely to still
+	 * find and fill an off-screen-but-visible-to-the-DOM field than one
+	 * already invisible in the accessibility tree. `contact-form-init.js`
+	 * forwards it untouched on submit; the server decides what a filled
+	 * one means.
+	 */
+	private string function renderContactForm( required struct attrs ) {
+		var fieldsRaw = trim( arguments.attrs.fields ?: "" )
+		if ( !len( fieldsRaw ) ) {
+			return '<div class="bxsites-contact-form bxsites-contact-form--invalid">::: contact-form - missing required fields="name:type,..."</div>'
+		}
+
+		var fields = parseContactFields( fieldsRaw )
+		if ( !fields.len() ) {
+			return '<div class="bxsites-contact-form bxsites-contact-form--invalid">::: contact-form - fields="' & encodeForHTML( fieldsRaw ) & '" has no valid name:type entries</div>'
+		}
+
+		var formId = len( trim( arguments.attrs.id ?: "" ) ) ? trim( arguments.attrs.id ) : "contact"
+		var to = trim( arguments.attrs.to ?: "" )
+		var submitLabel = len( trim( arguments.attrs.submitLabel ?: "" ) ) ? trim( arguments.attrs.submitLabel ) : "Send"
+		// A plain, DOM-id-safe slug derived from the (otherwise
+		// free-text) `id` attribute - only used to build each field's own
+		// `id`/`for` pair below, never rendered as `data-form-id` itself
+		// (that keeps the author's own `id` exactly as written).
+		var domId = "bxsites-contact-form-" & reReplace( formId, "[^a-zA-Z0-9_-]", "-", "all" )
+
+		var html = '<form class="bxsites-contact-form" data-bx-form data-form-id="' & attrEscape( formId ) & '"'
+		if ( len( to ) ) {
+			html &= ' data-form-to="' & attrEscape( to ) & '"'
+		}
+		html &= ' action="/api/forms/submit" method="POST">'
+
+		for ( var field in fields ) {
+			var fieldId = domId & "-" & field.name
+			var requiredAttr = field.required ? " required" : ""
+
+			html &= '<div class="bxsites-contact-form__field">'
+				& '<label class="bxsites-contact-form__label" for="' & attrEscape( fieldId ) & '">' & encodeForHTML( field.label )
+			if ( field.required ) {
+				html &= ' <span class="bxsites-contact-form__required" aria-hidden="true">*</span>'
+			}
+			html &= '</label>'
+
+			html &= field.type == "textarea"
+				? '<textarea class="bxsites-contact-form__input bxsites-contact-form__textarea" id="' & attrEscape( fieldId ) & '" name="' & attrEscape( field.name ) & '"' & requiredAttr & '></textarea>'
+				: '<input class="bxsites-contact-form__input" type="' & field.type & '" id="' & attrEscape( fieldId ) & '" name="' & attrEscape( field.name ) & '"' & requiredAttr & '>'
+			html &= '</div>'
+		}
+
+		html &= '<input class="bxsites-contact-form__honeypot" type="text" name="_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">'
+			& '<button type="submit" class="bxsites-button bxsites-button--primary bxsites-button--medium">'
+			& '<span class="bxsites-button__label">' & encodeForHTML( submitLabel ) & '</span>'
+			& '</button>'
+			& '<div class="bxsites-contact-form__status" data-bx-form-status hidden></div>'
+			& '</form>'
+
+		return html
+	}
+
+	/**
+	 * Parses `::: contact-form`'s own `fields="name:type,..."` DSL - one
+	 * comma-separated `name:type` pair per field, an optional trailing
+	 * `*` directly after the name (before its own `:`) marking that field
+	 * required, e.g. `"name:text,email*:email,message:textarea"`.
+	 *
+	 * @fieldsRaw The raw `fields` attribute value
+	 *
+	 * @return Array of { name, type ("text"/"email"/"textarea"), required, label } - one entry per well-formed segment. A malformed segment (no name, no `:type`) is silently skipped rather than failing the whole block - the same forgiving-typo spirit as an unrecognized `type` falling back to `"text"` below rather than erroring the build.
+	 */
+	private array function parseContactFields( required string fieldsRaw ) {
+		var fields = []
+
+		for ( var segment in listToArray( arguments.fieldsRaw, "," ) ) {
+			var trimmed = trim( segment )
+			// The `*` required-marker sits directly before the field's own
+			// `:type` - stripped here (rather than matched as an optional
+			// regex group) so contactFieldPattern itself never has to deal
+			// with a Java optional-group match that didn't participate
+			// (which surfaces as a null, not an empty string).
+			var required = trimmed.find( "*:" ) > 0
+			if ( required ) {
+				trimmed = trimmed.replace( "*:", ":", "one" )
+			}
+
+			var matcher = variables.contactFieldPattern.matcher( trimmed )
+			if ( !matcher.matches() ) {
+				continue
+			}
+
+			var name = matcher.group( 1 )
+			var type = lCase( matcher.group( 2 ) )
+			if ( !listFindNoCase( "text,email,textarea", type ) ) {
+				type = "text"
+			}
+
+			fields.append( { name : name, type : type, required : required, label : humanizeFieldName( name ) } )
+		}
+
+		return fields
+	}
+
+	/**
+	 * @name A `fields` DSL field name, e.g. "full-name" or "email"
+	 *
+	 * @return A human-friendly label ("Full Name", "Email") - splits `name` on "-"/"_" and title-cases each resulting word
+	 */
+	private string function humanizeFieldName( required string name ) {
+		var words = listToArray( arguments.name, "-_" )
+		var labeled = words.map( function( word ) {
+			return len( word ) ? uCase( left( word, 1 ) ) & right( word, len( word ) - 1 ) : word
+		} )
+		return labeled.toList( " " )
 	}
 
 }

@@ -346,6 +346,7 @@
 	<script src="#variables.basePath#assets/conditional-content-init.js" defer></script>
 	<script src="#variables.basePath#assets/course-progress.js" defer></script>
 	<script src="#variables.basePath#assets/prompt-init.js" defer></script>
+	<script src="#variables.basePath#assets/contact-form-init.js" defer></script>
 <bx:if variables.pageActionsEnabled>
 	<script src="#variables.basePath#assets/page-actions-init.js" defer></script>
 </bx:if>
