@@ -33,7 +33,7 @@ tags: [api, openapi]
 
 Ed ecco renderizzato per davvero, proprio su questa pagina, a partire da
 una piccola specifica "Bookshelf API" che questo repository già fornisce
-in [`assets/openapi/example.yaml`](../assets/openapi/example.yaml) - la
+in [`assets/openapi/example.yaml`](../../assets/openapi/example.yaml) - la
 stessa che dimostra [OpenAPI / Swagger](openapi.md):
 
 ---
