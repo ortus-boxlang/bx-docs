@@ -449,6 +449,46 @@ same preference automatically on load (handy for sharing a direct link to
 call `window.bxSitesSetPreference( key, value )` directly to drive it from
 custom UI instead.
 
+## Contact forms
+
+> **Premium feature.** A `::: contact-form` block always renders as a
+> real, complete form - inputs, labels, a submit button, all of it - but
+> *submitting* it only works once the project's own bxSites Cloud plan
+> includes working forms. On a plan that doesn't, a reader who submits
+> anyway sees a friendly "upgrade to enable this form" message instead of
+> their message going anywhere. There's nothing to configure here to turn
+> that on or off - it's entirely a property of the account's plan.
+
+A labeled contact/lead-gen form, submitted with `fetch()` to bxSites
+Cloud rather than a page reload:
+
+```markdown title="Example" linenums="1"
+::: contact-form id="demo-request" to="sales@acme.com" fields="name:text,email*:email,message:textarea" submitLabel="Send" :::
+```
+
+::: contact-form id="demo-request" to="sales@acme.com" fields="name:text,email*:email,message:textarea" submitLabel="Send" :::
+
+- `id` - this form's own slug. Matches a form configuration (who it
+  notifies, spam filtering, and so on) that you set up in bxSites Cloud,
+  not in this markdown - this build never checks that the id you write
+  here actually exists there, it's just passed straight through.
+  Defaults to `"contact"` when omitted.
+- `to` - optional and purely informational (real delivery routing is
+  configured server-side, by the account admin) - handy as a reminder of
+  where a given form's submissions end up when you're skimming the page
+  source later.
+- `fields` - required; a small DSL, comma-separated `name:type` pairs:
+  add a trailing `*` right after a field's own name (before its `:`) to
+  mark it required, e.g. `email*:email`. Supported types are `text`,
+  `email`, and `textarea`; any other/unrecognized type falls back to a
+  plain `text` input rather than failing the build. Each field's own
+  label is derived from its name (`full-name` becomes "Full Name").
+- `submitLabel` - the submit button's own text; defaults to `"Send"`.
+
+Every form also carries a hidden honeypot field a real visitor never
+sees or fills in - bxSites Cloud's own spam filtering uses it, no
+configuration needed here.
+
 ## Loop and conditional (data-driven)
 
 `::: for` and `::: if` render their own content against [reusable

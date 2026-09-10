@@ -464,6 +464,53 @@ Seite" zu teilen), und das eigene Theme-Override eines Projekts kann
 stattdessen direkt `window.bxSitesSetPreference( key, value )` aufrufen,
 um es von einer eigenen UI aus zu steuern.
 
+## Kontaktformulare
+
+> **Premium-Funktion.** Ein `::: contact-form`-Block wird immer als
+> echtes, vollständiges Formular gerendert - Felder, Beschriftungen,
+> Absende-Button, alles - aber das *Absenden* funktioniert erst, wenn der
+> bxSites-Cloud-Plan des Projekts funktionierende Formulare enthält. Bei
+> einem Plan ohne diese Funktion sieht jemand, der trotzdem absendet,
+> eine freundliche Meldung „Upgrade erforderlich, um dieses Formular zu
+> aktivieren" statt dass die Nachricht irgendwo ankommt. Es gibt hier
+> nichts zu konfigurieren, um das ein- oder auszuschalten - es ist
+> ausschließlich eine Eigenschaft des Konto-Plans.
+
+Ein beschriftetes Kontakt-/Lead-Formular, das per `fetch()` an
+bxSites Cloud gesendet wird statt einen Seiten-Reload auszulösen:
+
+```markdown title="Beispiel" linenums="1"
+::: contact-form id="demo-request" to="sales@acme.com" fields="name:text,email*:email,message:textarea" submitLabel="Send" :::
+```
+
+::: contact-form id="demo-request" to="sales@acme.com" fields="name:text,email*:email,message:textarea" submitLabel="Send" :::
+
+- `id` - der eigene Slug dieses Formulars. Entspricht einer
+  Formularkonfiguration (wer benachrichtigt wird, Spam-Filterung usw.),
+  die du in bxSites Cloud einrichtest, nicht in diesem Markdown - diese
+  Build prüft nie, ob die hier geschriebene id dort tatsächlich
+  existiert, sie wird einfach unverändert durchgereicht. Standardmäßig
+  `"contact"`, wenn weggelassen.
+- `to` - optional und rein informativ (das eigentliche Routing der
+  Zustellung wird serverseitig vom Konto-Administrator konfiguriert) -
+  praktisch als Erinnerung, wohin die Einsendungen eines Formulars gehen,
+  wenn du später den Seitenquelltext überfliegst.
+- `fields` - erforderlich; ein kleines DSL, durch Kommas getrennte
+  `name:type`-Paare: ein abschließendes `*` direkt nach dem Feldnamen
+  (vor seinem `:`) markiert das Feld als Pflichtfeld, z. B.
+  `email*:email`. Unterstützte Typen sind `text`, `email` und
+  `textarea`; jeder andere/unbekannte Typ fällt auf ein einfaches
+  `text`-Feld zurück, statt den Build fehlschlagen zu lassen. Die
+  Beschriftung jedes Felds wird aus seinem Namen abgeleitet
+  (`full-name` wird zu „Full Name").
+- `submitLabel` - der eigene Text des Absende-Buttons; Standard ist
+  `"Send"`.
+
+Jedes Formular führt außerdem ein verstecktes Honeypot-Feld mit, das
+eine echte Besucherin oder ein echter Besucher nie sieht oder ausfüllt -
+die eigene Spam-Filterung von bxSites Cloud nutzt es, ohne dass hier
+etwas konfiguriert werden muss.
+
 ## Schleife und Bedingung (datengesteuert)
 
 `::: for` und `::: if` rendern ihren eigenen Inhalt gegen

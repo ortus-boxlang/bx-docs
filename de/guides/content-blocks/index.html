@@ -41,7 +41,7 @@
 	</script>
 	<link rel="stylesheet" href="/de/assets/vendor/bootstrap/bootstrap.min.css">
 	<link rel="stylesheet" href="/de/assets/vendor/highlight/github.min.css">
-	<link rel="stylesheet" href="/de/assets/theme/style.48b930a5.css">
+	<link rel="stylesheet" href="/de/assets/theme/style.cf949b4c.css">
 	
 
 	<style>
@@ -144,7 +144,7 @@ Content-Bl&ouml;cke</h1>
 
 
 
-	<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary">Auf dieser Seite</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#expandable">Expandable</a></li><li class="toc-level-2"><a href="#cards">Cards</a></li><li class="toc-level-2"><a href="#columns">Columns</a></li><li class="toc-level-2"><a href="#stepper">Stepper</a></li><li class="toc-level-2"><a href="#file">File</a></li><li class="toc-level-2"><a href="#buttons">Buttons</a></li><li class="toc-level-2"><a href="#embed">Embed</a></li><li class="toc-level-2"><a href="#page-link">Page Link</a></li><li class="toc-level-2"><a href="#link-preview">Link Preview</a></li><li class="toc-level-2"><a href="#ki-prompt">KI-Prompt</a></li><li class="toc-level-2"><a href="#updates-changelog">Updates &#x28;Changelog&#x29;</a></li><li class="toc-level-2"><a href="#wiederverwendbare-inhalte-includes">Wiederverwendbare Inhalte &#x28;Includes&#x29;</a></li><li class="toc-level-2"><a href="#conditional-content">Conditional content</a></li><li class="toc-level-2"><a href="#schleife-und-bedingung-datengesteuert">Schleife und Bedingung &#x28;datengesteuert&#x29;</a></li><li class="toc-level-2"><a href="#kursindex">Kursindex</a></li></ul></details>
+	<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary">Auf dieser Seite</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#expandable">Expandable</a></li><li class="toc-level-2"><a href="#cards">Cards</a></li><li class="toc-level-2"><a href="#columns">Columns</a></li><li class="toc-level-2"><a href="#stepper">Stepper</a></li><li class="toc-level-2"><a href="#file">File</a></li><li class="toc-level-2"><a href="#buttons">Buttons</a></li><li class="toc-level-2"><a href="#embed">Embed</a></li><li class="toc-level-2"><a href="#page-link">Page Link</a></li><li class="toc-level-2"><a href="#link-preview">Link Preview</a></li><li class="toc-level-2"><a href="#ki-prompt">KI-Prompt</a></li><li class="toc-level-2"><a href="#updates-changelog">Updates &#x28;Changelog&#x29;</a></li><li class="toc-level-2"><a href="#wiederverwendbare-inhalte-includes">Wiederverwendbare Inhalte &#x28;Includes&#x29;</a></li><li class="toc-level-2"><a href="#conditional-content">Conditional content</a></li><li class="toc-level-2"><a href="#kontaktformulare">Kontaktformulare</a></li><li class="toc-level-2"><a href="#schleife-und-bedingung-datengesteuert">Schleife und Bedingung &#x28;datengesteuert&#x29;</a></li><li class="toc-level-2"><a href="#kursindex">Kursindex</a></li></ul></details>
 
 					<h1 id="content-blöcke"><a href="#content-blöcke" id="content-blöcke" name="content-blöcke" class="anchor"></a>Content-Blöcke</h1>
 <p>Zusätzlich zu allem in <a href="/de/guides/markdown/index.html">Markdown-Erweiterungen</a> unterstützt
@@ -478,6 +478,49 @@ Präferenz (praktisch, um einen direkten Link zu &quot;der Pro-Version dieser
 Seite&quot; zu teilen), und das eigene Theme-Override eines Projekts kann
 stattdessen direkt <code>window.bxSitesSetPreference( key, value )</code> aufrufen,
 um es von einer eigenen UI aus zu steuern.</p>
+<h2 id="kontaktformulare"><a href="#kontaktformulare" id="kontaktformulare" name="kontaktformulare" class="anchor"></a>Kontaktformulare</h2>
+<blockquote>
+<p><strong>Premium-Funktion.</strong> Ein <code>::: contact-form</code>-Block wird immer als
+echtes, vollständiges Formular gerendert - Felder, Beschriftungen,
+Absende-Button, alles - aber das <em>Absenden</em> funktioniert erst, wenn der
+bxSites-Cloud-Plan des Projekts funktionierende Formulare enthält. Bei
+einem Plan ohne diese Funktion sieht jemand, der trotzdem absendet,
+eine freundliche Meldung „Upgrade erforderlich, um dieses Formular zu
+aktivieren&quot; statt dass die Nachricht irgendwo ankommt. Es gibt hier
+nichts zu konfigurieren, um das ein- oder auszuschalten - es ist
+ausschließlich eine Eigenschaft des Konto-Plans.</p>
+</blockquote>
+<p>Ein beschriftetes Kontakt-/Lead-Formular, das per <code>fetch()</code> an
+bxSites Cloud gesendet wird statt einen Seiten-Reload auszulösen:</p>
+<pre data-bxsites-start-line="1" data-bxsites-title="Beispiel"><code class="language-markdown">::: contact-form id=&quot;demo-request&quot; to=&quot;sales@acme.com&quot; fields=&quot;name:text,email*:email,message:textarea&quot; submitLabel=&quot;Send&quot; :::
+</code></pre>
+<form class="bxsites-contact-form" data-bx-form data-form-id="demo-request" data-form-to="sales@acme.com" action="/api/forms/submit" method="POST"><div class="bxsites-contact-form__field"><label class="bxsites-contact-form__label" for="bxsites-contact-form-demo-request-name">Name</label><input class="bxsites-contact-form__input" type="text" id="bxsites-contact-form-demo-request-name" name="name"></div><div class="bxsites-contact-form__field"><label class="bxsites-contact-form__label" for="bxsites-contact-form-demo-request-email">Email <span class="bxsites-contact-form__required" aria-hidden="true">*</span></label><input class="bxsites-contact-form__input" type="email" id="bxsites-contact-form-demo-request-email" name="email" required></div><div class="bxsites-contact-form__field"><label class="bxsites-contact-form__label" for="bxsites-contact-form-demo-request-message">Message</label><textarea class="bxsites-contact-form__input bxsites-contact-form__textarea" id="bxsites-contact-form-demo-request-message" name="message"></textarea></div><input class="bxsites-contact-form__honeypot" type="text" name="_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px"><button type="submit" class="bxsites-button bxsites-button--primary bxsites-button--medium"><span class="bxsites-button__label">Send</span></button><div class="bxsites-contact-form__status" data-bx-form-status hidden></div></form>
+<ul>
+<li><code>id</code> - der eigene Slug dieses Formulars. Entspricht einer
+Formularkonfiguration (wer benachrichtigt wird, Spam-Filterung usw.),
+die du in bxSites Cloud einrichtest, nicht in diesem Markdown - diese
+Build prüft nie, ob die hier geschriebene id dort tatsächlich
+existiert, sie wird einfach unverändert durchgereicht. Standardmäßig
+<code>&quot;contact&quot;</code>, wenn weggelassen.</li>
+<li><code>to</code> - optional und rein informativ (das eigentliche Routing der
+Zustellung wird serverseitig vom Konto-Administrator konfiguriert) -
+praktisch als Erinnerung, wohin die Einsendungen eines Formulars gehen,
+wenn du später den Seitenquelltext überfliegst.</li>
+<li><code>fields</code> - erforderlich; ein kleines DSL, durch Kommas getrennte
+<code>name:type</code>-Paare: ein abschließendes <code>*</code> direkt nach dem Feldnamen
+(vor seinem <code>:</code>) markiert das Feld als Pflichtfeld, z. B.
+<code>email*:email</code>. Unterstützte Typen sind <code>text</code>, <code>email</code> und
+<code>textarea</code>; jeder andere/unbekannte Typ fällt auf ein einfaches
+<code>text</code>-Feld zurück, statt den Build fehlschlagen zu lassen. Die
+Beschriftung jedes Felds wird aus seinem Namen abgeleitet
+(<code>full-name</code> wird zu „Full Name&quot;).</li>
+<li><code>submitLabel</code> - der eigene Text des Absende-Buttons; Standard ist
+<code>&quot;Send&quot;</code>.</li>
+</ul>
+<p>Jedes Formular führt außerdem ein verstecktes Honeypot-Feld mit, das
+eine echte Besucherin oder ein echter Besucher nie sieht oder ausfüllt -
+die eigene Spam-Filterung von bxSites Cloud nutzt es, ohne dass hier
+etwas konfiguriert werden muss.</p>
 <h2 id="schleife-und-bedingung-datengesteuert"><a href="#schleife-und-bedingung-datengesteuert" id="schleife-und-bedingung-datengesteuert" name="schleife-und-bedingung-datengesteuert" class="anchor"></a>Schleife und Bedingung (datengesteuert)</h2>
 <p><code>::: for</code> und <code>::: if</code> rendern ihren eigenen Inhalt gegen
 <a href="/de/guides/data-files/index.html">wiederverwendbare Daten</a> - den eigenen Wert einer
@@ -573,7 +616,7 @@ Lektion-zu-Lektion-Navigation, und wie der Lesefortschritt erfasst
 wird, sobald der Index auf der Seite steht.</p>
 
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/de/guides/content-blocks.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Diese Seite bearbeiten</a><a href="/de/guides/content-blocks.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Markdown herunterladen</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Zuletzt aktualisiert Sep 10, 2026, 1&#x3a;58&#x3a;38 AM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/de/guides/content-blocks.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Diese Seite bearbeiten</a><a href="/de/guides/content-blocks.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Markdown herunterladen</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Zuletzt aktualisiert Sep 10, 2026, 6&#x3a;26&#x3a;40 PM</span></div>
 
 				</article>
 
@@ -596,7 +639,7 @@ wird, sobald der Index auf der Seite steht.</p>
 			</main>
 
 			<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-				<nav class="toc mb-4" aria-label="Auf dieser Seite"><div class="toc-title">Auf dieser Seite</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#expandable">Expandable</a></li><li class="toc-level-2"><a href="#cards">Cards</a></li><li class="toc-level-2"><a href="#columns">Columns</a></li><li class="toc-level-2"><a href="#stepper">Stepper</a></li><li class="toc-level-2"><a href="#file">File</a></li><li class="toc-level-2"><a href="#buttons">Buttons</a></li><li class="toc-level-2"><a href="#embed">Embed</a></li><li class="toc-level-2"><a href="#page-link">Page Link</a></li><li class="toc-level-2"><a href="#link-preview">Link Preview</a></li><li class="toc-level-2"><a href="#ki-prompt">KI-Prompt</a></li><li class="toc-level-2"><a href="#updates-changelog">Updates &#x28;Changelog&#x29;</a></li><li class="toc-level-2"><a href="#wiederverwendbare-inhalte-includes">Wiederverwendbare Inhalte &#x28;Includes&#x29;</a></li><li class="toc-level-2"><a href="#conditional-content">Conditional content</a></li><li class="toc-level-2"><a href="#schleife-und-bedingung-datengesteuert">Schleife und Bedingung &#x28;datengesteuert&#x29;</a></li><li class="toc-level-2"><a href="#kursindex">Kursindex</a></li></ul></nav>
+				<nav class="toc mb-4" aria-label="Auf dieser Seite"><div class="toc-title">Auf dieser Seite</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#expandable">Expandable</a></li><li class="toc-level-2"><a href="#cards">Cards</a></li><li class="toc-level-2"><a href="#columns">Columns</a></li><li class="toc-level-2"><a href="#stepper">Stepper</a></li><li class="toc-level-2"><a href="#file">File</a></li><li class="toc-level-2"><a href="#buttons">Buttons</a></li><li class="toc-level-2"><a href="#embed">Embed</a></li><li class="toc-level-2"><a href="#page-link">Page Link</a></li><li class="toc-level-2"><a href="#link-preview">Link Preview</a></li><li class="toc-level-2"><a href="#ki-prompt">KI-Prompt</a></li><li class="toc-level-2"><a href="#updates-changelog">Updates &#x28;Changelog&#x29;</a></li><li class="toc-level-2"><a href="#wiederverwendbare-inhalte-includes">Wiederverwendbare Inhalte &#x28;Includes&#x29;</a></li><li class="toc-level-2"><a href="#conditional-content">Conditional content</a></li><li class="toc-level-2"><a href="#kontaktformulare">Kontaktformulare</a></li><li class="toc-level-2"><a href="#schleife-und-bedingung-datengesteuert">Schleife und Bedingung &#x28;datengesteuert&#x29;</a></li><li class="toc-level-2"><a href="#kursindex">Kursindex</a></li></ul></nav>
 			</aside>
 
 		</div>
@@ -625,6 +668,7 @@ wird, sobald der Index auf der Seite steht.</p>
 	<script src="/de/assets/conditional-content-init.js" defer></script>
 	<script src="/de/assets/course-progress.js" defer></script>
 	<script src="/de/assets/prompt-init.js" defer></script>
+	<script src="/de/assets/contact-form-init.js" defer></script>
 
 	<script src="/de/assets/page-actions-init.js" defer></script>
 

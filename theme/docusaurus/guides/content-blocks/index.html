@@ -40,7 +40,7 @@
 		} )();
 	</script>
 	<link rel="stylesheet" href="/theme/docusaurus/assets/vendor/highlight/github.min.css">
-	<link rel="stylesheet" href="/theme/docusaurus/assets/theme/style.9e649853.css">
+	<link rel="stylesheet" href="/theme/docusaurus/assets/theme/style.b70cd795.css">
 	
 
 	<style>
@@ -138,7 +138,7 @@ Content Blocks</h1>
 
 
 
-	<details class="bxsites-toc-mobile dsrs-toc--mobile"><summary class="dsrs-toc--mobile__summary">On this page</summary><ul><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#expandable">Expandable</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#cards">Cards</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#columns">Columns</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#stepper">Stepper</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#file">File</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#page-break">Page break</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#buttons">Buttons</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#embed">Embed</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#page-link">Page link</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#link-preview">Link preview</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#ai-prompt">AI Prompt</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#updates-changelog">Updates &#x28;changelog&#x29;</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#reusable-content-includes">Reusable content &#x28;includes&#x29;</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#conditional-content">Conditional content</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#loop-and-conditional-data-driven">Loop and conditional &#x28;data-driven&#x29;</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#course-index">Course index</a></li></ul></details>
+	<details class="bxsites-toc-mobile dsrs-toc--mobile"><summary class="dsrs-toc--mobile__summary">On this page</summary><ul><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#expandable">Expandable</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#cards">Cards</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#columns">Columns</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#stepper">Stepper</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#file">File</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#page-break">Page break</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#buttons">Buttons</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#embed">Embed</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#page-link">Page link</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#link-preview">Link preview</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#ai-prompt">AI Prompt</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#updates-changelog">Updates &#x28;changelog&#x29;</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#reusable-content-includes">Reusable content &#x28;includes&#x29;</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#conditional-content">Conditional content</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#contact-forms">Contact forms</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#loop-and-conditional-data-driven">Loop and conditional &#x28;data-driven&#x29;</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#course-index">Course index</a></li></ul></details>
 
 				<div class="dsrs-content-body">
 				<h1 id="content-blocks"><a href="#content-blocks" id="content-blocks" name="content-blocks" class="anchor"></a>Content Blocks</h1>
@@ -453,6 +453,42 @@ same preference automatically on load (handy for sharing a direct link to
 &quot;the Pro version of this page&quot;), and a project's own theme override can
 call <code>window.bxSitesSetPreference( key, value )</code> directly to drive it from
 custom UI instead.</p>
+<h2 id="contact-forms"><a href="#contact-forms" id="contact-forms" name="contact-forms" class="anchor"></a>Contact forms</h2>
+<blockquote>
+<p><strong>Premium feature.</strong> A <code>::: contact-form</code> block always renders as a
+real, complete form - inputs, labels, a submit button, all of it - but
+<em>submitting</em> it only works once the project's own bxSites Cloud plan
+includes working forms. On a plan that doesn't, a reader who submits
+anyway sees a friendly &quot;upgrade to enable this form&quot; message instead of
+their message going anywhere. There's nothing to configure here to turn
+that on or off - it's entirely a property of the account's plan.</p>
+</blockquote>
+<p>A labeled contact/lead-gen form, submitted with <code>fetch()</code> to bxSites
+Cloud rather than a page reload:</p>
+<pre data-bxsites-start-line="1" data-bxsites-title="Example"><code class="language-markdown">::: contact-form id=&quot;demo-request&quot; to=&quot;sales@acme.com&quot; fields=&quot;name:text,email*:email,message:textarea&quot; submitLabel=&quot;Send&quot; :::
+</code></pre>
+<form class="bxsites-contact-form" data-bx-form data-form-id="demo-request" data-form-to="sales@acme.com" action="/api/forms/submit" method="POST"><div class="bxsites-contact-form__field"><label class="bxsites-contact-form__label" for="bxsites-contact-form-demo-request-name">Name</label><input class="bxsites-contact-form__input" type="text" id="bxsites-contact-form-demo-request-name" name="name"></div><div class="bxsites-contact-form__field"><label class="bxsites-contact-form__label" for="bxsites-contact-form-demo-request-email">Email <span class="bxsites-contact-form__required" aria-hidden="true">*</span></label><input class="bxsites-contact-form__input" type="email" id="bxsites-contact-form-demo-request-email" name="email" required></div><div class="bxsites-contact-form__field"><label class="bxsites-contact-form__label" for="bxsites-contact-form-demo-request-message">Message</label><textarea class="bxsites-contact-form__input bxsites-contact-form__textarea" id="bxsites-contact-form-demo-request-message" name="message"></textarea></div><input class="bxsites-contact-form__honeypot" type="text" name="_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px"><button type="submit" class="bxsites-button bxsites-button--primary bxsites-button--medium"><span class="bxsites-button__label">Send</span></button><div class="bxsites-contact-form__status" data-bx-form-status hidden></div></form>
+<ul>
+<li><code>id</code> - this form's own slug. Matches a form configuration (who it
+notifies, spam filtering, and so on) that you set up in bxSites Cloud,
+not in this markdown - this build never checks that the id you write
+here actually exists there, it's just passed straight through.
+Defaults to <code>&quot;contact&quot;</code> when omitted.</li>
+<li><code>to</code> - optional and purely informational (real delivery routing is
+configured server-side, by the account admin) - handy as a reminder of
+where a given form's submissions end up when you're skimming the page
+source later.</li>
+<li><code>fields</code> - required; a small DSL, comma-separated <code>name:type</code> pairs:
+add a trailing <code>*</code> right after a field's own name (before its <code>:</code>) to
+mark it required, e.g. <code>email*:email</code>. Supported types are <code>text</code>,
+<code>email</code>, and <code>textarea</code>; any other/unrecognized type falls back to a
+plain <code>text</code> input rather than failing the build. Each field's own
+label is derived from its name (<code>full-name</code> becomes &quot;Full Name&quot;).</li>
+<li><code>submitLabel</code> - the submit button's own text; defaults to <code>&quot;Send&quot;</code>.</li>
+</ul>
+<p>Every form also carries a hidden honeypot field a real visitor never
+sees or fills in - bxSites Cloud's own spam filtering uses it, no
+configuration needed here.</p>
 <h2 id="loop-and-conditional-data-driven"><a href="#loop-and-conditional-data-driven" id="loop-and-conditional-data-driven" name="loop-and-conditional-data-driven" class="anchor"></a>Loop and conditional (data-driven)</h2>
 <p><code>::: for</code> and <code>::: if</code> render their own content against <a href="/theme/docusaurus/guides/data-files/index.html">reusable
 data</a> - a <code>docs/data/*.yaml</code>/<code>.json</code> file's own value,
@@ -537,7 +573,7 @@ tracked once the index is on the page.</p>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/content-blocks.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/theme/docusaurus/guides/content-blocks.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 10, 2026, 1&#x3a;58&#x3a;38 AM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/content-blocks.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/theme/docusaurus/guides/content-blocks.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 10, 2026, 6&#x3a;26&#x3a;40 PM</span></div>
 
 			</article>
 
@@ -559,7 +595,7 @@ tracked once the index is on the page.</p>
 		</main>
 
 		<aside class="dsrs-toc-sidebar">
-			<nav class="dsrs-toc" aria-label="On this page"><div class="dsrs-toc__title">On this page</div><ul><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#expandable">Expandable</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#cards">Cards</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#columns">Columns</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#stepper">Stepper</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#file">File</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#page-break">Page break</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#buttons">Buttons</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#embed">Embed</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#page-link">Page link</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#link-preview">Link preview</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#ai-prompt">AI Prompt</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#updates-changelog">Updates &#x28;changelog&#x29;</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#reusable-content-includes">Reusable content &#x28;includes&#x29;</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#conditional-content">Conditional content</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#loop-and-conditional-data-driven">Loop and conditional &#x28;data-driven&#x29;</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#course-index">Course index</a></li></ul></nav>
+			<nav class="dsrs-toc" aria-label="On this page"><div class="dsrs-toc__title">On this page</div><ul><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#expandable">Expandable</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#cards">Cards</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#columns">Columns</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#stepper">Stepper</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#file">File</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#page-break">Page break</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#buttons">Buttons</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#embed">Embed</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#page-link">Page link</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#link-preview">Link preview</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#ai-prompt">AI Prompt</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#updates-changelog">Updates &#x28;changelog&#x29;</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#reusable-content-includes">Reusable content &#x28;includes&#x29;</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#conditional-content">Conditional content</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#contact-forms">Contact forms</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#loop-and-conditional-data-driven">Loop and conditional &#x28;data-driven&#x29;</a></li><li class="dsrs-toc__item dsrs-toc__item--2"><a href="#course-index">Course index</a></li></ul></nav>
 		</aside>
 
 	</div>
@@ -586,6 +622,7 @@ tracked once the index is on the page.</p>
 	<script src="/theme/docusaurus/assets/conditional-content-init.js" defer></script>
 	<script src="/theme/docusaurus/assets/course-progress.js" defer></script>
 	<script src="/theme/docusaurus/assets/prompt-init.js" defer></script>
+	<script src="/theme/docusaurus/assets/contact-form-init.js" defer></script>
 
 	<script src="/theme/docusaurus/assets/page-actions-init.js" defer></script>
 

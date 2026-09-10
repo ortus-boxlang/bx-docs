@@ -460,6 +460,50 @@ di un progetto può chiamare direttamente
 `window.bxSitesSetPreference( key, value )` per pilotarla da
 un'interfaccia personalizzata invece.
 
+## Moduli di contatto
+
+> **Funzionalità premium.** Un blocco `::: contact-form` viene sempre
+> renderizzato come un modulo reale e completo - campi, etichette,
+> pulsante di invio, tutto - ma *l'invio* funziona solo quando il piano
+> bxSites Cloud del progetto include moduli funzionanti. Su un piano che
+> non lo include, chi invia comunque vede un messaggio amichevole "esegui
+> l'upgrade per abilitare questo modulo" invece di vedere il proprio
+> messaggio arrivare a destinazione. Non c'è nulla da configurare qui per
+> attivarlo o disattivarlo - è interamente una proprietà del piano
+> dell'account.
+
+Un modulo di contatto/lead-gen con etichette, inviato con `fetch()` a
+bxSites Cloud invece di un ricaricamento della pagina:
+
+```markdown title="Esempio" linenums="1"
+::: contact-form id="demo-request" to="sales@acme.com" fields="name:text,email*:email,message:textarea" submitLabel="Send" :::
+```
+
+::: contact-form id="demo-request" to="sales@acme.com" fields="name:text,email*:email,message:textarea" submitLabel="Send" :::
+
+- `id` - lo slug di questo modulo. Corrisponde a una configurazione del
+  modulo (a chi notifica, filtro antispam, e così via) che imposti in
+  bxSites Cloud, non in questo markdown - questa build non verifica mai
+  che l'id scritto qui esista davvero lì, viene semplicemente passato
+  così com'è. Il valore predefinito è `"contact"` se omesso.
+- `to` - opzionale e puramente informativo (l'instradamento reale della
+  consegna è configurato lato server, dall'amministratore dell'account) -
+  utile come promemoria di dove finiscono gli invii di un dato modulo
+  quando in seguito scorri il sorgente della pagina.
+- `fields` - obbligatorio; un piccolo DSL, coppie `name:type` separate da
+  virgole: aggiungi un `*` finale subito dopo il nome del campo (prima
+  dei due punti) per contrassegnarlo come obbligatorio, es.
+  `email*:email`. I tipi supportati sono `text`, `email` e `textarea`;
+  qualsiasi altro tipo non riconosciuto ripiega su un semplice campo
+  `text` invece di far fallire la build. L'etichetta di ogni campo viene
+  derivata dal suo nome (`full-name` diventa "Full Name").
+- `submitLabel` - il testo del pulsante di invio; il valore predefinito è
+  `"Send"`.
+
+Ogni modulo porta anche un campo honeypot nascosto che una persona reale
+non vede né compila mai - lo usa il filtro antispam di bxSites Cloud,
+senza bisogno di configurazione qui.
+
 ## Loop e condizionale (basati sui dati)
 
 `::: for` e `::: if` renderizzano il proprio contenuto rispetto ai

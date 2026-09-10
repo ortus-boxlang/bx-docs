@@ -40,7 +40,7 @@
 		} )();
 	</script>
 	<link rel="stylesheet" href="/theme/justthedocs/it/assets/vendor/highlight/github.min.css">
-	<link rel="stylesheet" href="/theme/justthedocs/it/assets/theme/style.310f3960.css">
+	<link rel="stylesheet" href="/theme/justthedocs/it/assets/theme/style.4e71677a.css">
 	
 
 	<style>
@@ -136,7 +136,7 @@ Blocchi di contenuto</h1>
 
 
 
-	<details class="bxsites-toc-mobile jtd-toc--mobile"><summary class="jtd-toc--mobile__summary">In questa pagina</summary><ul><li class="jtd-toc__item jtd-toc__item--2"><a href="#espandibile">Espandibile</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#card">Card</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#colonne">Colonne</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#stepper">Stepper</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#file">File</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#pulsanti">Pulsanti</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#embed">Embed</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#link-a-pagina">Link a pagina</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#anteprima-link">Anteprima link</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#prompt-ai">Prompt AI</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#aggiornamenti-changelog">Aggiornamenti &#x28;changelog&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#contenuto-riutilizzabile-include">Contenuto riutilizzabile &#x28;include&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#contenuto-condizionale">Contenuto condizionale</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#loop-e-condizionale-basati-sui-dati">Loop e condizionale &#x28;basati sui dati&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#indice-del-corso">Indice del corso</a></li></ul></details>
+	<details class="bxsites-toc-mobile jtd-toc--mobile"><summary class="jtd-toc--mobile__summary">In questa pagina</summary><ul><li class="jtd-toc__item jtd-toc__item--2"><a href="#espandibile">Espandibile</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#card">Card</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#colonne">Colonne</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#stepper">Stepper</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#file">File</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#pulsanti">Pulsanti</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#embed">Embed</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#link-a-pagina">Link a pagina</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#anteprima-link">Anteprima link</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#prompt-ai">Prompt AI</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#aggiornamenti-changelog">Aggiornamenti &#x28;changelog&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#contenuto-riutilizzabile-include">Contenuto riutilizzabile &#x28;include&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#contenuto-condizionale">Contenuto condizionale</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#moduli-di-contatto">Moduli di contatto</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#loop-e-condizionale-basati-sui-dati">Loop e condizionale &#x28;basati sui dati&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#indice-del-corso">Indice del corso</a></li></ul></details>
 
 				<div class="jtd-content-body">
 				<h1 id="blocchi-di-contenuto"><a href="#blocchi-di-contenuto" id="blocchi-di-contenuto" name="blocchi-di-contenuto" class="anchor"></a>Blocchi di contenuto</h1>
@@ -465,6 +465,46 @@ preferenza al caricamento (comodo per condividere un link diretto verso
 di un progetto può chiamare direttamente
 <code>window.bxSitesSetPreference( key, value )</code> per pilotarla da
 un'interfaccia personalizzata invece.</p>
+<h2 id="moduli-di-contatto"><a href="#moduli-di-contatto" id="moduli-di-contatto" name="moduli-di-contatto" class="anchor"></a>Moduli di contatto</h2>
+<blockquote>
+<p><strong>Funzionalità premium.</strong> Un blocco <code>::: contact-form</code> viene sempre
+renderizzato come un modulo reale e completo - campi, etichette,
+pulsante di invio, tutto - ma <em>l'invio</em> funziona solo quando il piano
+bxSites Cloud del progetto include moduli funzionanti. Su un piano che
+non lo include, chi invia comunque vede un messaggio amichevole &quot;esegui
+l'upgrade per abilitare questo modulo&quot; invece di vedere il proprio
+messaggio arrivare a destinazione. Non c'è nulla da configurare qui per
+attivarlo o disattivarlo - è interamente una proprietà del piano
+dell'account.</p>
+</blockquote>
+<p>Un modulo di contatto/lead-gen con etichette, inviato con <code>fetch()</code> a
+bxSites Cloud invece di un ricaricamento della pagina:</p>
+<pre data-bxsites-start-line="1" data-bxsites-title="Esempio"><code class="language-markdown">::: contact-form id=&quot;demo-request&quot; to=&quot;sales@acme.com&quot; fields=&quot;name:text,email*:email,message:textarea&quot; submitLabel=&quot;Send&quot; :::
+</code></pre>
+<form class="bxsites-contact-form" data-bx-form data-form-id="demo-request" data-form-to="sales@acme.com" action="/api/forms/submit" method="POST"><div class="bxsites-contact-form__field"><label class="bxsites-contact-form__label" for="bxsites-contact-form-demo-request-name">Name</label><input class="bxsites-contact-form__input" type="text" id="bxsites-contact-form-demo-request-name" name="name"></div><div class="bxsites-contact-form__field"><label class="bxsites-contact-form__label" for="bxsites-contact-form-demo-request-email">Email <span class="bxsites-contact-form__required" aria-hidden="true">*</span></label><input class="bxsites-contact-form__input" type="email" id="bxsites-contact-form-demo-request-email" name="email" required></div><div class="bxsites-contact-form__field"><label class="bxsites-contact-form__label" for="bxsites-contact-form-demo-request-message">Message</label><textarea class="bxsites-contact-form__input bxsites-contact-form__textarea" id="bxsites-contact-form-demo-request-message" name="message"></textarea></div><input class="bxsites-contact-form__honeypot" type="text" name="_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px"><button type="submit" class="bxsites-button bxsites-button--primary bxsites-button--medium"><span class="bxsites-button__label">Send</span></button><div class="bxsites-contact-form__status" data-bx-form-status hidden></div></form>
+<ul>
+<li><code>id</code> - lo slug di questo modulo. Corrisponde a una configurazione del
+modulo (a chi notifica, filtro antispam, e così via) che imposti in
+bxSites Cloud, non in questo markdown - questa build non verifica mai
+che l'id scritto qui esista davvero lì, viene semplicemente passato
+così com'è. Il valore predefinito è <code>&quot;contact&quot;</code> se omesso.</li>
+<li><code>to</code> - opzionale e puramente informativo (l'instradamento reale della
+consegna è configurato lato server, dall'amministratore dell'account) -
+utile come promemoria di dove finiscono gli invii di un dato modulo
+quando in seguito scorri il sorgente della pagina.</li>
+<li><code>fields</code> - obbligatorio; un piccolo DSL, coppie <code>name:type</code> separate da
+virgole: aggiungi un <code>*</code> finale subito dopo il nome del campo (prima
+dei due punti) per contrassegnarlo come obbligatorio, es.
+<code>email*:email</code>. I tipi supportati sono <code>text</code>, <code>email</code> e <code>textarea</code>;
+qualsiasi altro tipo non riconosciuto ripiega su un semplice campo
+<code>text</code> invece di far fallire la build. L'etichetta di ogni campo viene
+derivata dal suo nome (<code>full-name</code> diventa &quot;Full Name&quot;).</li>
+<li><code>submitLabel</code> - il testo del pulsante di invio; il valore predefinito è
+<code>&quot;Send&quot;</code>.</li>
+</ul>
+<p>Ogni modulo porta anche un campo honeypot nascosto che una persona reale
+non vede né compila mai - lo usa il filtro antispam di bxSites Cloud,
+senza bisogno di configurazione qui.</p>
 <h2 id="loop-e-condizionale-basati-sui-dati"><a href="#loop-e-condizionale-basati-sui-dati" id="loop-e-condizionale-basati-sui-dati" name="loop-e-condizionale-basati-sui-dati" class="anchor"></a>Loop e condizionale (basati sui dati)</h2>
 <p><code>::: for</code> e <code>::: if</code> renderizzano il proprio contenuto rispetto ai
 <a href="/theme/justthedocs/it/guides/data-files/index.html">dati riutilizzabili</a> - il valore proprio di un file
@@ -558,7 +598,7 @@ l'indice è presente sulla pagina.</p>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/it/guides/content-blocks.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Modifica questa pagina</a><a href="/theme/justthedocs/it/guides/content-blocks.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Scarica Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Ultimo aggiornamento Sep 10, 2026, 1&#x3a;58&#x3a;38 AM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/it/guides/content-blocks.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Modifica questa pagina</a><a href="/theme/justthedocs/it/guides/content-blocks.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Scarica Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Ultimo aggiornamento Sep 10, 2026, 6&#x3a;26&#x3a;40 PM</span></div>
 
 			</article>
 
@@ -580,7 +620,7 @@ l'indice è presente sulla pagina.</p>
 		</main>
 
 		<aside class="jtd-toc-sidebar">
-			<nav class="jtd-toc" aria-label="In questa pagina"><div class="jtd-toc__title">In questa pagina</div><ul><li class="jtd-toc__item jtd-toc__item--2"><a href="#espandibile">Espandibile</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#card">Card</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#colonne">Colonne</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#stepper">Stepper</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#file">File</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#pulsanti">Pulsanti</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#embed">Embed</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#link-a-pagina">Link a pagina</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#anteprima-link">Anteprima link</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#prompt-ai">Prompt AI</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#aggiornamenti-changelog">Aggiornamenti &#x28;changelog&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#contenuto-riutilizzabile-include">Contenuto riutilizzabile &#x28;include&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#contenuto-condizionale">Contenuto condizionale</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#loop-e-condizionale-basati-sui-dati">Loop e condizionale &#x28;basati sui dati&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#indice-del-corso">Indice del corso</a></li></ul></nav>
+			<nav class="jtd-toc" aria-label="In questa pagina"><div class="jtd-toc__title">In questa pagina</div><ul><li class="jtd-toc__item jtd-toc__item--2"><a href="#espandibile">Espandibile</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#card">Card</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#colonne">Colonne</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#stepper">Stepper</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#file">File</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#pulsanti">Pulsanti</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#embed">Embed</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#link-a-pagina">Link a pagina</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#anteprima-link">Anteprima link</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#prompt-ai">Prompt AI</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#aggiornamenti-changelog">Aggiornamenti &#x28;changelog&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#contenuto-riutilizzabile-include">Contenuto riutilizzabile &#x28;include&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#contenuto-condizionale">Contenuto condizionale</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#moduli-di-contatto">Moduli di contatto</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#loop-e-condizionale-basati-sui-dati">Loop e condizionale &#x28;basati sui dati&#x29;</a></li><li class="jtd-toc__item jtd-toc__item--2"><a href="#indice-del-corso">Indice del corso</a></li></ul></nav>
 		</aside>
 
 	</div>
@@ -607,6 +647,7 @@ l'indice è presente sulla pagina.</p>
 	<script src="/theme/justthedocs/it/assets/conditional-content-init.js" defer></script>
 	<script src="/theme/justthedocs/it/assets/course-progress.js" defer></script>
 	<script src="/theme/justthedocs/it/assets/prompt-init.js" defer></script>
+	<script src="/theme/justthedocs/it/assets/contact-form-init.js" defer></script>
 
 	<script src="/theme/justthedocs/it/assets/page-actions-init.js" defer></script>
 
