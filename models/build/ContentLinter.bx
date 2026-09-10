@@ -18,6 +18,7 @@ class {
 
 	variables.frontmatterParser = new "models.build.FrontmatterParser@bxsites"()
 	variables.docsLoader = new "models.build.DocsLoader@bxsites"()
+	variables.pathRelativizer = new "models.build.PathRelativizer@bxsites"()
 
 	/**
 	 * @docsDir Absolute path to the project's docs/ directory
@@ -101,7 +102,11 @@ class {
 
 		var issues = []
 		for ( var filePath in directoryList( postsDir, true, "path", "*.md" ) ) {
-			var relativeToPostsDir = filePath.reReplace( postsDir, "", "one" ).reReplace( "^[\/]", "" )
+			// PathRelativizer.bx, not a raw reReplace(filePath, postsDir, ...) -
+			// postsDir is an absolute path, backslash-separated on Windows,
+			// which reReplace() would compile as a regex pattern rather than
+			// treat as literal text (see PathRelativizer.bx's own docblock).
+			var relativeToPostsDir = variables.pathRelativizer.relativeTo( postsDir, filePath )
 			var fm = variables.frontmatterParser.parse( fileRead( filePath ) ).frontmatter
 			var date = trim( fm.date ?: "" )
 

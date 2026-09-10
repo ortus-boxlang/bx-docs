@@ -29,6 +29,7 @@
 class {
 
 	variables.fingerprinter = new "models.build.AssetFingerprinter@bxsites"()
+	variables.pathRelativizer = new "models.build.PathRelativizer@bxsites"()
 	variables.eligiblePattern = createObject( "java", "java.util.regex.Pattern" ).compile( "(?i)\.(png|jpe?g)$" )
 	// Flips true the first time WebP encoding fails (e.g. no ImageIO WebP
 	// writer registered in this environment) - see buildEntry()'s own webp
@@ -61,7 +62,11 @@ class {
 			.filter( path => variables.eligiblePattern.matcher( path ).find() )
 
 		for ( var filePath in files ) {
-			var key = "assets/" & filePath.reReplace( dir, "", "one" ).reReplace( "^[\/]", "" )
+			// PathRelativizer.bx, not a raw reReplace(filePath, dir, ...) -
+			// dir is an absolute path, backslash-separated on Windows, which
+			// reReplace() would compile as a regex pattern rather than treat
+			// as literal text (see PathRelativizer.bx's own docblock).
+			var key = "assets/" & variables.pathRelativizer.relativeTo( dir, filePath )
 			manifest[ key ] = buildEntry( filePath, arguments.imagesConfig, arguments.cacheDir, arguments.fingerprint )
 		}
 

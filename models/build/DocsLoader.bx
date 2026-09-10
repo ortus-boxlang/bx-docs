@@ -7,6 +7,7 @@
 class {
 
 	variables.frontmatterParser = new "models.build.FrontmatterParser@bxsites"()
+	variables.pathRelativizer = new "models.build.PathRelativizer@bxsites"()
 
 	/**
 	 * Walks every `.md` file under `docsDir` (excluding `docs/assets/**`,
@@ -23,18 +24,18 @@ class {
 	 * @return Array of page structs, sorted by [order] then [title]: { relativePath, sourcePath, urlPath, title, description, order, hidden, tags, redirectFrom, frontmatter, icon, summary, ogImage, body }
 	 */
 	array function load( required string docsDir ) {
-		var dir = normalizePath( arguments.docsDir ).reReplace( "[\/]+$", "" )
+		var dir = variables.pathRelativizer.normalize( arguments.docsDir ).reReplace( "[\/]+$", "" )
 
 		if ( !directoryExists( dir ) ) {
 			throw( type = "BxSites.DocsDirNotFound", message = "No docs/ directory found at [#dir#]" )
 		}
 
 		var pages = directoryList( dir, true, "path", "*.md" )
-			.filter( path => !relativePathFrom( dir, path ).reFindNoCase( "^assets[\/]" ) )
-			.filter( path => !relativePathFrom( dir, path ).reFindNoCase( "^versions[\/]" ) )
-			.filter( path => !relativePathFrom( dir, path ).reFindNoCase( "^i18n[\/]" ) )
-			.filter( path => !relativePathFrom( dir, path ).reFindNoCase( "^blog[\/]" ) )
-			.filter( path => !relativePathFrom( dir, path ).reFindNoCase( "^includes[\/]" ) )
+			.filter( path => !variables.pathRelativizer.relativeTo( dir, path ).reFindNoCase( "^assets[\/]" ) )
+			.filter( path => !variables.pathRelativizer.relativeTo( dir, path ).reFindNoCase( "^versions[\/]" ) )
+			.filter( path => !variables.pathRelativizer.relativeTo( dir, path ).reFindNoCase( "^i18n[\/]" ) )
+			.filter( path => !variables.pathRelativizer.relativeTo( dir, path ).reFindNoCase( "^blog[\/]" ) )
+			.filter( path => !variables.pathRelativizer.relativeTo( dir, path ).reFindNoCase( "^includes[\/]" ) )
 			.map( path => loadFile( dir, path ) )
 
 		pages.sort( ( a, b ) => {
@@ -56,7 +57,7 @@ class {
 	 * @filePath Absolute path to the .md file being loaded
 	 */
 	private struct function loadFile( required string docsDir, required string filePath ) {
-		var relativePath = relativePathFrom( arguments.docsDir, arguments.filePath )
+		var relativePath = variables.pathRelativizer.relativeTo( arguments.docsDir, arguments.filePath )
 		var parsed = variables.frontmatterParser.parse( fileRead( arguments.filePath ) )
 		var fm = parsed.frontmatter
 
@@ -90,36 +91,6 @@ class {
 			ogImage      : trim( fm.ogImage ?: "" ),
 			body         : parsed.body
 		}
-	}
-
-	/**
-	 * Derives a docs-root-relative path from an absolute file path without
-	 * interpreting the docs root as a regex pattern, so Windows-style
-	 * backslashes are treated as plain separators.
-	 *
-	 * @basePath Absolute docs root path
-	 * @filePath Absolute path to a file under docs root
-	 */
-	private string function relativePathFrom( required string basePath, required string filePath ) {
-		var normalizedBase = normalizePath( arguments.basePath ).reReplace( "[\/]+$", "" )
-		var normalizedPath = normalizePath( arguments.filePath )
-
-		if ( normalizedPath.startsWith( normalizedBase ) ) {
-			var relativePath = normalizedPath.right( normalizedPath.len() - normalizedBase.len() )
-			return relativePath.reReplace( "^[\/]+", "" )
-		}
-
-		return normalizedPath.reReplace( "^[\/]+", "" )
-	}
-
-	/**
-	 * Normalizes path separators to "/" for consistent cross-platform path
-	 * comparisons and prefix stripping.
-	 *
-	 * @value The path to normalize
-	 */
-	private string function normalizePath( required string value ) {
-		return arguments.value.replace( char( 92 ), "/", "all" )
 	}
 
 	/**

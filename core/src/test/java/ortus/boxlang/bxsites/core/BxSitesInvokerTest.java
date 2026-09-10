@@ -115,4 +115,48 @@ class BxSitesInvokerTest {
 
         assertFalse(Files.exists(missing), "only `new` should create a missing project root - build/serve/etc. expect one to already exist");
     }
+
+    // javaExecutable() prefers java.home's own bin/ launcher over a bare
+    // "java" PATH lookup - these fake a JDK layout under java.home for each
+    // OS shape rather than assuming the JDK actually running this test
+    // matches either one, so the Windows case is exercised on this (Linux)
+    // CI runner too, not just wherever the suite happens to run.
+
+    @Test
+    void javaExecutable_prefersJavaHomesOwnLauncherOnUnix(@TempDir Path fakeJavaHome) throws IOException {
+        Path bin = Files.createDirectories(fakeJavaHome.resolve("bin"));
+        Path javaBinary = Files.createFile(bin.resolve("java"));
+        javaBinary.toFile().setExecutable(true);
+
+        withJavaHome(fakeJavaHome, () -> assertEquals(javaBinary.toString(), BxSitesInvoker.javaExecutable()));
+    }
+
+    @Test
+    void javaExecutable_prefersJavaHomesOwnLauncherOnWindows_javaExeNotBareJava(@TempDir Path fakeJavaHome) throws IOException {
+        // Reproduces the actual bug: a Windows JDK/JRE never ships a bare
+        // "java" file, only "java.exe" - Path.of(javaHome, "bin", "java")
+        // alone (this method's old, whole implementation) would find
+        // nothing here and silently fall through to the bare "java"
+        // PATH-lookup fallback on every real Windows machine.
+        Path bin = Files.createDirectories(fakeJavaHome.resolve("bin"));
+        Path javaExe = Files.createFile(bin.resolve("java.exe"));
+        javaExe.toFile().setExecutable(true);
+
+        withJavaHome(fakeJavaHome, () -> assertEquals(javaExe.toString(), BxSitesInvoker.javaExecutable()));
+    }
+
+    @Test
+    void javaExecutable_fallsBackToBareJavaWhenJavaHomeHasNeitherLauncher(@TempDir Path fakeJavaHome) {
+        withJavaHome(fakeJavaHome, () -> assertEquals("java", BxSitesInvoker.javaExecutable()));
+    }
+
+    private static void withJavaHome(Path fakeJavaHome, Runnable assertion) {
+        String original = System.getProperty("java.home");
+        System.setProperty("java.home", fakeJavaHome.toString());
+        try {
+            assertion.run();
+        } finally {
+            System.setProperty("java.home", original);
+        }
+    }
 }
