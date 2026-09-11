@@ -46,6 +46,17 @@
 	--bxsites-step-warning-text: #1a1300;
 	--bxsites-step-danger-bg: #dc2626;
 	--bxsites-step-danger-text: #ffffff;
+	/* Tables - see the `.bxsites-table-wrap` rules further down. The
+	   card/header surfaces are literal colors rather than the theme's
+	   own surface token so a table always reads as its own panel, and
+	   the stripe/hover tints are alpha-only so they work on top of
+	   whichever surface the card ends up painting. */
+	--bxsites-table-bg: #ffffff;
+	--bxsites-table-head-bg: #f4f5fa;
+	--bxsites-table-head-text: var(--md-ink);
+	--bxsites-table-border: var(--md-border);
+	--bxsites-table-stripe-bg: rgba(0, 0, 0, 0.022);
+	--bxsites-table-hover-bg: rgba(0, 0, 0, 0.045);
 }
 
 /* A near-black slate surface with a soft lavender accent - kept just as
@@ -64,6 +75,12 @@
 	--md-border: rgba(255, 255, 255, 0.1);
 	--md-code-bg: #1b1c23;
 	--bxsites-step-line: rgba(255, 255, 255, 0.15);
+	--bxsites-table-bg: #16171d;
+	--bxsites-table-head-bg: #1f2029;
+	--bxsites-table-head-text: var(--md-ink);
+	--bxsites-table-border: rgba(255, 255, 255, 0.11);
+	--bxsites-table-stripe-bg: rgba(255, 255, 255, 0.025);
+	--bxsites-table-hover-bg: rgba(255, 255, 255, 0.06);
 }
 
 [x-cloak] {
@@ -1271,69 +1288,115 @@ code:not(pre code) {
 	border-radius: 8px;
 }
 
+/* A rendered table is a self-contained card: one rounded, bordered
+   wrapper, horizontal row dividers only (no vertical grid lines), a tinted
+   header strip, and zebra/hover tints that sit on top of the card's own
+   surface. Every color comes from a `--bxsites-table-*` token (declared in
+   this file's `:root`/`[data-theme="dark"]` blocks) with a literal
+   fallback, so the whole table flips with the theme toggle instead of
+   leaving a light-mode slab behind on a dark page, and an `extraCss`
+   override or a custom theme that never declares the tokens still renders
+   correctly - see docs/guides/tables.md#theming.
+
+   BuildPipeline's own TableWrapProcessor adds the `.bxsites-table-wrap`
+   div around every rendered table (and, past ten rows, the filter input
+   inside it), which is what makes the card and the sticky header below
+   possible at all - bx-markdown/Flexmark's `tableOptions` has no way to
+   emit wrapping markup of its own. */
 .jtd-content-body .bxsites-table-wrap {
 	/* Horizontal only - a tall table (e.g. from the filter feature) must
 	   never be vertically clipped; sticky-header pinning (below) still
-	   works fine against the page's own scroll. */
+	   works fine against the page's own scroll. Vertical overflow is
+	   hidden rather than left visible so the card's own rounded corners
+	   actually clip the header strip and the last row's zebra/hover tint -
+	   nothing is lost by it, since the wrapper has no height of its own to
+	   overflow (`overflow-x: auto` alone would compute `overflow-y` to
+	   `auto` and clip exactly the same, just with square corners). */
 	overflow-x: auto;
-	margin-bottom: 1.5rem;
+	overflow-y: hidden;
+	margin: 0 0 1.5rem;
+	background: var(--bxsites-table-bg, #ffffff);
+	border: 1px solid var(--bxsites-table-border, rgba(0, 0, 0, 0.09));
+	border-radius: 10px;
 }
 
+/* The filter input sits inside the card, so it reads as the table's own
+   header strip rather than a stray form control floating above it. */
 .jtd-content-body .bxsites-table-filter {
 	display: block;
 	width: 100%;
-	margin: 0 0 0.6rem;
-	padding: 0.4rem 0.75rem;
+	margin: 0;
+	padding: 0.55rem 1rem;
 	font-size: 0.85rem;
 	font-family: inherit;
-	border: 1px solid var(--bxsites-border);
-	border-radius: 20px;
-	background: var(--bxsites-bg);
-	color: var(--bxsites-text);
+	border: 0;
+	border-bottom: 1px solid var(--bxsites-table-border, rgba(0, 0, 0, 0.09));
+	border-radius: 10px 10px 0 0;
+	background: var(--bxsites-table-head-bg, #f4f5fa);
+	color: var(--bxsites-table-head-text, var(--md-ink));
 	box-sizing: border-box;
 }
 
+.jtd-content-body .bxsites-table-filter::placeholder {
+	color: var(--md-muted);
+	opacity: 1;
+}
+
 .jtd-content-body .bxsites-table-filter:focus {
-	outline: 2px solid var(--bxsites-link);
-	outline-offset: 1px;
+	/* Inset, so the ring doesn't spill outside the card's own rounded
+	   corners the way a positive offset would. */
+	outline: 2px solid var(--md-link);
+	outline-offset: -2px;
 }
 
 .jtd-content-body table {
 	width: 100%;
+	margin: 0;
 	border-collapse: collapse;
-	font-size: 0.95rem;
+	background: transparent;
+	font-size: 0.925rem;
 }
 
-.jtd-content-body thead th {
+.jtd-content-body table thead th {
 	position: sticky;
 	top: 0;
 	z-index: 1;
-	background-color: var(--md-surface);
+	/* Opaque on purpose - a translucent tint would let the rows scrolling
+	   underneath show through the pinned header. */
+	background-color: var(--bxsites-table-head-bg, #f4f5fa);
 }
 
-.jtd-content-body th,
-.jtd-content-body td {
-	padding: 0.6rem 0.9rem;
-	border: 1px solid var(--md-border);
+.jtd-content-body table th,
+.jtd-content-body table td {
+	padding: 0.7rem 1rem;
+	/* Row dividers only - vertical rules between cells are what made these
+	   read as a grid of boxes rather than rows of content. */
+	border: 0;
+	border-bottom: 1px solid var(--bxsites-table-border, rgba(0, 0, 0, 0.09));
 	text-align: left;
 	vertical-align: top;
 }
 
-.jtd-content-body th {
-	background: var(--md-code-bg);
-	font-weight: 700;
+.jtd-content-body table th {
+	color: var(--bxsites-table-head-text, var(--md-ink));
+	font-weight: 600;
 	font-size: 0.78rem;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
-	border-bottom: 2px solid var(--bxsites-link);
 }
 
-.jtd-content-body tbody tr:nth-child(even) {
-	background: rgba(0, 0, 0, 0.02);
+/* The wrapper's own border closes the card, so the last row doesn't need
+   a divider of its own under it. */
+.jtd-content-body table tbody tr:last-child>* {
+	border-bottom: 0;
 }
 
-[data-theme="dark"] .jtd-content-body tbody tr:nth-child(even) {
-	background: rgba(255, 255, 255, 0.03);
+.jtd-content-body table tbody tr:nth-child(even) {
+	background: var(--bxsites-table-stripe-bg, rgba(0, 0, 0, 0.022));
+}
+
+.jtd-content-body table tbody tr:hover {
+	background: var(--bxsites-table-hover-bg, rgba(0, 0, 0, 0.045));
 }
 
 @media (max-width: 900px) {
