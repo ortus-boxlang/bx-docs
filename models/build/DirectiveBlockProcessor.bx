@@ -1608,7 +1608,7 @@ class {
 	 *
 	 * @fieldsRaw The raw `fields` attribute value
 	 *
-	 * @return Array of { name, type ("text"/"email"/"textarea"), required, label } - one entry per well-formed segment. A malformed segment (no name, no `:type`) is silently skipped rather than failing the whole block - the same forgiving-typo spirit as an unrecognized `type` falling back to `"text"` below rather than erroring the build.
+	 * @return Array of { name, type ("text"/"email"/"textarea"/"number"), required, label } - one entry per well-formed segment. A malformed segment (no name, no `:type`) is silently skipped rather than failing the whole block - the same forgiving-typo spirit as an unrecognized `type` falling back to `"text"` below rather than erroring the build.
 	 */
 	private array function parseContactFields( required string fieldsRaw ) {
 		var fields = []
@@ -1632,7 +1632,7 @@ class {
 
 			var name = matcher.group( 1 )
 			var type = lCase( matcher.group( 2 ) )
-			if ( !listFindNoCase( "text,email,textarea", type ) ) {
+			if ( !listFindNoCase( "text,email,textarea,number", type ) ) {
 				type = "text"
 			}
 

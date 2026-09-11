@@ -575,6 +575,12 @@ class extends="testbox.system.BaseSpec" {
 				expect( html ).toInclude( '<input class="bxsites-contact-form__input" type="text" id="bxsites-contact-form-contact-phone" name="phone">' );
 			} );
 
+			it( "renders a ::: contact-form [type=number] field as a real number input, matching bxSites Cloud's own numeric validation for it", function() {
+				var html = render( '::: contact-form fields="quantity:number" :::' );
+
+				expect( html ).toInclude( '<input class="bxsites-contact-form__input" type="number" id="bxsites-contact-form-contact-quantity" name="quantity">' );
+			} );
+
 			it( "humanizes a ::: contact-form field's dashed/underscored name into its own label", function() {
 				var html = render( '::: contact-form fields="full-name:text,company_size:text" :::' );
 
