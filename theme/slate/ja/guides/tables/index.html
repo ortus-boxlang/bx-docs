@@ -40,7 +40,7 @@
 		} )();
 	</script>
 	<link rel="stylesheet" href="/theme/slate/ja/assets/vendor/highlight/github.min.css">
-	<link rel="stylesheet" href="/theme/slate/ja/assets/theme/style.4a1492af.css">
+	<link rel="stylesheet" href="/theme/slate/ja/assets/theme/style.d2d2f811.css">
 	
 
 	<style>
@@ -136,7 +136,7 @@
 
 
 
-	<details class="bxsites-toc-mobile slate-toc--mobile"><summary class="slate-toc--mobile__summary">&#x3053;&#x306e;&#x30da;&#x30fc;&#x30b8;&#x306e;&#x5185;&#x5bb9;</summary><ul><li class="slate-toc__item slate-toc__item--2"><a href="#セルの内容は通常のインライン-markdown">&#x30bb;&#x30eb;&#x306e;&#x5185;&#x5bb9;&#x306f;&#x901a;&#x5e38;&#x306e;&#x30a4;&#x30f3;&#x30e9;&#x30a4;&#x30f3; Markdown</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#セル内のパイプをエスケープする">&#x30bb;&#x30eb;&#x5185;&#x306e;&#x30d1;&#x30a4;&#x30d7;&#x3092;&#x30a8;&#x30b9;&#x30b1;&#x30fc;&#x30d7;&#x3059;&#x308b;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#短い行と長い行">&#x77ed;&#x3044;&#x884c;&#x3068;&#x9577;&#x3044;&#x884c;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#パース設定">&#x30d1;&#x30fc;&#x30b9;&#x8a2d;&#x5b9a;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#レスポンシブなスクロールと固定ヘッダー">&#x30ec;&#x30b9;&#x30dd;&#x30f3;&#x30b7;&#x30d6;&#x306a;&#x30b9;&#x30af;&#x30ed;&#x30fc;&#x30eb;&#x3068;&#x56fa;&#x5b9a;&#x30d8;&#x30c3;&#x30c0;&#x30fc;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#プレーンなデータの先へ">&#x30d7;&#x30ec;&#x30fc;&#x30f3;&#x306a;&#x30c7;&#x30fc;&#x30bf;&#x306e;&#x5148;&#x3078;</a></li></ul></details>
+	<details class="bxsites-toc-mobile slate-toc--mobile"><summary class="slate-toc--mobile__summary">&#x3053;&#x306e;&#x30da;&#x30fc;&#x30b8;&#x306e;&#x5185;&#x5bb9;</summary><ul><li class="slate-toc__item slate-toc__item--2"><a href="#セルの内容は通常のインライン-markdown">&#x30bb;&#x30eb;&#x306e;&#x5185;&#x5bb9;&#x306f;&#x901a;&#x5e38;&#x306e;&#x30a4;&#x30f3;&#x30e9;&#x30a4;&#x30f3; Markdown</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#セル内のパイプをエスケープする">&#x30bb;&#x30eb;&#x5185;&#x306e;&#x30d1;&#x30a4;&#x30d7;&#x3092;&#x30a8;&#x30b9;&#x30b1;&#x30fc;&#x30d7;&#x3059;&#x308b;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#短い行と長い行">&#x77ed;&#x3044;&#x884c;&#x3068;&#x9577;&#x3044;&#x884c;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#パース設定">&#x30d1;&#x30fc;&#x30b9;&#x8a2d;&#x5b9a;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#レスポンシブなスクロールと固定ヘッダー">&#x30ec;&#x30b9;&#x30dd;&#x30f3;&#x30b7;&#x30d6;&#x306a;&#x30b9;&#x30af;&#x30ed;&#x30fc;&#x30eb;&#x3068;&#x56fa;&#x5b9a;&#x30d8;&#x30c3;&#x30c0;&#x30fc;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#テーマ">&#x30c6;&#x30fc;&#x30de;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#プレーンなデータの先へ">&#x30d7;&#x30ec;&#x30fc;&#x30f3;&#x306a;&#x30c7;&#x30fc;&#x30bf;&#x306e;&#x5148;&#x3078;</a></li></ul></details>
 
 				<div class="slate-content-body">
 				<h1 id="テーブル"><a href="#テーブル" id="テーブル" name="テーブル" class="anchor"></a>テーブル</h1>
@@ -244,6 +244,40 @@
 上記のような短いテーブルは、すでに収まっているため、スクロールバーがまったく
 生成されません。カスタムの <code>theme/</code> オーバーライドは、他の CSS クラスと同様に
 <code>.bxsites-table-wrap</code>（とりわけその <code>max-height</code>）を再スタイリングできます。</p>
+<h2 id="テーマ"><a href="#テーマ" id="テーマ" name="テーマ" class="anchor"></a>テーマ</h2>
+<p>すべての組み込みテーマは、テーブルを独立したカードとしてレンダリングします -
+角丸でボーダーのあるラッパー、色味を付けたヘッダー帯、縦の罫線を持たない
+横方向の行区切り、そして行のゼブラ/ホバーの色味です。これらはすべて、テーマ自身の
+<code>assets/style.css</code> でモードごと（<code>:root</code> と <code>[data-theme=&quot;dark&quot;]</code>）に宣言された
+6 つの CSS カスタムプロパティから描画されます。</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>トークン</th><th>描画する対象</th></tr>
+</thead>
+<tbody>
+<tr><td><code>--bxsites-table-bg</code></td><td>すべての行の背面にあるカード自体の面</td></tr>
+<tr><td><code>--bxsites-table-head-bg</code></td><td>ヘッダー行と、その上のフィルタ入力</td></tr>
+<tr><td><code>--bxsites-table-head-text</code></td><td>ヘッダーのラベル文字</td></tr>
+<tr><td><code>--bxsites-table-border</code></td><td>カードの輪郭と行区切り線</td></tr>
+<tr><td><code>--bxsites-table-stripe-bg</code></td><td>偶数行 - カード面に重ねるアルファの色味</td></tr>
+<tr><td><code>--bxsites-table-hover-bg</code></td><td>カーソル下の行 - 同じものを少し強めたもの</td></tr>
+</tbody>
+</table></div>
+<p>どれも両方のモードで宣言されているため、テーブルはページの他の部分と同じように
+テーマ切り替えに追従し、暗いページに明るいモードの白い塊が取り残されることは
+ありません。いずれも
+<a href="/theme/slate/ja/guides/themes/index.html#テーマオーバーライドなしの色のカスタマイズ"><code>extraCss</code></a>
+から差し替えられます - テーマのオーバーライドは不要です。</p>
+<pre data-bxsites-start-line="1" data-bxsites-title="docs&#x2f;assets&#x2f;brand.css"><code class="language-css">[data-theme=&quot;dark&quot;] {
+	--bxsites-table-head-bg: #241b2e;
+	--bxsites-table-hover-bg: rgba(167, 139, 250, 0.12);
+}
+</code></pre>
+<p><code>--bxsites-table-stripe-bg</code>/<code>-hover-bg</code> はアルファ色のままにしてください。これらは
+<code>--bxsites-table-bg</code> が敷いた面の上に描画されるため、不透明な値を指定すると
+色味を付ける代わりにカード面を覆ってしまいます。色以外のもの - パディング、
+角丸の半径、大文字のヘッダーラベル - は、テーマ内の他の CSS と同じく本物の
+<code>theme/</code> オーバーライドになります。</p>
 <h2 id="プレーンなデータの先へ"><a href="#プレーンなデータの先へ" id="プレーンなデータの先へ" name="プレーンなデータの先へ" class="anchor"></a>プレーンなデータの先へ</h2>
 <p>プレーンなテーブルの上に、さらに次の2つのレシピを直接組み合わせられます:</p>
 <ul>
@@ -257,7 +291,7 @@
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/ja/guides/tables.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> &#x3053;&#x306e;&#x30da;&#x30fc;&#x30b8;&#x3092;&#x7de8;&#x96c6;</a><a href="/theme/slate/ja/guides/tables.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Markdown&#x3092;&#x30c0;&#x30a6;&#x30f3;&#x30ed;&#x30fc;&#x30c9;</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> &#x6700;&#x7d42;&#x66f4;&#x65b0; Sep 11, 2026, 1&#x3a;44&#x3a;50 AM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/ja/guides/tables.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> &#x3053;&#x306e;&#x30da;&#x30fc;&#x30b8;&#x3092;&#x7de8;&#x96c6;</a><a href="/theme/slate/ja/guides/tables.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Markdown&#x3092;&#x30c0;&#x30a6;&#x30f3;&#x30ed;&#x30fc;&#x30c9;</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> &#x6700;&#x7d42;&#x66f4;&#x65b0; Sep 11, 2026, 7&#x3a;11&#x3a;15 PM</span></div>
 
 			</article>
 
@@ -279,7 +313,7 @@
 		</main>
 
 		<aside class="slate-toc-sidebar">
-			<nav class="slate-toc" aria-label="&#x3053;&#x306e;&#x30da;&#x30fc;&#x30b8;&#x306e;&#x5185;&#x5bb9;"><div class="slate-toc__title">&#x3053;&#x306e;&#x30da;&#x30fc;&#x30b8;&#x306e;&#x5185;&#x5bb9;</div><ul><li class="slate-toc__item slate-toc__item--2"><a href="#セルの内容は通常のインライン-markdown">&#x30bb;&#x30eb;&#x306e;&#x5185;&#x5bb9;&#x306f;&#x901a;&#x5e38;&#x306e;&#x30a4;&#x30f3;&#x30e9;&#x30a4;&#x30f3; Markdown</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#セル内のパイプをエスケープする">&#x30bb;&#x30eb;&#x5185;&#x306e;&#x30d1;&#x30a4;&#x30d7;&#x3092;&#x30a8;&#x30b9;&#x30b1;&#x30fc;&#x30d7;&#x3059;&#x308b;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#短い行と長い行">&#x77ed;&#x3044;&#x884c;&#x3068;&#x9577;&#x3044;&#x884c;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#パース設定">&#x30d1;&#x30fc;&#x30b9;&#x8a2d;&#x5b9a;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#レスポンシブなスクロールと固定ヘッダー">&#x30ec;&#x30b9;&#x30dd;&#x30f3;&#x30b7;&#x30d6;&#x306a;&#x30b9;&#x30af;&#x30ed;&#x30fc;&#x30eb;&#x3068;&#x56fa;&#x5b9a;&#x30d8;&#x30c3;&#x30c0;&#x30fc;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#プレーンなデータの先へ">&#x30d7;&#x30ec;&#x30fc;&#x30f3;&#x306a;&#x30c7;&#x30fc;&#x30bf;&#x306e;&#x5148;&#x3078;</a></li></ul></nav>
+			<nav class="slate-toc" aria-label="&#x3053;&#x306e;&#x30da;&#x30fc;&#x30b8;&#x306e;&#x5185;&#x5bb9;"><div class="slate-toc__title">&#x3053;&#x306e;&#x30da;&#x30fc;&#x30b8;&#x306e;&#x5185;&#x5bb9;</div><ul><li class="slate-toc__item slate-toc__item--2"><a href="#セルの内容は通常のインライン-markdown">&#x30bb;&#x30eb;&#x306e;&#x5185;&#x5bb9;&#x306f;&#x901a;&#x5e38;&#x306e;&#x30a4;&#x30f3;&#x30e9;&#x30a4;&#x30f3; Markdown</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#セル内のパイプをエスケープする">&#x30bb;&#x30eb;&#x5185;&#x306e;&#x30d1;&#x30a4;&#x30d7;&#x3092;&#x30a8;&#x30b9;&#x30b1;&#x30fc;&#x30d7;&#x3059;&#x308b;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#短い行と長い行">&#x77ed;&#x3044;&#x884c;&#x3068;&#x9577;&#x3044;&#x884c;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#パース設定">&#x30d1;&#x30fc;&#x30b9;&#x8a2d;&#x5b9a;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#レスポンシブなスクロールと固定ヘッダー">&#x30ec;&#x30b9;&#x30dd;&#x30f3;&#x30b7;&#x30d6;&#x306a;&#x30b9;&#x30af;&#x30ed;&#x30fc;&#x30eb;&#x3068;&#x56fa;&#x5b9a;&#x30d8;&#x30c3;&#x30c0;&#x30fc;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#テーマ">&#x30c6;&#x30fc;&#x30de;</a></li><li class="slate-toc__item slate-toc__item--2"><a href="#プレーンなデータの先へ">&#x30d7;&#x30ec;&#x30fc;&#x30f3;&#x306a;&#x30c7;&#x30fc;&#x30bf;&#x306e;&#x5148;&#x3078;</a></li></ul></nav>
 		</aside>
 
 	</div>

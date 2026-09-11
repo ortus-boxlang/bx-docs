@@ -309,9 +309,11 @@ highlight.js、Alpine.js、lunr.js はすべてこのモジュールに同梱さ
 `--bxsites-border`、`--bxsites-link`、`--bxsites-link-hover`、`--bxsites-code-bg`、
 `--bxsites-step-marker-bg`、`--bxsites-step-marker-text`、`--bxsites-step-line`、
 `--bxsites-step-success-bg`/`-text`、`--bxsites-step-warning-bg`/`-text`、
-`--bxsites-step-danger-bg`/`-text` です。すべての組み込みテーマは
-`--bxsites-gradient-start`/`-end`、`--bxsites-accent`、そして `--bxsites-step-*`
-セットをこれらの正確な名前で保証しているため、`extraCss` はテーマに関わらず常に
+`--bxsites-step-danger-bg`/`-text`、そしてレンダリングされたテーブルのカード、
+ヘッダー帯、区切り線、ゼブラ/ホバーの色味を描画する
+[`--bxsites-table-*` セット](tables.md#テーマ)です。すべての組み込みテーマは
+`--bxsites-gradient-start`/`-end`、`--bxsites-accent`、`--bxsites-step-*`
+セット、`--bxsites-table-*` セットをこれらの正確な名前で保証しているため、`extraCss` はテーマに関わらず常に
 ブランドカラー/ステッパーアクセントを再ターゲットできます - ただし
 `--bxsites-bg`/`-text`/`-sidebar-bg`/`-sidebar-text`/`-border`/`-link`/`-link-hover`/`-code-bg`
 をこれらの名前で公開しているのは `bootstrap`、`slate`、`notion` だけです

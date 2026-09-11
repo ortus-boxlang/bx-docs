@@ -137,9 +137,10 @@ never clipped vertically - it always renders at its own full height,
 with normal breathing room below it), and its header row sticks to the
 top of the viewport while the surrounding page scrolls past it, so a
 long table's column headers stay in view - a short table like the ones
-above never needs any of this, since it already fits on screen. A custom
-`theme/` override can restyle `.bxsites-table-wrap` like any other CSS
-class.
+above never needs any of this, since it already fits on screen. The
+wrapper is also what the theme paints as the table's own card - see
+[Theming](#theming) for the tokens behind it - and a custom `theme/`
+override can restyle `.bxsites-table-wrap` like any other CSS class.
 
 ## Large tables get an automatic filter
 
@@ -192,6 +193,43 @@ setting. Sorting isn't part of this - it's a filter only. For a table a
 reader can also re-sort, see [A sortable, filterable
 table](interactivity.md#a-sortable-filterable-table) below, which builds
 the table from Alpine data instead of markdown.
+
+## Theming
+
+Every built-in theme renders a table as a self-contained card - one
+rounded, bordered wrapper, a tinted header strip, horizontal row dividers
+with no vertical grid lines, and a zebra/hover tint on the rows - and it
+paints all of that from six CSS custom properties, declared per mode
+(`:root` and `[data-theme="dark"]`) in the theme's own
+`assets/style.css`:
+
+| Token | What it paints |
+| --- | --- |
+| `--bxsites-table-bg` | The card's own surface, behind every row |
+| `--bxsites-table-head-bg` | The header row, and the filter input above it |
+| `--bxsites-table-head-text` | Header label text |
+| `--bxsites-table-border` | The card outline and the row dividers |
+| `--bxsites-table-stripe-bg` | Even rows - an alpha tint over the card surface |
+| `--bxsites-table-hover-bg` | The row under the cursor - the same, slightly stronger |
+
+Because every one of them is declared in both modes, a table follows the
+theme toggle like the rest of the page instead of leaving a light-mode
+slab of white behind on a dark one. Retarget any of them from
+[`extraCss`](themes.md#customizing-colors-without-a-theme-override) - no
+theme override needed:
+
+```css title="docs/assets/brand.css" linenums="1"
+[data-theme="dark"] {
+	--bxsites-table-head-bg: #241b2e;
+	--bxsites-table-hover-bg: rgba(167, 139, 250, 0.12);
+}
+```
+
+Keep `--bxsites-table-stripe-bg`/`-hover-bg` alpha colors: they're
+painted on top of whatever `--bxsites-table-bg` puts down, so an opaque
+value there covers the card surface instead of tinting it. Anything past
+color - padding, the corner radius, the uppercase header labels - is a
+real `theme/` override, the same as any other CSS in a theme.
 
 ## Beyond plain data
 

@@ -40,7 +40,7 @@
 		} )();
 	</script>
 	<link rel="stylesheet" href="/theme/vuepress/es/assets/vendor/highlight/github.min.css">
-	<link rel="stylesheet" href="/theme/vuepress/es/assets/theme/style.990f65ed.css">
+	<link rel="stylesheet" href="/theme/vuepress/es/assets/theme/style.296dc601.css">
 	
 
 	<style>
@@ -136,7 +136,7 @@ Tablas</h1>
 
 
 
-	<details class="bxsites-toc-mobile vp-toc--mobile"><summary class="vp-toc--mobile__summary">En esta p&aacute;gina</summary><ul><li class="vp-toc__item vp-toc__item--2"><a href="#el-contenido-de-las-celdas-es-markdown-inline-normal">El contenido de las celdas es markdown inline normal</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#escapar-un-pipe-dentro-de-una-celda">Escapar un pipe dentro de una celda</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#filas-cortas-y-largas">Filas cortas y largas</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#configurar-el-análisis">Configurar el an&aacute;lisis</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#desplazamiento-responsivo-y-un-encabezado-fijo">Desplazamiento responsivo y un encabezado fijo</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#más-allá-de-los-datos-simples">M&aacute;s all&aacute; de los datos simples</a></li></ul></details>
+	<details class="bxsites-toc-mobile vp-toc--mobile"><summary class="vp-toc--mobile__summary">En esta p&aacute;gina</summary><ul><li class="vp-toc__item vp-toc__item--2"><a href="#el-contenido-de-las-celdas-es-markdown-inline-normal">El contenido de las celdas es markdown inline normal</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#escapar-un-pipe-dentro-de-una-celda">Escapar un pipe dentro de una celda</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#filas-cortas-y-largas">Filas cortas y largas</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#configurar-el-análisis">Configurar el an&aacute;lisis</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#desplazamiento-responsivo-y-un-encabezado-fijo">Desplazamiento responsivo y un encabezado fijo</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#tematización">Tematizaci&oacute;n</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#más-allá-de-los-datos-simples">M&aacute;s all&aacute; de los datos simples</a></li></ul></details>
 
 				<div class="vp-content-body">
 				<h1 id="tablas"><a href="#tablas" id="tablas" name="tablas" class="anchor"></a>Tablas</h1>
@@ -254,6 +254,43 @@ desplazamiento alguna, ya que ya cabe sin problema. Una sobrescritura
 personalizada en <code>theme/</code> puede modificar el estilo de
 <code>.bxsites-table-wrap</code> (su <code>max-height</code>, en particular) igual que
 cualquier otra clase CSS.</p>
+<h2 id="tematización"><a href="#tematización" id="tematización" name="tematización" class="anchor"></a>Tematización</h2>
+<p>Todo tema incorporado renderiza una tabla como una tarjeta autónoma - un
+wrapper redondeado y con borde, una franja de encabezado con tinte,
+separadores horizontales de fila sin líneas verticales de rejilla y un
+tinte de cebra/hover en las filas - y pinta todo eso a partir de seis
+propiedades personalizadas de CSS, declaradas por modo (<code>:root</code> y
+<code>[data-theme=&quot;dark&quot;]</code>) en el propio <code>assets/style.css</code> del tema:</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Token</th><th>Qué pinta</th></tr>
+</thead>
+<tbody>
+<tr><td><code>--bxsites-table-bg</code></td><td>La superficie de la tarjeta, detrás de cada fila</td></tr>
+<tr><td><code>--bxsites-table-head-bg</code></td><td>La fila de encabezado y el campo de filtro sobre ella</td></tr>
+<tr><td><code>--bxsites-table-head-text</code></td><td>El texto de las etiquetas del encabezado</td></tr>
+<tr><td><code>--bxsites-table-border</code></td><td>El contorno de la tarjeta y los separadores de fila</td></tr>
+<tr><td><code>--bxsites-table-stripe-bg</code></td><td>Las filas pares - un tinte alfa sobre la superficie de la tarjeta</td></tr>
+<tr><td><code>--bxsites-table-hover-bg</code></td><td>La fila bajo el cursor - el mismo, algo más intenso</td></tr>
+</tbody>
+</table></div>
+<p>Como todas están declaradas en ambos modos, una tabla sigue al
+conmutador de tema igual que el resto de la página, en lugar de dejar una
+losa blanca de modo claro sobre una página oscura. Puedes redirigir
+cualquiera de ellas desde
+<a href="/theme/vuepress/es/guides/themes/index.html#personalizar-colores-sin-sobrescribir-un-tema"><code>extraCss</code></a> - sin
+necesidad de un override de tema:</p>
+<pre data-bxsites-start-line="1" data-bxsites-title="docs&#x2f;assets&#x2f;brand.css"><code class="language-css">[data-theme=&quot;dark&quot;] {
+	--bxsites-table-head-bg: #241b2e;
+	--bxsites-table-hover-bg: rgba(167, 139, 250, 0.12);
+}
+</code></pre>
+<p>Mantén <code>--bxsites-table-stripe-bg</code>/<code>-hover-bg</code> como colores alfa: se
+pintan encima de lo que ponga <code>--bxsites-table-bg</code>, así que un valor
+opaco cubre la superficie de la tarjeta en vez de teñirla. Todo lo que va
+más allá del color - el padding, el radio de las esquinas, las etiquetas
+en mayúsculas del encabezado - es un override real de <code>theme/</code>, igual que
+cualquier otro CSS de un tema.</p>
 <h2 id="más-allá-de-los-datos-simples"><a href="#más-allá-de-los-datos-simples" id="más-allá-de-los-datos-simples" name="más-allá-de-los-datos-simples" class="anchor"></a>Más allá de los datos simples</h2>
 <p>Dos recetas más se construyen directamente encima de una tabla simple
 como las de arriba:</p>
@@ -268,7 +305,7 @@ ordenable y filtrable</a>.</li>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/es/guides/tables.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Editar esta p&aacute;gina</a><a href="/theme/vuepress/es/guides/tables.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Descargar Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> &Uacute;ltima actualizaci&oacute;n Sep 11, 2026, 1&#x3a;44&#x3a;50 AM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/es/guides/tables.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Editar esta p&aacute;gina</a><a href="/theme/vuepress/es/guides/tables.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Descargar Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> &Uacute;ltima actualizaci&oacute;n Sep 11, 2026, 7&#x3a;11&#x3a;15 PM</span></div>
 
 			</article>
 
@@ -290,7 +327,7 @@ ordenable y filtrable</a>.</li>
 		</main>
 
 		<aside class="vp-toc-sidebar">
-			<nav class="vp-toc" aria-label="En esta p&aacute;gina"><div class="vp-toc__title">En esta p&aacute;gina</div><ul><li class="vp-toc__item vp-toc__item--2"><a href="#el-contenido-de-las-celdas-es-markdown-inline-normal">El contenido de las celdas es markdown inline normal</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#escapar-un-pipe-dentro-de-una-celda">Escapar un pipe dentro de una celda</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#filas-cortas-y-largas">Filas cortas y largas</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#configurar-el-análisis">Configurar el an&aacute;lisis</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#desplazamiento-responsivo-y-un-encabezado-fijo">Desplazamiento responsivo y un encabezado fijo</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#más-allá-de-los-datos-simples">M&aacute;s all&aacute; de los datos simples</a></li></ul></nav>
+			<nav class="vp-toc" aria-label="En esta p&aacute;gina"><div class="vp-toc__title">En esta p&aacute;gina</div><ul><li class="vp-toc__item vp-toc__item--2"><a href="#el-contenido-de-las-celdas-es-markdown-inline-normal">El contenido de las celdas es markdown inline normal</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#escapar-un-pipe-dentro-de-una-celda">Escapar un pipe dentro de una celda</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#filas-cortas-y-largas">Filas cortas y largas</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#configurar-el-análisis">Configurar el an&aacute;lisis</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#desplazamiento-responsivo-y-un-encabezado-fijo">Desplazamiento responsivo y un encabezado fijo</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#tematización">Tematizaci&oacute;n</a></li><li class="vp-toc__item vp-toc__item--2"><a href="#más-allá-de-los-datos-simples">M&aacute;s all&aacute; de los datos simples</a></li></ul></nav>
 		</aside>
 
 	</div>

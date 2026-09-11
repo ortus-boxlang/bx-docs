@@ -124,6 +124,45 @@ sta già. Una sovrascrittura personalizzata in `theme/` può ridefinire lo
 stile di `.bxsites-table-wrap` (in particolare la sua `max-height`), come
 qualsiasi altra classe CSS.
 
+## Temi
+
+Ogni tema integrato rende una tabella come una card a sé stante - un
+wrapper arrotondato e bordato, una fascia di intestazione colorata,
+separatori orizzontali di riga senza linee verticali di griglia e una
+tinta zebra/hover sulle righe - e disegna tutto questo a partire da sei
+proprietà personalizzate CSS, dichiarate per modalità (`:root` e
+`[data-theme="dark"]`) nel `assets/style.css` del tema stesso:
+
+| Token | Cosa disegna |
+| --- | --- |
+| `--bxsites-table-bg` | La superficie della card, dietro ogni riga |
+| `--bxsites-table-head-bg` | La riga di intestazione e il campo filtro sopra di essa |
+| `--bxsites-table-head-text` | Il testo delle etichette di intestazione |
+| `--bxsites-table-border` | Il contorno della card e i separatori di riga |
+| `--bxsites-table-stripe-bg` | Le righe pari - una tinta alfa sopra la superficie della card |
+| `--bxsites-table-hover-bg` | La riga sotto il cursore - la stessa, un po' più marcata |
+
+Poiché ognuna è dichiarata in entrambe le modalità, una tabella segue
+l'interruttore del tema come il resto della pagina, invece di lasciare
+una lastra bianca in modalità chiara su una pagina scura. Puoi
+ridefinirne una qualsiasi da
+[`extraCss`](themes.md#personalizzare-i-colori-senza-sovrascrivere-un-tema) -
+senza alcun override del tema:
+
+```css title="docs/assets/brand.css" linenums="1"
+[data-theme="dark"] {
+	--bxsites-table-head-bg: #241b2e;
+	--bxsites-table-hover-bg: rgba(167, 139, 250, 0.12);
+}
+```
+
+Mantieni `--bxsites-table-stripe-bg`/`-hover-bg` come colori alfa: sono
+disegnati sopra ciò che imposta `--bxsites-table-bg`, quindi un valore
+opaco copre la superficie della card invece di tingerla. Tutto ciò che va
+oltre il colore - il padding, il raggio degli angoli, le etichette
+maiuscole dell'intestazione - è un vero override `theme/`, esattamente
+come qualsiasi altro CSS in un tema.
+
 ## Oltre i dati semplici
 
 Altre due ricette si costruiscono direttamente sopra una tabella

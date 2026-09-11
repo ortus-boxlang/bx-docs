@@ -346,10 +346,12 @@ Das eigene Set des `bootstrap`-Themes
 `--bxsites-border`, `--bxsites-link`, `--bxsites-link-hover`,
 `--bxsites-code-bg`, `--bxsites-step-marker-bg`, `--bxsites-step-marker-text`,
 `--bxsites-step-line`, `--bxsites-step-success-bg`/`-text`,
-`--bxsites-step-warning-bg`/`-text` und `--bxsites-step-danger-bg`/`-text`.
+`--bxsites-step-warning-bg`/`-text`, `--bxsites-step-danger-bg`/`-text` und
+das [`--bxsites-table-*`-Set](tables.md#theming), das bei einer gerenderten
+Tabelle Karte, Kopfleiste, Trennlinien und Zebra-/Hover-Tönung zeichnet.
 Jedes integrierte Theme garantiert `--bxsites-gradient-start`/`-end`,
-`--bxsites-accent` sowie das `--bxsites-step-*`-Set unter genau diesen
-Namen, sodass `extraCss` unabhängig vom Theme immer die
+`--bxsites-accent` sowie die Sets `--bxsites-step-*` und
+`--bxsites-table-*` unter genau diesen Namen, sodass `extraCss` unabhängig vom Theme immer die
 Markenfarbe/Stepper-Akzente umlenken kann - aber nur `bootstrap`, `slate`
 und `notion` legen zusätzlich auch
 `--bxsites-bg`/`-text`/`-sidebar-bg`/`-sidebar-text`/`-border`/`-link`/`-link-hover`/`-code-bg`

@@ -319,9 +319,12 @@ is `--bxsites-gradient-start`/`-end`, `--bxsites-accent`, `--bxsites-bg`,
 `--bxsites-border`, `--bxsites-link`, `--bxsites-link-hover`,
 `--bxsites-code-bg`, `--bxsites-step-marker-bg`, `--bxsites-step-marker-text`,
 `--bxsites-step-line`, `--bxsites-step-success-bg`/`-text`,
-`--bxsites-step-warning-bg`/`-text` and `--bxsites-step-danger-bg`/`-text`.
+`--bxsites-step-warning-bg`/`-text`, `--bxsites-step-danger-bg`/`-text` and
+the [`--bxsites-table-*` set](tables.md#theming) that paints a rendered
+table's card, header strip, dividers and zebra/hover tints.
 Every built-in theme guarantees `--bxsites-gradient-start`/`-end`,
-`--bxsites-accent` and the `--bxsites-step-*` set under those exact names,
+`--bxsites-accent`, the `--bxsites-step-*` set and the `--bxsites-table-*`
+set under those exact names,
 so `extraCss` can always retarget the brand color/stepper accents
 regardless of theme - but only `bootstrap`, `slate` and `notion` also
 expose `--bxsites-bg`/`-text`/`-sidebar-bg`/`-sidebar-text`/`-border`/`-link`/`-link-hover`/`-code-bg`

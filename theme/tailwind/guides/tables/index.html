@@ -41,7 +41,7 @@
 	</script>
 	<script src="https://cdn.tailwindcss.com"></script>
 	<link rel="stylesheet" href="/theme/tailwind/assets/vendor/highlight/github.min.css">
-	<link rel="stylesheet" href="/theme/tailwind/assets/theme/style.ce94a124.css">
+	<link rel="stylesheet" href="/theme/tailwind/assets/theme/style.353c643e.css">
 	
 
 	<style>
@@ -139,7 +139,7 @@ Tables</h1>
 
 
 
-	<details class="bxsites-toc-mobile group sticky top-0 z-10 mb-6 max-h-screen overflow-y-auto rounded border border-slate-200 bg-cyan-50/95 text-sm backdrop-blur xl:hidden"><summary class="flex list-none items-center justify-between gap-2 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">On this page<span class="h-1.5 w-1.5 shrink-0 rotate-45 border-b-2 border-r-2 border-current transition-transform group-open:-rotate-[135deg]"></span></summary><div class="px-4 pb-3"><ul class="space-y-2"><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#cell-content-is-regular-inline-markdown">Cell content is regular inline markdown</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#escaping-a-pipe-inside-a-cell">Escaping a pipe inside a cell</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#short-and-long-rows">Short and long rows</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#configuring-parsing">Configuring parsing</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#a-more-complex-example">A more complex example</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#responsive-scroll-and-a-sticky-header">Responsive scroll and a sticky header</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#large-tables-get-an-automatic-filter">Large tables get an automatic filter</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#beyond-plain-data">Beyond plain data</a></li></ul></div></details>
+	<details class="bxsites-toc-mobile group sticky top-0 z-10 mb-6 max-h-screen overflow-y-auto rounded border border-slate-200 bg-cyan-50/95 text-sm backdrop-blur xl:hidden"><summary class="flex list-none items-center justify-between gap-2 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">On this page<span class="h-1.5 w-1.5 shrink-0 rotate-45 border-b-2 border-r-2 border-current transition-transform group-open:-rotate-[135deg]"></span></summary><div class="px-4 pb-3"><ul class="space-y-2"><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#cell-content-is-regular-inline-markdown">Cell content is regular inline markdown</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#escaping-a-pipe-inside-a-cell">Escaping a pipe inside a cell</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#short-and-long-rows">Short and long rows</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#configuring-parsing">Configuring parsing</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#a-more-complex-example">A more complex example</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#responsive-scroll-and-a-sticky-header">Responsive scroll and a sticky header</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#large-tables-get-an-automatic-filter">Large tables get an automatic filter</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#theming">Theming</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#beyond-plain-data">Beyond plain data</a></li></ul></div></details>
 
 				<div class="prose max-w-none">
 					<h1 id="tables"><a href="#tables" id="tables" name="tables" class="anchor"></a>Tables</h1>
@@ -268,9 +268,10 @@ never clipped vertically - it always renders at its own full height,
 with normal breathing room below it), and its header row sticks to the
 top of the viewport while the surrounding page scrolls past it, so a
 long table's column headers stay in view - a short table like the ones
-above never needs any of this, since it already fits on screen. A custom
-<code>theme/</code> override can restyle <code>.bxsites-table-wrap</code> like any other CSS
-class.</p>
+above never needs any of this, since it already fits on screen. The
+wrapper is also what the theme paints as the table's own card - see
+<a href="#theming">Theming</a> for the tokens behind it - and a custom <code>theme/</code>
+override can restyle <code>.bxsites-table-wrap</code> like any other CSS class.</p>
 <h2 id="large-tables-get-an-automatic-filter"><a href="#large-tables-get-an-automatic-filter" id="large-tables-get-an-automatic-filter" name="large-tables-get-an-automatic-filter" class="anchor"></a>Large tables get an automatic filter</h2>
 <p>Any table with 10 or more data rows automatically gets a live filter
 input injected right above it - no <code>bxsites.yaml</code> config, no extra
@@ -321,6 +322,41 @@ setting. Sorting isn't part of this - it's a filter only. For a table a
 reader can also re-sort, see <a href="/theme/tailwind/guides/interactivity/index.html#a-sortable-filterable-table">A sortable, filterable
 table</a> below, which builds
 the table from Alpine data instead of markdown.</p>
+<h2 id="theming"><a href="#theming" id="theming" name="theming" class="anchor"></a>Theming</h2>
+<p>Every built-in theme renders a table as a self-contained card - one
+rounded, bordered wrapper, a tinted header strip, horizontal row dividers
+with no vertical grid lines, and a zebra/hover tint on the rows - and it
+paints all of that from six CSS custom properties, declared per mode
+(<code>:root</code> and <code>[data-theme=&quot;dark&quot;]</code>) in the theme's own
+<code>assets/style.css</code>:</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Token</th><th>What it paints</th></tr>
+</thead>
+<tbody>
+<tr><td><code>--bxsites-table-bg</code></td><td>The card's own surface, behind every row</td></tr>
+<tr><td><code>--bxsites-table-head-bg</code></td><td>The header row, and the filter input above it</td></tr>
+<tr><td><code>--bxsites-table-head-text</code></td><td>Header label text</td></tr>
+<tr><td><code>--bxsites-table-border</code></td><td>The card outline and the row dividers</td></tr>
+<tr><td><code>--bxsites-table-stripe-bg</code></td><td>Even rows - an alpha tint over the card surface</td></tr>
+<tr><td><code>--bxsites-table-hover-bg</code></td><td>The row under the cursor - the same, slightly stronger</td></tr>
+</tbody>
+</table></div>
+<p>Because every one of them is declared in both modes, a table follows the
+theme toggle like the rest of the page instead of leaving a light-mode
+slab of white behind on a dark one. Retarget any of them from
+<a href="/theme/tailwind/guides/themes/index.html#customizing-colors-without-a-theme-override"><code>extraCss</code></a> - no
+theme override needed:</p>
+<pre data-bxsites-start-line="1" data-bxsites-title="docs&#x2f;assets&#x2f;brand.css"><code class="language-css">[data-theme=&quot;dark&quot;] {
+	--bxsites-table-head-bg: #241b2e;
+	--bxsites-table-hover-bg: rgba(167, 139, 250, 0.12);
+}
+</code></pre>
+<p>Keep <code>--bxsites-table-stripe-bg</code>/<code>-hover-bg</code> alpha colors: they're
+painted on top of whatever <code>--bxsites-table-bg</code> puts down, so an opaque
+value there covers the card surface instead of tinting it. Anything past
+color - padding, the corner radius, the uppercase header labels - is a
+real <code>theme/</code> override, the same as any other CSS in a theme.</p>
 <h2 id="beyond-plain-data"><a href="#beyond-plain-data" id="beyond-plain-data" name="beyond-plain-data" class="anchor"></a>Beyond plain data</h2>
 <p>Two more recipes build directly on top of a plain table like the ones
 above:</p>
@@ -334,7 +370,7 @@ table</a>.</li>
 
 				</div>
 
-	<div class="page-meta mt-8 border-t border-slate-200 pt-4 flex flex-wrap items-center gap-4 text-xs text-slate-500"><a class="inline-flex items-center gap-1 hover:text-cyan-700" href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/tables.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a class="inline-flex items-center gap-1 hover:text-cyan-700" href="/theme/tailwind/guides/tables.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="inline-flex items-center gap-1"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 11, 2026, 1&#x3a;44&#x3a;50 AM</span></div>
+	<div class="page-meta mt-8 border-t border-slate-200 pt-4 flex flex-wrap items-center gap-4 text-xs text-slate-500"><a class="inline-flex items-center gap-1 hover:text-cyan-700" href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/guides/tables.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a class="inline-flex items-center gap-1 hover:text-cyan-700" href="/theme/tailwind/guides/tables.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="inline-flex items-center gap-1"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Sep 11, 2026, 7&#x3a;11&#x3a;15 PM</span></div>
 
 			</article>
 
@@ -356,7 +392,7 @@ table</a>.</li>
 		</main>
 
 		<aside class="hidden w-56 shrink-0 p-4 xl:sticky xl:top-6 xl:block xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto">
-			<nav class="mb-6 rounded border border-slate-200 bg-cyan-50/40 px-4 py-3 text-sm"><div class="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">On this page</div><ul class="space-y-2"><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#cell-content-is-regular-inline-markdown">Cell content is regular inline markdown</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#escaping-a-pipe-inside-a-cell">Escaping a pipe inside a cell</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#short-and-long-rows">Short and long rows</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#configuring-parsing">Configuring parsing</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#a-more-complex-example">A more complex example</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#responsive-scroll-and-a-sticky-header">Responsive scroll and a sticky header</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#large-tables-get-an-automatic-filter">Large tables get an automatic filter</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#beyond-plain-data">Beyond plain data</a></li></ul></nav>
+			<nav class="mb-6 rounded border border-slate-200 bg-cyan-50/40 px-4 py-3 text-sm"><div class="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">On this page</div><ul class="space-y-2"><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#cell-content-is-regular-inline-markdown">Cell content is regular inline markdown</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#escaping-a-pipe-inside-a-cell">Escaping a pipe inside a cell</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#short-and-long-rows">Short and long rows</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#configuring-parsing">Configuring parsing</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#a-more-complex-example">A more complex example</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#responsive-scroll-and-a-sticky-header">Responsive scroll and a sticky header</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#large-tables-get-an-automatic-filter">Large tables get an automatic filter</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#theming">Theming</a></li><li class="leading-snug"><a class="text-slate-700 hover:text-cyan-700" href="#beyond-plain-data">Beyond plain data</a></li></ul></nav>
 		</aside>
 
 	</div>

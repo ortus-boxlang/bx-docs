@@ -40,7 +40,7 @@
 		} )();
 	</script>
 	<link rel="stylesheet" href="/theme/gitbook/it/assets/vendor/highlight/github.min.css">
-	<link rel="stylesheet" href="/theme/gitbook/it/assets/theme/style.00894861.css">
+	<link rel="stylesheet" href="/theme/gitbook/it/assets/theme/style.9bfb41da.css">
 	
 
 	<style>
@@ -136,7 +136,7 @@ Tabelle</h1>
 
 
 
-	<details class="bxsites-toc-mobile gb-toc--mobile"><summary class="gb-toc--mobile__summary">In questa pagina</summary><ul><li class="gb-toc__item gb-toc__item--2"><a href="#il-contenuto-delle-celle-è-normale-markdown-inline">Il contenuto delle celle &egrave; normale markdown inline</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#escape-di-una-pipe-dentro-una-cella">Escape di una pipe dentro una cella</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#righe-corte-e-lunghe">Righe corte e lunghe</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#configurare-il-parsing">Configurare il parsing</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#scorrimento-responsive-e-intestazione-fissa">Scorrimento responsive e intestazione fissa</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#oltre-i-dati-semplici">Oltre i dati semplici</a></li></ul></details>
+	<details class="bxsites-toc-mobile gb-toc--mobile"><summary class="gb-toc--mobile__summary">In questa pagina</summary><ul><li class="gb-toc__item gb-toc__item--2"><a href="#il-contenuto-delle-celle-è-normale-markdown-inline">Il contenuto delle celle &egrave; normale markdown inline</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#escape-di-una-pipe-dentro-una-cella">Escape di una pipe dentro una cella</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#righe-corte-e-lunghe">Righe corte e lunghe</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#configurare-il-parsing">Configurare il parsing</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#scorrimento-responsive-e-intestazione-fissa">Scorrimento responsive e intestazione fissa</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#temi">Temi</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#oltre-i-dati-semplici">Oltre i dati semplici</a></li></ul></details>
 
 				<div class="gb-content-body">
 				<h1 id="tabelle"><a href="#tabelle" id="tabelle" name="tabelle" class="anchor"></a>Tabelle</h1>
@@ -252,6 +252,43 @@ quelle qui sopra non sviluppa mai una barra di scorrimento, dato che ci
 sta già. Una sovrascrittura personalizzata in <code>theme/</code> può ridefinire lo
 stile di <code>.bxsites-table-wrap</code> (in particolare la sua <code>max-height</code>), come
 qualsiasi altra classe CSS.</p>
+<h2 id="temi"><a href="#temi" id="temi" name="temi" class="anchor"></a>Temi</h2>
+<p>Ogni tema integrato rende una tabella come una card a sé stante - un
+wrapper arrotondato e bordato, una fascia di intestazione colorata,
+separatori orizzontali di riga senza linee verticali di griglia e una
+tinta zebra/hover sulle righe - e disegna tutto questo a partire da sei
+proprietà personalizzate CSS, dichiarate per modalità (<code>:root</code> e
+<code>[data-theme=&quot;dark&quot;]</code>) nel <code>assets/style.css</code> del tema stesso:</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Token</th><th>Cosa disegna</th></tr>
+</thead>
+<tbody>
+<tr><td><code>--bxsites-table-bg</code></td><td>La superficie della card, dietro ogni riga</td></tr>
+<tr><td><code>--bxsites-table-head-bg</code></td><td>La riga di intestazione e il campo filtro sopra di essa</td></tr>
+<tr><td><code>--bxsites-table-head-text</code></td><td>Il testo delle etichette di intestazione</td></tr>
+<tr><td><code>--bxsites-table-border</code></td><td>Il contorno della card e i separatori di riga</td></tr>
+<tr><td><code>--bxsites-table-stripe-bg</code></td><td>Le righe pari - una tinta alfa sopra la superficie della card</td></tr>
+<tr><td><code>--bxsites-table-hover-bg</code></td><td>La riga sotto il cursore - la stessa, un po' più marcata</td></tr>
+</tbody>
+</table></div>
+<p>Poiché ognuna è dichiarata in entrambe le modalità, una tabella segue
+l'interruttore del tema come il resto della pagina, invece di lasciare
+una lastra bianca in modalità chiara su una pagina scura. Puoi
+ridefinirne una qualsiasi da
+<a href="/theme/gitbook/it/guides/themes/index.html#personalizzare-i-colori-senza-sovrascrivere-un-tema"><code>extraCss</code></a> -
+senza alcun override del tema:</p>
+<pre data-bxsites-start-line="1" data-bxsites-title="docs&#x2f;assets&#x2f;brand.css"><code class="language-css">[data-theme=&quot;dark&quot;] {
+	--bxsites-table-head-bg: #241b2e;
+	--bxsites-table-hover-bg: rgba(167, 139, 250, 0.12);
+}
+</code></pre>
+<p>Mantieni <code>--bxsites-table-stripe-bg</code>/<code>-hover-bg</code> come colori alfa: sono
+disegnati sopra ciò che imposta <code>--bxsites-table-bg</code>, quindi un valore
+opaco copre la superficie della card invece di tingerla. Tutto ciò che va
+oltre il colore - il padding, il raggio degli angoli, le etichette
+maiuscole dell'intestazione - è un vero override <code>theme/</code>, esattamente
+come qualsiasi altro CSS in un tema.</p>
 <h2 id="oltre-i-dati-semplici"><a href="#oltre-i-dati-semplici" id="oltre-i-dati-semplici" name="oltre-i-dati-semplici" class="anchor"></a>Oltre i dati semplici</h2>
 <p>Altre due ricette si costruiscono direttamente sopra una tabella
 semplice come quelle sopra:</p>
@@ -265,7 +302,7 @@ filtrabile</a>.</li>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/it/guides/tables.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Modifica questa pagina</a><a href="/theme/gitbook/it/guides/tables.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Scarica Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Ultimo aggiornamento Sep 11, 2026, 1&#x3a;44&#x3a;50 AM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/it/guides/tables.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Modifica questa pagina</a><a href="/theme/gitbook/it/guides/tables.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Scarica Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Ultimo aggiornamento Sep 11, 2026, 7&#x3a;11&#x3a;15 PM</span></div>
 
 			</article>
 
@@ -287,7 +324,7 @@ filtrabile</a>.</li>
 		</main>
 
 		<aside class="gb-toc-sidebar">
-			<nav class="gb-toc" aria-label="In questa pagina"><div class="gb-toc__title">In questa pagina</div><ul><li class="gb-toc__item gb-toc__item--2"><a href="#il-contenuto-delle-celle-è-normale-markdown-inline">Il contenuto delle celle &egrave; normale markdown inline</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#escape-di-una-pipe-dentro-una-cella">Escape di una pipe dentro una cella</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#righe-corte-e-lunghe">Righe corte e lunghe</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#configurare-il-parsing">Configurare il parsing</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#scorrimento-responsive-e-intestazione-fissa">Scorrimento responsive e intestazione fissa</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#oltre-i-dati-semplici">Oltre i dati semplici</a></li></ul></nav>
+			<nav class="gb-toc" aria-label="In questa pagina"><div class="gb-toc__title">In questa pagina</div><ul><li class="gb-toc__item gb-toc__item--2"><a href="#il-contenuto-delle-celle-è-normale-markdown-inline">Il contenuto delle celle &egrave; normale markdown inline</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#escape-di-una-pipe-dentro-una-cella">Escape di una pipe dentro una cella</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#righe-corte-e-lunghe">Righe corte e lunghe</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#configurare-il-parsing">Configurare il parsing</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#scorrimento-responsive-e-intestazione-fissa">Scorrimento responsive e intestazione fissa</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#temi">Temi</a></li><li class="gb-toc__item gb-toc__item--2"><a href="#oltre-i-dati-semplici">Oltre i dati semplici</a></li></ul></nav>
 		</aside>
 
 	</div>

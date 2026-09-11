@@ -349,10 +349,13 @@ El propio conjunto del tema `bootstrap`
 `--bxsites-border`, `--bxsites-link`, `--bxsites-link-hover`,
 `--bxsites-code-bg`, `--bxsites-step-marker-bg`, `--bxsites-step-marker-text`,
 `--bxsites-step-line`, `--bxsites-step-success-bg`/`-text` y
-`--bxsites-step-warning-bg`/`-text`/`--bxsites-step-danger-bg`/`-text`.
+`--bxsites-step-warning-bg`/`-text`/`--bxsites-step-danger-bg`/`-text` y el
+[conjunto `--bxsites-table-*`](tables.md#tematización), que pinta la
+tarjeta, la franja de encabezado, los separadores y las tintas de
+cebra/hover de una tabla renderizada.
 Todo tema incorporado garantiza `--bxsites-gradient-start`/`-end`,
-`--bxsites-accent` y el conjunto `--bxsites-step-*` bajo esos nombres
-exactos, así que `extraCss` siempre puede redirigir el color de marca/los
+`--bxsites-accent` y los conjuntos `--bxsites-step-*` y `--bxsites-table-*`
+bajo esos nombres exactos, así que `extraCss` siempre puede redirigir el color de marca/los
 acentos del stepper sin importar el tema - pero solo `bootstrap`, `slate`
 y `notion` también exponen
 `--bxsites-bg`/`-text`/`-sidebar-bg`/`-sidebar-text`/`-border`/`-link`/`-link-hover`/`-code-bg`

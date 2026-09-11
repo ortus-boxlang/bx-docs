@@ -126,6 +126,45 @@ personalizada en `theme/` puede modificar el estilo de
 `.bxsites-table-wrap` (su `max-height`, en particular) igual que
 cualquier otra clase CSS.
 
+## Tematización
+
+Todo tema incorporado renderiza una tabla como una tarjeta autónoma - un
+wrapper redondeado y con borde, una franja de encabezado con tinte,
+separadores horizontales de fila sin líneas verticales de rejilla y un
+tinte de cebra/hover en las filas - y pinta todo eso a partir de seis
+propiedades personalizadas de CSS, declaradas por modo (`:root` y
+`[data-theme="dark"]`) en el propio `assets/style.css` del tema:
+
+| Token | Qué pinta |
+| --- | --- |
+| `--bxsites-table-bg` | La superficie de la tarjeta, detrás de cada fila |
+| `--bxsites-table-head-bg` | La fila de encabezado y el campo de filtro sobre ella |
+| `--bxsites-table-head-text` | El texto de las etiquetas del encabezado |
+| `--bxsites-table-border` | El contorno de la tarjeta y los separadores de fila |
+| `--bxsites-table-stripe-bg` | Las filas pares - un tinte alfa sobre la superficie de la tarjeta |
+| `--bxsites-table-hover-bg` | La fila bajo el cursor - el mismo, algo más intenso |
+
+Como todas están declaradas en ambos modos, una tabla sigue al
+conmutador de tema igual que el resto de la página, en lugar de dejar una
+losa blanca de modo claro sobre una página oscura. Puedes redirigir
+cualquiera de ellas desde
+[`extraCss`](themes.md#personalizar-colores-sin-sobrescribir-un-tema) - sin
+necesidad de un override de tema:
+
+```css title="docs/assets/brand.css" linenums="1"
+[data-theme="dark"] {
+	--bxsites-table-head-bg: #241b2e;
+	--bxsites-table-hover-bg: rgba(167, 139, 250, 0.12);
+}
+```
+
+Mantén `--bxsites-table-stripe-bg`/`-hover-bg` como colores alfa: se
+pintan encima de lo que ponga `--bxsites-table-bg`, así que un valor
+opaco cubre la superficie de la tarjeta en vez de teñirla. Todo lo que va
+más allá del color - el padding, el radio de las esquinas, las etiquetas
+en mayúsculas del encabezado - es un override real de `theme/`, igual que
+cualquier otro CSS de un tema.
+
 ## Más allá de los datos simples
 
 Dos recetas más se construyen directamente encima de una tabla simple

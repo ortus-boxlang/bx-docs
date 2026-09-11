@@ -351,9 +351,13 @@ L'insieme proprio del tema `bootstrap`
 `--bxsites-border`, `--bxsites-link`, `--bxsites-link-hover`,
 `--bxsites-code-bg`, `--bxsites-step-marker-bg`, `--bxsites-step-marker-text`,
 `--bxsites-step-line`, `--bxsites-step-success-bg`/`-text`,
-`--bxsites-step-warning-bg`/`-text` e `--bxsites-step-danger-bg`/`-text`.
+`--bxsites-step-warning-bg`/`-text`, `--bxsites-step-danger-bg`/`-text` e
+l'[insieme `--bxsites-table-*`](tables.md#temi), che disegna la card, la
+fascia di intestazione, i separatori e le tinte zebra/hover di una tabella
+renderizzata.
 Ogni tema integrato garantisce `--bxsites-gradient-start`/`-end`,
-`--bxsites-accent` e l'insieme `--bxsites-step-*` con questi nomi esatti,
+`--bxsites-accent` e gli insiemi `--bxsites-step-*` e `--bxsites-table-*`
+con questi nomi esatti,
 quindi `extraCss` può sempre ridefinire il colore del brand/gli accenti
 dello stepper indipendentemente dal tema - ma solo `bootstrap`, `slate` e
 `notion` espongono anche `--bxsites-bg`/`-text`/`-sidebar-bg`/`-sidebar-text`/`-border`/`-link`/`-link-hover`/`-code-bg`

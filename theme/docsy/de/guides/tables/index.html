@@ -40,7 +40,7 @@
 		} )();
 	</script>
 	<link rel="stylesheet" href="/theme/docsy/de/assets/vendor/highlight/github.min.css">
-	<link rel="stylesheet" href="/theme/docsy/de/assets/theme/style.fa38daad.css">
+	<link rel="stylesheet" href="/theme/docsy/de/assets/theme/style.17cec8cb.css">
 	
 
 	<style>
@@ -136,7 +136,7 @@ Tabellen</h1>
 
 
 
-	<details class="bxsites-toc-mobile docsy-toc--mobile"><summary class="docsy-toc--mobile__summary">Auf dieser Seite</summary><ul><li class="docsy-toc__item docsy-toc__item--2"><a href="#zellinhalt-ist-reguläres-inline-markdown">Zellinhalt ist regul&auml;res Inline-Markdown</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#ein-pipe-zeichen-innerhalb-einer-zelle-escapen">Ein Pipe-Zeichen innerhalb einer Zelle escapen</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#kurze-und-lange-zeilen">Kurze und lange Zeilen</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#das-parsen-konfigurieren">Das Parsen konfigurieren</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#responsives-scrollen-und-eine-fixierte-kopfzeile">Responsives Scrollen und eine fixierte Kopfzeile</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#über-reine-daten-hinaus">&Uuml;ber reine Daten hinaus</a></li></ul></details>
+	<details class="bxsites-toc-mobile docsy-toc--mobile"><summary class="docsy-toc--mobile__summary">Auf dieser Seite</summary><ul><li class="docsy-toc__item docsy-toc__item--2"><a href="#zellinhalt-ist-reguläres-inline-markdown">Zellinhalt ist regul&auml;res Inline-Markdown</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#ein-pipe-zeichen-innerhalb-einer-zelle-escapen">Ein Pipe-Zeichen innerhalb einer Zelle escapen</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#kurze-und-lange-zeilen">Kurze und lange Zeilen</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#das-parsen-konfigurieren">Das Parsen konfigurieren</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#responsives-scrollen-und-eine-fixierte-kopfzeile">Responsives Scrollen und eine fixierte Kopfzeile</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#theming">Theming</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#über-reine-daten-hinaus">&Uuml;ber reine Daten hinaus</a></li></ul></details>
 
 				<div class="docsy-content-body">
 				<h1 id="tabellen"><a href="#tabellen" id="tabellen" name="tabellen" class="anchor"></a>Tabellen</h1>
@@ -253,6 +253,44 @@ darunter scrollt - eine kurze Tabelle wie die obigen bekommt nie eine
 Scrollleiste, weil sie ohnehin schon passt. Ein eigenes <code>theme/</code>-Override
 kann <code>.bxsites-table-wrap</code> (insbesondere seine <code>max-height</code>) genau wie
 jede andere CSS-Klasse umgestalten.</p>
+<h2 id="theming"><a href="#theming" id="theming" name="theming" class="anchor"></a>Theming</h2>
+<p>Jedes integrierte Theme rendert eine Tabelle als eigenständige Karte -
+ein abgerundeter, umrandeter Wrapper, eine getönte Kopfleiste,
+waagerechte Zeilentrenner ohne senkrechte Gitterlinien und eine
+Zebra-/Hover-Tönung auf den Zeilen - und zeichnet all das aus sechs
+CSS-Custom-Properties, die pro Modus (<code>:root</code> und <code>[data-theme=&quot;dark&quot;]</code>)
+im eigenen <code>assets/style.css</code> des Themes deklariert sind:</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Token</th><th>Was es zeichnet</th></tr>
+</thead>
+<tbody>
+<tr><td><code>--bxsites-table-bg</code></td><td>Die Oberfläche der Karte, hinter jeder Zeile</td></tr>
+<tr><td><code>--bxsites-table-head-bg</code></td><td>Die Kopfzeile und das Filterfeld darüber</td></tr>
+<tr><td><code>--bxsites-table-head-text</code></td><td>Die Beschriftungen der Kopfzeile</td></tr>
+<tr><td><code>--bxsites-table-border</code></td><td>Die Kontur der Karte und die Zeilentrenner</td></tr>
+<tr><td><code>--bxsites-table-stripe-bg</code></td><td>Gerade Zeilen - eine Alpha-Tönung über der Kartenoberfläche</td></tr>
+<tr><td><code>--bxsites-table-hover-bg</code></td><td>Die Zeile unter dem Mauszeiger - dieselbe, etwas kräftiger</td></tr>
+</tbody>
+</table></div>
+<p>Da jedes davon in beiden Modi deklariert ist, folgt eine Tabelle dem
+Theme-Umschalter wie der Rest der Seite, statt auf einer dunklen Seite
+eine weiße Platte im Light-Mode zurückzulassen. Jedes davon lässt sich
+über <a href="/theme/docsy/de/guides/themes/index.html#farben-anpassen-ohne-ein-theme-zu-überschreiben"><code>extraCss</code></a> umlenken</p>
+<ul>
+<li>ohne Theme-Override:</li>
+</ul>
+<pre data-bxsites-start-line="1" data-bxsites-title="docs&#x2f;assets&#x2f;brand.css"><code class="language-css">[data-theme=&quot;dark&quot;] {
+	--bxsites-table-head-bg: #241b2e;
+	--bxsites-table-hover-bg: rgba(167, 139, 250, 0.12);
+}
+</code></pre>
+<p>Halte <code>--bxsites-table-stripe-bg</code>/<code>-hover-bg</code> als Alpha-Farben: Sie
+werden über das gezeichnet, was <code>--bxsites-table-bg</code> setzt, ein deckender
+Wert überdeckt die Kartenoberfläche also, statt sie zu tönen. Alles
+jenseits von Farbe - Innenabstände, der Eckenradius, die
+Großbuchstaben-Beschriftungen der Kopfzeile - ist ein echter
+<code>theme/</code>-Override, genau wie jedes andere CSS in einem Theme.</p>
 <h2 id="über-reine-daten-hinaus"><a href="#über-reine-daten-hinaus" id="über-reine-daten-hinaus" name="über-reine-daten-hinaus" class="anchor"></a>Über reine Daten hinaus</h2>
 <p>Zwei weitere Rezepte bauen direkt auf einer einfachen Tabelle wie den
 obigen auf:</p>
@@ -266,7 +304,7 @@ filterbare Tabelle</a>.</li>
 
 			</div>
 
-	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/de/guides/tables.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Diese Seite bearbeiten</a><a href="/theme/docsy/de/guides/tables.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Markdown herunterladen</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Zuletzt aktualisiert Sep 11, 2026, 1&#x3a;44&#x3a;50 AM</span></div>
+	<div class="page-meta"><a href="https://github.com/ortus-boxlang/bx-sites/edit/main/docs/i18n/de/guides/tables.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Diese Seite bearbeiten</a><a href="/theme/docsy/de/guides/tables.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Markdown herunterladen</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Zuletzt aktualisiert Sep 11, 2026, 7&#x3a;11&#x3a;15 PM</span></div>
 
 			</article>
 
@@ -288,7 +326,7 @@ filterbare Tabelle</a>.</li>
 		</main>
 
 		<aside class="docsy-toc-sidebar">
-			<nav class="docsy-toc" aria-label="Auf dieser Seite"><div class="docsy-toc__title">Auf dieser Seite</div><ul><li class="docsy-toc__item docsy-toc__item--2"><a href="#zellinhalt-ist-reguläres-inline-markdown">Zellinhalt ist regul&auml;res Inline-Markdown</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#ein-pipe-zeichen-innerhalb-einer-zelle-escapen">Ein Pipe-Zeichen innerhalb einer Zelle escapen</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#kurze-und-lange-zeilen">Kurze und lange Zeilen</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#das-parsen-konfigurieren">Das Parsen konfigurieren</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#responsives-scrollen-und-eine-fixierte-kopfzeile">Responsives Scrollen und eine fixierte Kopfzeile</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#über-reine-daten-hinaus">&Uuml;ber reine Daten hinaus</a></li></ul></nav>
+			<nav class="docsy-toc" aria-label="Auf dieser Seite"><div class="docsy-toc__title">Auf dieser Seite</div><ul><li class="docsy-toc__item docsy-toc__item--2"><a href="#zellinhalt-ist-reguläres-inline-markdown">Zellinhalt ist regul&auml;res Inline-Markdown</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#ein-pipe-zeichen-innerhalb-einer-zelle-escapen">Ein Pipe-Zeichen innerhalb einer Zelle escapen</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#kurze-und-lange-zeilen">Kurze und lange Zeilen</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#das-parsen-konfigurieren">Das Parsen konfigurieren</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#responsives-scrollen-und-eine-fixierte-kopfzeile">Responsives Scrollen und eine fixierte Kopfzeile</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#theming">Theming</a></li><li class="docsy-toc__item docsy-toc__item--2"><a href="#über-reine-daten-hinaus">&Uuml;ber reine Daten hinaus</a></li></ul></nav>
 		</aside>
 
 	</div>

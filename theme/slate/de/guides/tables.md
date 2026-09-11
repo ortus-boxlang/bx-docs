@@ -123,6 +123,44 @@ Scrollleiste, weil sie ohnehin schon passt. Ein eigenes `theme/`-Override
 kann `.bxsites-table-wrap` (insbesondere seine `max-height`) genau wie
 jede andere CSS-Klasse umgestalten.
 
+## Theming
+
+Jedes integrierte Theme rendert eine Tabelle als eigenständige Karte -
+ein abgerundeter, umrandeter Wrapper, eine getönte Kopfleiste,
+waagerechte Zeilentrenner ohne senkrechte Gitterlinien und eine
+Zebra-/Hover-Tönung auf den Zeilen - und zeichnet all das aus sechs
+CSS-Custom-Properties, die pro Modus (`:root` und `[data-theme="dark"]`)
+im eigenen `assets/style.css` des Themes deklariert sind:
+
+| Token | Was es zeichnet |
+| --- | --- |
+| `--bxsites-table-bg` | Die Oberfläche der Karte, hinter jeder Zeile |
+| `--bxsites-table-head-bg` | Die Kopfzeile und das Filterfeld darüber |
+| `--bxsites-table-head-text` | Die Beschriftungen der Kopfzeile |
+| `--bxsites-table-border` | Die Kontur der Karte und die Zeilentrenner |
+| `--bxsites-table-stripe-bg` | Gerade Zeilen - eine Alpha-Tönung über der Kartenoberfläche |
+| `--bxsites-table-hover-bg` | Die Zeile unter dem Mauszeiger - dieselbe, etwas kräftiger |
+
+Da jedes davon in beiden Modi deklariert ist, folgt eine Tabelle dem
+Theme-Umschalter wie der Rest der Seite, statt auf einer dunklen Seite
+eine weiße Platte im Light-Mode zurückzulassen. Jedes davon lässt sich
+über [`extraCss`](themes.md#farben-anpassen-ohne-ein-theme-zu-überschreiben) umlenken
+- ohne Theme-Override:
+
+```css title="docs/assets/brand.css" linenums="1"
+[data-theme="dark"] {
+	--bxsites-table-head-bg: #241b2e;
+	--bxsites-table-hover-bg: rgba(167, 139, 250, 0.12);
+}
+```
+
+Halte `--bxsites-table-stripe-bg`/`-hover-bg` als Alpha-Farben: Sie
+werden über das gezeichnet, was `--bxsites-table-bg` setzt, ein deckender
+Wert überdeckt die Kartenoberfläche also, statt sie zu tönen. Alles
+jenseits von Farbe - Innenabstände, der Eckenradius, die
+Großbuchstaben-Beschriftungen der Kopfzeile - ist ein echter
+`theme/`-Override, genau wie jedes andere CSS in einem Theme.
+
 ## Über reine Daten hinaus
 
 Zwei weitere Rezepte bauen direkt auf einer einfachen Tabelle wie den
